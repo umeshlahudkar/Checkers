@@ -8,6 +8,7 @@ public class Block : MonoBehaviour
     [SerializeField] private RectTransform thisTransform;
     [SerializeField] private Image blockImage;
     [SerializeField] private Image highlightImage;
+    [SerializeField] private Image nextMoveHighlightImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
@@ -37,20 +38,20 @@ public class Block : MonoBehaviour
     {
         isNextMoveHighlighted = true;
         isNextToNextHighlighted = nextToNextHighlighted;
-        highlightImage.gameObject.SetActive(true);
+        nextMoveHighlightImage.gameObject.SetActive(true);
     }
 
     public void ResetBlock()
     {
         isNextMoveHighlighted = false;
         highlightImage.gameObject.SetActive(false);
+        nextMoveHighlightImage.gameObject.SetActive(false);
     }
 
     public void OnClick()
     {
         if(isNextMoveHighlighted)
         {
-            Debug.Log("block clicked");
             GameplayController.instance.MovePiece(this);
         }
     }
@@ -76,6 +77,4 @@ public class Block : MonoBehaviour
     }
 
     public RectTransform ThisTransform { get { return thisTransform; } }
-
-
 }

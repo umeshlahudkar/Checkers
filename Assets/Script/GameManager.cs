@@ -9,16 +9,13 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         instance = this;
+
+        turn = 1;
+        pieceType = (PieceType)turn;
     }
 
     public PieceType pieceType;
     public int turn;
-
-    private void Start()
-    {
-        turn = 1;
-        pieceType = (PieceType)turn;
-    }
 
     public void ChangeTurn()
     {
