@@ -6,11 +6,12 @@ using UnityEngine.UI;
 public class Piece : MonoBehaviour
 {
     [SerializeField] private Image pieceImage;
-
     [SerializeField] private PieceType pieceType;
 
     [SerializeField] private int rowID;
     [SerializeField] private int columID;
+
+    private bool isCrownedKing;
 
 
     public void SetBlock(int row, int colum, PieceType pieceType, Sprite sprite)
@@ -19,6 +20,13 @@ public class Piece : MonoBehaviour
         rowID = row;
         this.pieceType = pieceType;
         pieceImage.sprite = sprite;
+        isCrownedKing = false;
+    }
+
+    public bool IsCrownedKing
+    {
+        get { return isCrownedKing; }
+        set { isCrownedKing = value; }
     }
 
     public int Row_ID 
