@@ -29,6 +29,8 @@ public class GameplayController : MonoBehaviour
 
     public void CheckMoves()
     {
+        ResetHighlightedBlocks();
+
         if (GameManager.instance.pieceType == PieceType.Black)
         {
             CheckBlackPieceMove();
@@ -133,7 +135,7 @@ public class GameplayController : MonoBehaviour
         return blockFound;
     }
 
-    private void ResetHighlightedBlocks(PieceType pieceType)
+    private void ResetHighlightedBlocks()
     {
         foreach (Block b in highlightedBlocks)
         {
@@ -142,9 +144,9 @@ public class GameplayController : MonoBehaviour
         highlightedBlocks.Clear();
     }
 
-    public void CheckNextMove(Piece piece)
+    public bool CheckNextMove(Piece piece)
     {
-        ResetHighlightedBlocks(piece.PieceType);
+        ResetHighlightedBlocks();
 
         int row = piece.Row_ID;
         int coloum = piece.Coloum_ID;
@@ -236,11 +238,13 @@ public class GameplayController : MonoBehaviour
             selectedPiece = null;
             CheckMoves();
         }
+
+        return moveFound;
     }
 
     public void MovePiece(Block block)
     {
-        ResetHighlightedBlocks(selectedPiece.PieceType);
+        ResetHighlightedBlocks();
 
         if(block.IsNextToNextHighlighted)
         {
@@ -317,6 +321,54 @@ public class GameplayController : MonoBehaviour
         selectedPiece.Coloum_ID = block.Coloum_ID;
         selectedPiece.transform.position = block.transform.position;
 
-        GameManager.instance.ChangeTurn();
+        selectedPiece = block.Piece;
+
+        if(CanMove())
+        {
+            CheckNextMove(selectedPiece);
+        }
+        else
+        {
+            GameManager.instance.ChangeTurn();
+        }
+    }
+
+    private bool CanMove()
+    {
+        if(selectedPiece.PieceType == PieceType.White)
+        {
+            int row = selectedPiece.Row_ID;
+            int coloum = selectedPiece.Coloum_ID;
+
+            if(row + 1 < 8 && coloum - 1 >= 0 && board[row + 1, coloum - 1].IsPiecePresent && selectedPiece.PieceType != board[row + 1, coloum - 1].Piece.PieceType &&
+               row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent)
+            {
+                return true;
+            }
+
+            if (row + 1 < 8 && coloum + 1 < 8 && board[row + 1, coloum + 1].IsPiecePresent && selectedPiece.PieceType != board[row + 1, coloum + 1].Piece.PieceType &&
+              row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
+            {
+                return true;
+            }
+        }
+        else if (selectedPiece.PieceType == PieceType.Black)
+        {
+            int row = selectedPiece.Row_ID;
+            int coloum = selectedPiece.Coloum_ID;
+
+            if (row - 1 >= 0 && coloum - 1 >= 0 && board[row - 1, coloum - 1].IsPiecePresent && selectedPiece.PieceType != board[row - 1, coloum - 1].Piece.PieceType &&
+               row - 2 >= 0 && coloum - 2 >= 0 && !board[row -2, coloum - 2].IsPiecePresent)
+            {
+                return true;
+            }
+
+            if (row - 1 >= 0 && coloum + 1 < 8 && board[row - 1, coloum + 1].IsPiecePresent && selectedPiece.PieceType != board[row - 1, coloum + 1].Piece.PieceType &&
+              row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
