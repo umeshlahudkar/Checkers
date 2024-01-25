@@ -27,18 +27,20 @@ public class GameplayController : MonoBehaviour
         CheckMoves();
     }
 
-    public void CheckMoves()
+    public bool CheckMoves()
     {
         ResetHighlightedBlocks();
 
         if (GameManager.instance.pieceType == PieceType.Black)
         {
-            CheckBlackPieceMove();
+            return CheckBlackPieceMove();
         }
         else if (GameManager.instance.pieceType == PieceType.White)
         {
-            CheckWhitePieceMove();
+            return CheckWhitePieceMove();
         }
+
+        return false;
     }
 
     public bool CheckWhitePieceMove()

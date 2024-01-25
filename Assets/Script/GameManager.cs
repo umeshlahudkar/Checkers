@@ -22,7 +22,10 @@ public class GameManager : MonoBehaviour
         turn = turn == 1 ? 2 : 1;
         pieceType = (PieceType)turn;
 
-        GameplayController.instance.CheckMoves();
+        if(!GameplayController.instance.CheckMoves())
+        {
+            Debug.Log("Game Over : looser : " + pieceType);
+        }
     }
 
 }

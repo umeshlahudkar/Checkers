@@ -4,22 +4,27 @@ using UnityEngine;
 
 public class BoardGenerator : MonoBehaviour
 {
-    public int rows;
-    public int colums;
+    [Header("Board Data")]
+    [SerializeField] private int rows;
+    [SerializeField] private int colums;
+    [SerializeField] private float blockSize;
 
-    public float blockSize;
+    [Header("Board Block")]
+    [SerializeField] private Block blockPrefab;
+    [SerializeField] private Sprite whiteBlockSprite;
+    [SerializeField] private Sprite blackBlockSprite;
 
-    public Block blockPrefab;
+    [Header("Piece")]
+    [SerializeField] private Piece piecePrefab;
+    [SerializeField] private Sprite whitePieceSprite;
+    [SerializeField] private Sprite blackPieceSprite;
 
-    public Sprite whiteBlockSprite;
-    public Sprite blackBlockSprite;
+    [Header("Piece Holder")]
+    [SerializeField] private Transform pieceHolderParent;
+    [SerializeField] private Transform blockHolderParent;
 
-    public Piece piecePrefab;
-
-    public Sprite whitePieceSprite;
-    public Sprite blackPieceSprite;
-
-    public Transform pieceHolder;
+    [Header("Piece Holder")]
+    [SerializeField] private RectTransform boardBorder;
 
 
     private void Start()
@@ -39,7 +44,7 @@ public class BoardGenerator : MonoBehaviour
         {
             for (int j = 0; j < colums; j++)
             {
-                Block block = Instantiate(blockPrefab, transform);
+                Block block = Instantiate(blockPrefab, blockHolderParent);
                 block.gameObject.name = "Block " + i + " " + j;
                 block.ThisTransform.localPosition = new Vector3(currentX, currentY, 0);
                 block.ThisTransform.sizeDelta = new Vector2(blockSize, blockSize);
@@ -53,14 +58,14 @@ public class BoardGenerator : MonoBehaviour
                     Piece piece = null;
                     if (i < 3)
                     {
-                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolder);
+                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetBlock(i, j, PieceType.White, whitePieceSprite);
                         GameplayController.instance.whitePieces.Add(piece);
                     }
 
                     if (i > 4)
                     {
-                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolder);
+                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetBlock(i, j, PieceType.Black, blackPieceSprite);
                         GameplayController.instance.blackPieces.Add(piece);
                     }
@@ -77,8 +82,13 @@ public class BoardGenerator : MonoBehaviour
             currentY -= blockSize;
         }
 
-        transform.localPosition += new Vector3(blockSize,0,0);
-        pieceHolder.localPosition += new Vector3(blockSize, 0, 0);
+        blockHolderParent.localPosition += new Vector3(blockSize,0,0);
+        pieceHolderParent.localPosition += new Vector3(blockSize, 0, 0);
+
+        float borderX = (blockSize * colums) + (blockSize / 2);
+        float borderY = (blockSize * rows) + (blockSize / 2);
+
+        boardBorder.sizeDelta = new Vector2(borderX, borderY);
 
         GameplayController.instance.OnBoardReady();
     }
