@@ -6,18 +6,31 @@ using UnityEngine.UI;
 public class Block : MonoBehaviour
 {
     [SerializeField] private RectTransform thisTransform;
+
     [SerializeField] private Image blockImage;
     [SerializeField] private Image highlightImage;
-    [SerializeField] private Image nextMoveHighlightImage;
+    [SerializeField] private Image targetImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
 
     [SerializeField] private bool isPiecePresent;
     private Piece piece;
-    private bool isNextMoveHighlighted;
-    private bool isNextToNextHighlighted;
 
+    private bool isTargetBlockHighlighted;
+    private bool isNextTargetBlockHighlighted;
+
+    private float startTime = 0f;
+    private float animationDuration = 1f;
+    private bool animFlag;
+
+    [Header("Highlight Anim Data")]
+    private float maxAlpha = 1f;
+    private float minAlpha = 0.5f;
+
+    [Header("Target Image Anim Data")]
+    private float maxScale = 1f;
+    private float minScale = 0.5f;
 
     public void SetBlock(int row, int colum, Sprite sprite, bool isPiece, Piece piece = null)
     {
@@ -26,31 +39,103 @@ public class Block : MonoBehaviour
         blockImage.sprite = sprite;
         isPiecePresent = isPiece;
         this.piece = piece;
-        isNextMoveHighlighted = false;
+        isTargetBlockHighlighted = false;
+    }
+
+    private void Update()
+    {
+        if(highlightImage.enabled)
+        {
+            PlayHighlightImageAnim();
+        }
+
+        if (targetImage.enabled)
+        {
+            PlayTargetImageAnim();
+        }
+    }
+
+    private void PlayHighlightImageAnim()
+    {
+        float t = (Time.time - startTime) / animationDuration;
+        float newAlpha;
+
+        if (animFlag)
+        {
+            newAlpha = Mathf.Lerp(maxAlpha, minAlpha, t);
+        }
+        else
+        {
+            newAlpha = Mathf.Lerp(minAlpha, maxAlpha, t);
+        }
+
+        SetHighlightImageAlpha(newAlpha);
+
+        if (t >= animationDuration)
+        {
+            animFlag = !animFlag;
+            startTime = Time.time;
+        }
+    }
+
+    private void PlayTargetImageAnim()
+    {
+        float t = (Time.time - startTime) / animationDuration;
+        float newScale;
+
+        if (animFlag)
+        {
+            newScale = Mathf.Lerp(maxScale, minScale, t);
+        }
+        else
+        {
+            newScale = Mathf.Lerp(minScale, maxScale, t);
+        }
+
+        targetImage.rectTransform.localScale = new Vector3(newScale, newScale, newScale);
+
+        if (t >= animationDuration)
+        {
+            animFlag = !animFlag;
+            startTime = Time.time;
+        }
+    }
+
+    private void SetHighlightImageAlpha(float alpha)
+    {
+        Color currentColor = highlightImage.color;
+        Color newColor = new(currentColor.r, currentColor.g, currentColor.b, alpha);
+        highlightImage.color = newColor;
     }
 
     public void HighlightPieceBlock()
     {
+        startTime = Time.time;
+        animFlag = false;
+
         highlightImage.gameObject.SetActive(true);
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
     {
-        isNextMoveHighlighted = true;
-        isNextToNextHighlighted = nextToNextHighlighted;
-        nextMoveHighlightImage.gameObject.SetActive(true);
+        startTime = Time.time;
+        animFlag = false;
+
+        isTargetBlockHighlighted = true;
+        isNextTargetBlockHighlighted = nextToNextHighlighted;
+        targetImage.gameObject.SetActive(true);
     }
 
     public void ResetBlock()
     {
-        isNextMoveHighlighted = false;
+        isTargetBlockHighlighted = false;
         highlightImage.gameObject.SetActive(false);
-        nextMoveHighlightImage.gameObject.SetActive(false);
+        targetImage.gameObject.SetActive(false);
     }
 
     public void OnClick()
     {
-        if(isNextMoveHighlighted)
+        if(isTargetBlockHighlighted)
         {
             GameplayController.instance.MovePiece(this);
         }
@@ -58,7 +143,7 @@ public class Block : MonoBehaviour
 
     public bool IsNextToNextHighlighted
     {
-        get { return isNextToNextHighlighted; }
+        get { return isNextTargetBlockHighlighted; }
     }
 
     public int Row_ID { get { return rowID; } }

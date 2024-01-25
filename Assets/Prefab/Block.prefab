@@ -95,7 +95,7 @@ MonoBehaviour:
   thisTransform: {fileID: 2126190907609127084}
   blockImage: {fileID: 2126190907609127083}
   highlightImage: {fileID: 2126190908254881661}
-  nextMoveHighlightImage: {fileID: 4513905672826614449}
+  targetImage: {fileID: 4513905672826614449}
   columID: 0
   rowID: 0
   isPiecePresent: 0
@@ -167,7 +167,7 @@ GameObject:
   - component: {fileID: 2126190908254881660}
   - component: {fileID: 2126190908254881661}
   m_Layer: 5
-  m_Name: PieceBlockHighlight
+  m_Name: Highlight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -214,7 +214,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.3585841, g: 0.6792453, b: 0.35500178, a: 1}
+  m_Color: {r: 0.457852, g: 0.8962264, b: 0.37540045, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -243,7 +243,7 @@ GameObject:
   - component: {fileID: 9080180571678363033}
   - component: {fileID: 4513905672826614449}
   m_Layer: 5
-  m_Name: NectMoveBlockHighlight
+  m_Name: Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -264,8 +264,8 @@ RectTransform:
   m_Father: {fileID: 2126190907609127084}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.18, y: 0.18}
-  m_AnchorMax: {x: 0.83000004, y: 0.82000005}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -290,14 +290,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.7266773, g: 0.56532574, b: 0.754717, a: 1}
+  m_Color: {r: 1, g: 0.2066857, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 6a943bbbe451872499e0964a92459cf1, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

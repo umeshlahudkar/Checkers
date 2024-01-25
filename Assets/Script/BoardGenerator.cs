@@ -30,6 +30,7 @@ public class BoardGenerator : MonoBehaviour
     private void Start()
     {
         GenerateBoard();
+        GameplayController.instance.OnBoardReady();
     }
 
     private void GenerateBoard()
@@ -89,7 +90,5 @@ public class BoardGenerator : MonoBehaviour
         float borderY = (blockSize * rows) + (blockSize / 2);
 
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
-
-        GameplayController.instance.OnBoardReady();
     }
 }
