@@ -2,10 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Photon.Pun;
 
 public class Piece : MonoBehaviour
 {
-    [SerializeField] private Image pieceImage;
+    [SerializeField] private RectTransform thisTransform;
+    [SerializeField] private Image whitePieceImage;
+    [SerializeField] private Image blackPieceImage;
+    [SerializeField] private Image crownImage;
     [SerializeField] private PieceType pieceType;
 
     [SerializeField] private int rowID;
@@ -13,20 +17,37 @@ public class Piece : MonoBehaviour
 
     private bool isCrownedKing;
 
-
-    public void SetBlock(int row, int colum, PieceType pieceType, Sprite sprite)
+    [PunRPC]
+    public void SetBlock(int row, int colum, int pieceType, float blockSize)
     {
         columID = colum;
         rowID = row;
-        this.pieceType = pieceType;
-        pieceImage.sprite = sprite;
+        this.pieceType = (PieceType)pieceType;
         isCrownedKing = false;
+
+        if(this.pieceType == PieceType.White)
+        {
+            whitePieceImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            blackPieceImage.gameObject.SetActive(true);
+        }
+
+        thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
+        thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
+        thisTransform.localScale = Vector3.one;
+    }
+
+    public void SetKrownKing()
+    {
+        isCrownedKing = true;
+        crownImage.gameObject.SetActive(true);
     }
 
     public bool IsCrownedKing
     {
         get { return isCrownedKing; }
-        set { isCrownedKing = value; }
     }
 
     public int Row_ID 
@@ -45,7 +66,7 @@ public class Piece : MonoBehaviour
 
     public void OnClick()
     {
-        if(GameManager.instance.pieceType == pieceType)
+        if(GameManager.instance.ActorNumber == GameManager.instance.CurrentTurn && pieceType == GameManager.instance.PieceType)
         {
             GameplayController.instance.CheckNextMove(this);
         }

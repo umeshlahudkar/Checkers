@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
 
 public class BoardGenerator : MonoBehaviour
 {
@@ -27,13 +28,7 @@ public class BoardGenerator : MonoBehaviour
     [SerializeField] private RectTransform boardBorder;
 
 
-    private void Start()
-    {
-        GenerateBoard();
-        GameplayController.instance.OnBoardReady();
-    }
-
-    private void GenerateBoard()
+    public void GenerateBoard()
     {
         float startX = -((blockSize * colums) / 2  + (blockSize/2));
         float startY = ((blockSize * rows) / 2)  - (blockSize / 2);
@@ -56,6 +51,7 @@ public class BoardGenerator : MonoBehaviour
                 }
                 else
                 {
+                    /*
                     Piece piece = null;
                     if (i < 3)
                     {
@@ -71,11 +67,13 @@ public class BoardGenerator : MonoBehaviour
                         GameplayController.instance.blackPieces.Add(piece);
                     }
 
+                   
                     block.SetBlock(i, j, blackBlockSprite, piece == null ? false : true, piece);
+                    */
+                    block.SetBlock(i, j, blackBlockSprite, false);
                 }
 
                 GameplayController.instance.board[i, j] = block;
-
                 currentX += blockSize;
             }
 
@@ -90,5 +88,42 @@ public class BoardGenerator : MonoBehaviour
         float borderY = (blockSize * rows) + (blockSize / 2);
 
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
+    }
+
+    public void GeneratePieces(PieceType type)
+    {
+        for(int i = 0; i < rows; i++)
+        {
+            for(int j = 0; j < colums; j++)
+            {
+                if((i + j) % 2 != 0)
+                {
+                    if (i < 3 && type == PieceType.White)
+                    {
+                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.instance.board[i, j].transform.position, Quaternion.identity);
+                        Piece piece = obj.GetComponent<Piece>();
+                        PhotonView view = obj.GetComponent<PhotonView>();
+
+                        view.RPC(nameof(piece.SetBlock), RpcTarget.All, i, j, (int)PieceType.White, blockSize);
+                        //piece.SetBlock(i, j, (int)PieceType.White);
+                        GameplayController.instance.whitePieces.Add(piece);
+                        //obj.transform.SetParent(pieceHolderParent);
+                    }
+
+                    if (i > 4 && type == PieceType.Black)
+                    {
+                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.instance.board[i, j].transform.position, Quaternion.identity);
+                        Piece piece = obj.GetComponent<Piece>();
+                        PhotonView view = obj.GetComponent<PhotonView>();
+
+                        view.RPC(nameof(piece.SetBlock), RpcTarget.All, i, j, (int)PieceType.Black, blockSize);
+
+                        //piece.SetBlock(i, j, (int)PieceType.Black);
+                        GameplayController.instance.blackPieces.Add(piece);
+                        //obj.transform.SetParent(pieceHolderParent);
+                    }
+                }
+            }
+        }
     }
 }

@@ -15,15 +15,13 @@ public class GameplayController : MonoBehaviour
     public List<Piece> whitePieces = new List<Piece>();
     public List<Piece> blackPieces = new List<Piece>();
 
-    [SerializeField] private List<Block> highlightedBlocks;
+    [SerializeField] private List<Block> highlightedBlocks = new List<Block>();
 
     public Piece selectedPiece;
 
 
     public void OnBoardReady()
     {
-        highlightedBlocks = new List<Block>();
-
         CheckMoves();
     }
 
@@ -31,11 +29,11 @@ public class GameplayController : MonoBehaviour
     {
         ResetHighlightedBlocks();
 
-        if (GameManager.instance.pieceType == PieceType.Black)
+        if (GameManager.instance.PieceType == PieceType.Black)
         {
             return CheckBlackPieceMove();
         }
-        else if (GameManager.instance.pieceType == PieceType.White)
+        else if (GameManager.instance.PieceType == PieceType.White)
         {
             return CheckWhitePieceMove();
         }
@@ -558,16 +556,16 @@ public class GameplayController : MonoBehaviour
         selectedPiece.Coloum_ID = block.Coloum_ID;
         selectedPiece.transform.position = block.transform.position;
 
-        selectedPiece = block.Piece;
-
-        if(selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7)
+        if (selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7)
         {
-            selectedPiece.IsCrownedKing = true;
+            selectedPiece.SetKrownKing();
         }
         else if (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0)
         {
-            selectedPiece.IsCrownedKing = true;
+            selectedPiece.SetKrownKing();
         }
+
+        selectedPiece = block.Piece;
 
         if (hasDeleted && CanMove())
         {
@@ -575,7 +573,7 @@ public class GameplayController : MonoBehaviour
         }
         else
         {
-            GameManager.instance.ChangeTurn();
+            GameManager.instance.SwitchTurn();
         }
     }
 
