@@ -172,12 +172,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   thisTransform: {fileID: 4085975894928045903}
+  button: {fileID: 2684559871079811949}
+  photonView: {fileID: 1007264746458196750}
   whitePieceImage: {fileID: 7712523309567671624}
   blackPieceImage: {fileID: 2886333377084448173}
   crownImage: {fileID: 3171805904955252001}
   pieceType: 0
   rowID: 0
   columID: 0
+  isCrownedKing: 0
 --- !u!114 &2684559871079811949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -197,7 +200,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
@@ -217,7 +220,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 4085975894928045900}
   m_OnClick:
     m_PersistentCalls:

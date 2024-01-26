@@ -7,6 +7,8 @@ public class Block : MonoBehaviour
 {
     [SerializeField] private RectTransform thisTransform;
 
+    [SerializeField] private Button button;
+
     [SerializeField] private Image blockImage;
     [SerializeField] private Image highlightImage;
     [SerializeField] private Image targetImage;
@@ -32,14 +34,27 @@ public class Block : MonoBehaviour
     private float maxScale = 1f;
     private float minScale = 0.5f;
 
-    public void SetBlock(int row, int colum, Sprite sprite, bool isPiece, Piece piece = null)
+    public void SetBlock(int row, int colum, Sprite sprite)
     {
         columID = colum;
         rowID = row;
         blockImage.sprite = sprite;
-        isPiecePresent = isPiece;
-        this.piece = piece;
+        //isPiecePresent = isPiece;
+        //this.piece = piece;
         isTargetBlockHighlighted = false;
+        button.interactable = false;
+    }
+
+    public void SetBlockPiece(bool piecePresent, Piece piece)
+    {
+        isPiecePresent = piecePresent;
+        this.piece = piece;
+
+        if(this.piece != null)
+        {
+            this.piece.Row_ID = rowID;
+            this.piece.Coloum_ID = columID;
+        }
     }
 
     private void Update()
@@ -114,6 +129,7 @@ public class Block : MonoBehaviour
         animFlag = false;
 
         highlightImage.gameObject.SetActive(true);
+        button.interactable = true;
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
@@ -124,10 +140,12 @@ public class Block : MonoBehaviour
         isTargetBlockHighlighted = true;
         isNextTargetBlockHighlighted = nextToNextHighlighted;
         targetImage.gameObject.SetActive(true);
+        button.interactable = true;
     }
 
     public void ResetBlock()
     {
+        button.interactable = false;
         isTargetBlockHighlighted = false;
         highlightImage.gameObject.SetActive(false);
         targetImage.gameObject.SetActive(false);

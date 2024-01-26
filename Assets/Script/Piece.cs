@@ -7,6 +7,9 @@ using Photon.Pun;
 public class Piece : MonoBehaviour
 {
     [SerializeField] private RectTransform thisTransform;
+    [SerializeField] private Button button;
+    [SerializeField] private PhotonView photonView;
+
     [SerializeField] private Image whitePieceImage;
     [SerializeField] private Image blackPieceImage;
     [SerializeField] private Image crownImage;
@@ -15,7 +18,8 @@ public class Piece : MonoBehaviour
     [SerializeField] private int rowID;
     [SerializeField] private int columID;
 
-    private bool isCrownedKing;
+    [SerializeField] private bool isCrownedKing;
+    
 
     [PunRPC]
     public void SetBlock(int row, int colum, int pieceType, float blockSize)
@@ -37,6 +41,13 @@ public class Piece : MonoBehaviour
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
         thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
         thisTransform.localScale = Vector3.one;
+
+        GameplayController.instance.board[row, colum].SetBlockPiece(true, this);
+
+        if(photonView.IsMine)
+        {
+            button.interactable = true;
+        }
     }
 
     public void SetKrownKing()

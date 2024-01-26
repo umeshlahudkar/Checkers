@@ -47,7 +47,7 @@ public class BoardGenerator : MonoBehaviour
 
                 if((i+j) % 2 == 0)
                 {
-                    block.SetBlock(i, j, whiteBlockSprite, false);
+                    block.SetBlock(i, j, whiteBlockSprite);
                 }
                 else
                 {
@@ -70,7 +70,7 @@ public class BoardGenerator : MonoBehaviour
                    
                     block.SetBlock(i, j, blackBlockSprite, piece == null ? false : true, piece);
                     */
-                    block.SetBlock(i, j, blackBlockSprite, false);
+                    block.SetBlock(i, j, blackBlockSprite);
                 }
 
                 GameplayController.instance.board[i, j] = block;

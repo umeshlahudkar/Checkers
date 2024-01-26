@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
 
 public class GameplayController : MonoBehaviour
 {
@@ -416,151 +417,185 @@ public class GameplayController : MonoBehaviour
         {
             int row = block.Row_ID;
             int coloum = block.Coloum_ID;
-     
-            if (selectedPiece.PieceType == PieceType.White)
+
+            int targetRow = row + (row > selectedPiece.Row_ID ? -1 : 1);
+            int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
+
+            Piece piece = board[targetRow, targetCol].Piece;
+            if (blackPieces.Contains(piece))
             {
-                bool onLeftSide = block.Coloum_ID < selectedPiece.Coloum_ID ? true : false;
+                blackPieces.Remove(piece);
+            }
+            PhotonNetwork.Destroy(piece.gameObject);
+            //board[targetRow, targetCol].SetBlockPiece(false, null);
+
+            GameManager.instance.UpdateGrid(targetRow, targetCol, null);
+            //if (selectedPiece.PieceType == PieceType.White)
+            //{
+            //    bool onLeftSide = coloum < selectedPiece.Coloum_ID;
+               
+
+            //    if (onLeftSide)
+            //    {
+            //        bool onDownSide = row > selectedPiece.Row_ID;
+
+            //        if (onDownSide)
+            //        {
+            //            Piece piece = board[row - 1, coloum + 1].Piece;
+            //            if (blackPieces.Contains(piece))
+            //            {
+            //                blackPieces.Remove(piece);
+            //            }
+
+            //            Destroy(piece.gameObject);
+            //            //board[row - 1, coloum + 1].Piece = null;
+            //            //board[row - 1, coloum + 1].IsPiecePresent = false;
+
+            //            board[row - 1, coloum + 1].SetBlockPiece(false, null);
+            //        }
+            //        else
+            //        {
+            //            Piece piece = board[row + 1, coloum + 1].Piece;
+            //            if (blackPieces.Contains(piece))
+            //            {
+            //                blackPieces.Remove(piece);
+            //            }
+
+            //            Destroy(piece.gameObject);
+            //            //board[row + 1, coloum + 1].Piece = null;
+            //            //board[row + 1, coloum + 1].IsPiecePresent = false;
+
+            //            board[row + 1, coloum + 1].SetBlockPiece(false, null);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
+
+            //        if(onDownSide)
+            //        {
+            //            Piece piece = board[row - 1, coloum - 1].Piece;
+            //            if (blackPieces.Contains(piece))
+            //            {
+            //                blackPieces.Remove(piece);
+            //            }
+
+            //            Destroy(piece.gameObject);
+            //            //board[row - 1, coloum - 1].Piece = null;
+            //            //board[row - 1, coloum - 1].IsPiecePresent = false;
+
+            //            board[row - 1, coloum - 1].SetBlockPiece(false, null);
+            //        }
+            //        else
+            //        {
+            //            Piece piece = board[row + 1, coloum - 1].Piece;
+            //            if (blackPieces.Contains(piece))
+            //            {
+            //                blackPieces.Remove(piece);
+            //            }
+
+            //            Destroy(piece.gameObject);
+            //            //board[row + 1, coloum - 1].Piece = null;
+            //            //board[row + 1, coloum - 1].IsPiecePresent = false;
+
+            //            board[row + 1, coloum - 1].SetBlockPiece(false, null);
+            //        }
+            //    }
                 
-                if(onLeftSide)
-                {
-                    bool onDownSide = block.Row_ID > selectedPiece.Row_ID ? true : false;
+            //}
+            //else if (selectedPiece.PieceType == PieceType.Black)
+            //{
+            //    bool onLeftSide = block.Coloum_ID < selectedPiece.Coloum_ID;
 
-                    if(onDownSide)
-                    {
-                        Piece piece = board[row - 1, coloum + 1].Piece;
-                        if (blackPieces.Contains(piece))
-                        {
-                            blackPieces.Remove(piece);
-                        }
+               
+            //    if (onLeftSide)
+            //    {
+            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
 
-                        Destroy(piece.gameObject);
-                        board[row - 1, coloum + 1].Piece = null;
-                        board[row - 1, coloum + 1].IsPiecePresent = false;
-                    }
-                    else
-                    {
-                        Piece piece = board[row + 1, coloum + 1].Piece;
-                        if (blackPieces.Contains(piece))
-                        {
-                            blackPieces.Remove(piece);
-                        }
+            //        if(onDownSide)
+            //        {
+            //            Piece piece = board[row - 1, coloum + 1].Piece;
+            //            if (whitePieces.Contains(piece))
+            //            {
+            //                whitePieces.Remove(piece);
+            //            }
 
-                        Destroy(piece.gameObject);
-                        board[row + 1, coloum + 1].Piece = null;
-                        board[row + 1, coloum + 1].IsPiecePresent = false;
-                    }
-                }
-                else
-                {
-                    bool onDownSide = block.Row_ID > selectedPiece.Row_ID ? true : false;
+            //            Destroy(piece.gameObject);
+            //            //board[row - 1, coloum + 1].Piece = null;
+            //            //board[row - 1, coloum + 1].IsPiecePresent = false;
 
-                    if(onDownSide)
-                    {
-                        Piece piece = board[row - 1, coloum - 1].Piece;
-                        if (blackPieces.Contains(piece))
-                        {
-                            blackPieces.Remove(piece);
-                        }
+            //            board[row - 1, coloum + 1].SetBlockPiece(false, null);
+            //        }
+            //        else
+            //        {
+            //            Piece piece = board[row + 1, coloum + 1].Piece;
+            //            if (whitePieces.Contains(piece))
+            //            {
+            //                whitePieces.Remove(piece);
+            //            }
 
-                        Destroy(piece.gameObject);
-                        board[row - 1, coloum - 1].Piece = null;
-                        board[row - 1, coloum - 1].IsPiecePresent = false;
-                    }
-                    else
-                    {
-                        Piece piece = board[row + 1, coloum - 1].Piece;
-                        if (blackPieces.Contains(piece))
-                        {
-                            blackPieces.Remove(piece);
-                        }
+            //            Destroy(piece.gameObject);
+            //            //board[row + 1, coloum + 1].Piece = null;
+            //            //board[row + 1, coloum + 1].IsPiecePresent = false;
 
-                        Destroy(piece.gameObject);
-                        board[row + 1, coloum - 1].Piece = null;
-                        board[row + 1, coloum - 1].IsPiecePresent = false;
-                    }
-                }
-            }
-            else if (selectedPiece.PieceType == PieceType.Black)
-            {
-                bool onLeftSide = block.Coloum_ID < selectedPiece.Coloum_ID ? true : false;
+            //            board[row + 1, coloum + 1].SetBlockPiece(false, null);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
 
-                if (onLeftSide)
-                {
-                    bool onDownSide = block.Row_ID > selectedPiece.Row_ID ? true : false;
+            //        if(onDownSide)
+            //        {
+            //            Piece piece = board[row - 1, coloum - 1].Piece;
+            //            if (whitePieces.Contains(piece))
+            //            {
+            //                whitePieces.Remove(piece);
+            //            }
 
-                    if(onDownSide)
-                    {
-                        Piece piece = board[row - 1, coloum + 1].Piece;
-                        if (whitePieces.Contains(piece))
-                        {
-                            whitePieces.Remove(piece);
-                        }
+            //            Destroy(piece.gameObject);
+            //            //board[row - 1, coloum - 1].Piece = null;
+            //            //board[row - 1, coloum - 1].IsPiecePresent = false;
 
-                        Destroy(piece.gameObject);
-                        board[row - 1, coloum + 1].Piece = null;
-                        board[row - 1, coloum + 1].IsPiecePresent = false;
-                    }
-                    else
-                    {
-                        Piece piece = board[row + 1, coloum + 1].Piece;
-                        if (whitePieces.Contains(piece))
-                        {
-                            whitePieces.Remove(piece);
-                        }
+            //            board[row - 1, coloum - 1].SetBlockPiece(false, null);
+            //        }
+            //        else
+            //        {
+            //            Piece piece = board[row + 1, coloum - 1].Piece;
+            //            if (whitePieces.Contains(piece))
+            //            {
+            //                whitePieces.Remove(piece);
+            //            }
 
-                        Destroy(piece.gameObject);
-                        board[row + 1, coloum + 1].Piece = null;
-                        board[row + 1, coloum + 1].IsPiecePresent = false;
-                    }
-                }
-                else
-                {
-                    bool onDownSide = block.Row_ID > selectedPiece.Row_ID ? true : false;
+            //            Destroy(piece.gameObject);
+            //            //board[row + 1, coloum - 1].Piece = null;
+            //            //board[row + 1, coloum - 1].IsPiecePresent = false;
 
-                    if(onDownSide)
-                    {
-                        Piece piece = board[row - 1, coloum - 1].Piece;
-                        if (whitePieces.Contains(piece))
-                        {
-                            whitePieces.Remove(piece);
-                        }
-
-                        Destroy(piece.gameObject);
-                        board[row - 1, coloum - 1].Piece = null;
-                        board[row - 1, coloum - 1].IsPiecePresent = false;
-                    }
-                    else
-                    {
-                        Piece piece = board[row + 1, coloum - 1].Piece;
-                        if (whitePieces.Contains(piece))
-                        {
-                            whitePieces.Remove(piece);
-                        }
-
-                        Destroy(piece.gameObject);
-                        board[row + 1, coloum - 1].Piece = null;
-                        board[row + 1, coloum - 1].IsPiecePresent = false;
-                    }
-                }
-            }
+            //            board[row + 1, coloum - 1].SetBlockPiece(false, null);
+            //        }
+            //    }
+            //}
             hasDeleted = true;
         }
 
-        board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].IsPiecePresent = false;
-        board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].Piece = null;
+        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].IsPiecePresent = false;
+        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].Piece = null;
 
-        block.IsPiecePresent = true;
-        block.Piece = selectedPiece;
+        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].SetBlockPiece(false, null);
+        GameManager.instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
 
-        selectedPiece.Row_ID = block.Row_ID;
-        selectedPiece.Coloum_ID = block.Coloum_ID;
+        //block.IsPiecePresent = true;
+        //block.Piece = selectedPiece;
+
+        //block.SetBlockPiece(true, selectedPiece);
+        GameManager.instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+
+        //selectedPiece.Row_ID = block.Row_ID;
+        //selectedPiece.Coloum_ID = block.Coloum_ID;
         selectedPiece.transform.position = block.transform.position;
 
-        if (selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7)
-        {
-            selectedPiece.SetKrownKing();
-        }
-        else if (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0)
+        if ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
+            (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0))
         {
             selectedPiece.SetKrownKing();
         }

@@ -34,9 +34,6 @@ public class GameManager : MonoBehaviour
         {
             currentTurn = actorNumber;
             pieceType = PieceType.Black;
-
-            //boardGenerator.GenerateBoard();
-            //GameplayController.instance.OnBoardReady();
         }
         else
         {
@@ -45,6 +42,11 @@ public class GameManager : MonoBehaviour
 
         boardGenerator.GenerateBoard();
         boardGenerator.GeneratePieces(pieceType);
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            GameplayController.instance.OnBoardReady();
+        }
     }
 
     public void SwitchTurn()
@@ -62,6 +64,28 @@ public class GameManager : MonoBehaviour
         {
             Debug.Log("Game Over : looser : " + pieceType);
         }
+    }
+
+
+    public void UpdateGrid(int row, int col, Piece piece)
+    {
+        int viewId = -1;
+        if(piece != null)
+        {
+            viewId = piece.GetComponent<PhotonView>().ViewID;
+        }
+        gameManagerPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, row, col, viewId);
+    }
+
+    [PunRPC]
+    public void UpdateGrid(int row, int col, int viewId)
+    {
+        Piece piece = null;
+        if(viewId != -1)
+        {
+            piece = PhotonView.Find(viewId).GetComponent<Piece>();
+        }
+        GameplayController.instance.board[row, col].SetBlockPiece((viewId != -1), piece);
     }
 
 }
