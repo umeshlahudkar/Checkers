@@ -26,32 +26,71 @@ public class GameplayController : MonoBehaviour
         CheckMoves();
     }
 
-    public bool CheckMoves()
+    public bool CheckMoves(bool canHighlightMoves = true)
     {
         ResetHighlightedBlocks();
 
         if (GameManager.instance.PieceType == PieceType.Black)
         {
-            return CheckBlackPieceMove();
+            return CheckAllBlackPieceMove(canHighlightMoves);
         }
         else if (GameManager.instance.PieceType == PieceType.White)
         {
-            return CheckWhitePieceMove();
+            return CheckAllWhitePieceMove(canHighlightMoves);
         }
 
         return false;
     }
 
-    public bool CheckWhitePieceMove()
+    private bool IsValidPosition(int row, int col)
     {
-        bool blockFound = false;
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    private bool CheckPieceMoveAndHighlightBlock(int row, int col, int jumpRow, int jumpCol, Piece piece, Block block, bool canHighlightMoves)
+    {
+        if(!IsValidPosition(row, col)) { return false; }
+
+        bool moveFound = false;
+
+        if((!board[row, col].IsPiecePresent) || 
+            (board[row, col].IsPiecePresent && piece.PieceType != board[row, col].Piece.PieceType &&
+                IsValidPosition(jumpRow, jumpCol) && !board[jumpRow, jumpCol].IsPiecePresent))
+        {
+            moveFound = true;
+        }
+
+        if(moveFound && canHighlightMoves)
+        {
+            block.HighlightPieceBlock();
+            highlightedBlocks.Add(block);
+        }
+        return moveFound;
+    }
+
+    private bool CheckAllWhitePieceMove(bool canHighlightMoves)
+    {
+        bool moveFound = false;
         foreach (Piece piece in whitePieces)
         {
             int row = piece.Row_ID;
             int coloum = piece.Coloum_ID;
-
             Block pieceBlock = board[row, coloum];
 
+            // diagonally down left
+            moveFound |= CheckPieceMoveAndHighlightBlock(row + 1, coloum - 1, row + 2, coloum - 2, piece, pieceBlock, canHighlightMoves);
+            //diagonally down right
+            moveFound |= CheckPieceMoveAndHighlightBlock(row + 1, coloum + 1, row + 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
+
+            if(piece.IsCrownedKing)
+            {
+                // diagonally up left
+                moveFound |= CheckPieceMoveAndHighlightBlock(row - 1, coloum - 1, row - 2, coloum - 2, piece, pieceBlock, canHighlightMoves);
+                //diagonally up right
+                moveFound |= CheckPieceMoveAndHighlightBlock(row - 1, coloum + 1, row - 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
+            }
+
+            /*
             // diagonally down left
             if (row + 1 < 8 && coloum - 1 >= 0)
             {
@@ -126,13 +165,15 @@ public class GameplayController : MonoBehaviour
                     }
                 }
             }
+
+            */
         }
-        return blockFound;
+        return moveFound;
     }
 
-    public bool CheckBlackPieceMove()
+    public bool CheckAllBlackPieceMove(bool canHighlightMoves)
     {
-        bool blockFound = false;
+        bool moveFound = false;
         foreach (Piece piece in blackPieces)
         {
             int row = piece.Row_ID;
@@ -140,6 +181,20 @@ public class GameplayController : MonoBehaviour
 
             Block pieceBlock = board[row, coloum];
 
+            // diagonally up left
+            moveFound |= CheckPieceMoveAndHighlightBlock(row - 1, coloum - 1, row - 2, coloum - 2, piece, pieceBlock, canHighlightMoves);
+            // diagonally up right
+            moveFound |= CheckPieceMoveAndHighlightBlock(row - 1, coloum + 1, row - 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                moveFound |= CheckPieceMoveAndHighlightBlock(row + 1, coloum - 1, row + 2, coloum - 2, piece, pieceBlock, canHighlightMoves);
+                //diagonally down right
+                moveFound |= CheckPieceMoveAndHighlightBlock(row + 1, coloum + 1, row + 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
+            }
+
+            /*
             // diagonally up left
             if (row - 1 >= 0 && coloum - 1 >= 0)
             {
@@ -150,7 +205,7 @@ public class GameplayController : MonoBehaviour
                     blockFound = true;
                 }
                 else if (board[row - 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum - 1].Piece.PieceType
-                         && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
+                            && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
                 {
                     pieceBlock.HighlightPieceBlock();
                     highlightedBlocks.Add(pieceBlock);
@@ -214,8 +269,9 @@ public class GameplayController : MonoBehaviour
                     }
                 }
             }
+            */
         }
-        return blockFound;
+        return moveFound;
     }
 
     private void ResetHighlightedBlocks()
@@ -227,17 +283,53 @@ public class GameplayController : MonoBehaviour
         highlightedBlocks.Clear();
     }
 
-    public bool CheckNextMove(Piece piece)
+
+    private bool CheckPieceNextMoveAndHighlightTargetBlock(int targetRow, int targetCol, int jumpTargetRow, int jumpTargetCol, Piece pieceToMove)
+    {
+        if(!IsValidPosition(targetRow, targetCol)) { return false; }
+
+        bool targetMoveFound = false;
+
+        if (!board[targetRow, targetCol].IsPiecePresent)
+        {
+            board[targetRow, targetCol].HighlightNextMoveBlock();
+            highlightedBlocks.Add(board[targetRow, targetCol]);
+            targetMoveFound = true;
+        } 
+        else if(board[targetRow, targetCol].IsPiecePresent && pieceToMove.PieceType != board[targetRow, targetCol].Piece.PieceType
+             && IsValidPosition(jumpTargetRow, jumpTargetCol) && !board[jumpTargetRow, jumpTargetCol].IsPiecePresent)
+        {
+            board[jumpTargetRow, jumpTargetCol].HighlightNextMoveBlock(true);
+            highlightedBlocks.Add(board[jumpTargetRow, jumpTargetCol]);
+            targetMoveFound = true;
+        }
+        return targetMoveFound;
+    }
+
+    public bool CheckNextMove(Piece pieceToMove)
     {
         ResetHighlightedBlocks();
 
-        int row = piece.Row_ID;
-        int coloum = piece.Coloum_ID;
-
+        int row = pieceToMove.Row_ID;
+        int coloum = pieceToMove.Coloum_ID;
         bool moveFound = false;
 
-        if (piece.PieceType == PieceType.White)
+        if (pieceToMove.PieceType == PieceType.White)
         {
+            // diagonally down left
+            moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceToMove);
+            // diagonally down right
+            moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceToMove);
+
+            if(pieceToMove.IsCrownedKing)
+            {
+                // diagonally up left
+                moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceToMove);
+                //diagonally up right
+                moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceToMove);
+            }
+
+            /*
             // diagonally down left
             if (row + 1 < 8 && coloum - 1 >= 0)
             {
@@ -247,7 +339,7 @@ public class GameplayController : MonoBehaviour
                     highlightedBlocks.Add(board[row + 1, coloum - 1]);
                     moveFound = true;
                 }
-                else if (board[row + 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum - 1].Piece.PieceType
+                else if (board[row + 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum - 1].Piece.PieceType
                          && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent) 
                 {
                     board[row + 2, coloum - 2].HighlightNextMoveBlock(true);
@@ -265,7 +357,7 @@ public class GameplayController : MonoBehaviour
                     highlightedBlocks.Add(board[row + 1, coloum + 1]);
                     moveFound = true;
                 }
-                else if (board[row + 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum + 1].Piece.PieceType
+                else if (board[row + 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum + 1].Piece.PieceType
                          && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
                 {
                     board[row + 2, coloum + 2].HighlightNextMoveBlock(true);
@@ -274,7 +366,7 @@ public class GameplayController : MonoBehaviour
                 }
             }
 
-            if (piece.IsCrownedKing)
+            if (pieceToMove.IsCrownedKing)
             {
                 // diagonally up left
                 if (row - 1 >= 0 && coloum - 1 >= 0)
@@ -285,7 +377,7 @@ public class GameplayController : MonoBehaviour
                         highlightedBlocks.Add(board[row - 1, coloum - 1]);
                         moveFound = true;
                     }
-                    else if (board[row - 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum - 1].Piece.PieceType
+                    else if (board[row - 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum - 1].Piece.PieceType
                             && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
                     {
                         board[row - 2, coloum - 2].HighlightNextMoveBlock(true);
@@ -303,7 +395,7 @@ public class GameplayController : MonoBehaviour
                         highlightedBlocks.Add(board[row - 1, coloum + 1]);
                         moveFound = true;
                     }
-                    else if (board[row - 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum + 1].Piece.PieceType
+                    else if (board[row - 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum + 1].Piece.PieceType
                             && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
                     {
                         board[row - 2, coloum + 2].HighlightNextMoveBlock(true);
@@ -312,9 +404,25 @@ public class GameplayController : MonoBehaviour
                     }
                 }
             }
+
+            */
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (pieceToMove.PieceType == PieceType.Black)
         {
+            // diagonally up left
+            moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceToMove);
+            // diagonally up right
+            moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceToMove);
+
+            if (pieceToMove.IsCrownedKing)
+            {
+                // diagonally down left
+                moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceToMove);
+                //diagonally down right
+                moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceToMove);
+            }
+
+            /*
             // diagonally up left
             if (row - 1 >= 0 && coloum - 1 >= 0)
             {
@@ -324,7 +432,7 @@ public class GameplayController : MonoBehaviour
                     highlightedBlocks.Add(board[row - 1, coloum - 1]);
                     moveFound = true;
                 }
-                else if (board[row - 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum - 1].Piece.PieceType
+                else if (board[row - 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum - 1].Piece.PieceType
                         && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
                 {
                     board[row - 2, coloum - 2].HighlightNextMoveBlock(true);
@@ -342,7 +450,7 @@ public class GameplayController : MonoBehaviour
                     highlightedBlocks.Add(board[row - 1, coloum + 1]);
                     moveFound = true;
                 }
-                else if (board[row - 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum + 1].Piece.PieceType
+                else if (board[row - 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum + 1].Piece.PieceType
                        && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
                 {
                     board[row - 2, coloum + 2].HighlightNextMoveBlock(true);
@@ -351,7 +459,7 @@ public class GameplayController : MonoBehaviour
                 }
             }
 
-            if (piece.IsCrownedKing)
+            if (pieceToMove.IsCrownedKing)
             {
                 // diagonally down left
                 if (row + 1 < 8 && coloum - 1 >= 0)
@@ -362,7 +470,7 @@ public class GameplayController : MonoBehaviour
                         highlightedBlocks.Add(board[row + 1, coloum - 1]);
                         moveFound = true;
                     }
-                    else if (board[row + 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum - 1].Piece.PieceType
+                    else if (board[row + 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum - 1].Piece.PieceType
                             && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent)
                     {
                         board[row + 2, coloum - 2].HighlightNextMoveBlock(true);
@@ -380,7 +488,7 @@ public class GameplayController : MonoBehaviour
                         highlightedBlocks.Add(board[row + 1, coloum + 1]);
                         moveFound = true;
                     }
-                    else if (board[row + 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum + 1].Piece.PieceType
+                    else if (board[row + 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum + 1].Piece.PieceType
                             && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
                     {
                         board[row + 2, coloum + 2].HighlightNextMoveBlock(true);
@@ -389,13 +497,14 @@ public class GameplayController : MonoBehaviour
                     }
                 }
             }
+            */
         }
 
         if (moveFound)
         {
-            selectedPiece = piece;
-            board[piece.Row_ID, piece.Coloum_ID].HighlightPieceBlock();
-            highlightedBlocks.Add(board[piece.Row_ID, piece.Coloum_ID]);
+            selectedPiece = pieceToMove;
+            board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].HighlightPieceBlock();
+            highlightedBlocks.Add(board[pieceToMove.Row_ID, pieceToMove.Coloum_ID]);
 
         }
         else

@@ -60,10 +60,16 @@ public class GameManager : MonoBehaviour
     {
         currentTurn = nextTurn;
 
-        if(currentTurn == actorNumber && !GameplayController.instance.CheckMoves())
+        if(!GameplayController.instance.CheckMoves((actorNumber == CurrentTurn)))
         {
-            Debug.Log("Game Over : looser : " + pieceType);
+            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All);
         }
+    }
+
+    [PunRPC]
+    public void GameOver()
+    {
+        Debug.Log("Game over........");
     }
 
 
