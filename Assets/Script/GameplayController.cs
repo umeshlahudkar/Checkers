@@ -422,14 +422,15 @@ public class GameplayController : MonoBehaviour
             int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
             Piece piece = board[targetRow, targetCol].Piece;
-            if (blackPieces.Contains(piece))
+            //if (blackPieces.Contains(piece))
             {
-                blackPieces.Remove(piece);
+                //blackPieces.Remove(piece);
             }
-            PhotonNetwork.Destroy(piece.gameObject);
+            //PhotonNetwork.Destroy(piece.gameObject);
+            piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
             //board[targetRow, targetCol].SetBlockPiece(false, null);
 
-            GameManager.instance.UpdateGrid(targetRow, targetCol, null);
+           // GameManager.instance.UpdateGrid(targetRow, targetCol, null);
             //if (selectedPiece.PieceType == PieceType.White)
             //{
             //    bool onLeftSide = coloum < selectedPiece.Coloum_ID;
@@ -597,7 +598,8 @@ public class GameplayController : MonoBehaviour
         if ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
             (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0))
         {
-            selectedPiece.SetKrownKing();
+            //selectedPiece.SetCrownKing();
+            selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
         }
 
         selectedPiece = block.Piece;

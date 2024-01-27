@@ -50,10 +50,31 @@ public class Piece : MonoBehaviour
         }
     }
 
-    public void SetKrownKing()
+    [PunRPC]
+    public void SetCrownKing()
     {
         isCrownedKing = true;
         crownImage.gameObject.SetActive(true);
+    }
+
+    [PunRPC]
+    public void Destroy()
+    {
+        GameplayController.instance.board[rowID, columID].SetBlockPiece(false, null);
+
+        if (pieceType == PieceType.White)
+        {
+            GameplayController.instance.whitePieces.Remove(this);
+        }
+        else
+        {
+            GameplayController.instance.blackPieces.Remove(this);
+        }
+
+        if (photonView.IsMine)
+        {
+            PhotonNetwork.Destroy(this.gameObject);
+        }
     }
 
     public bool IsCrownedKing
@@ -74,6 +95,8 @@ public class Piece : MonoBehaviour
     }
 
     public PieceType PieceType { get { return pieceType; } }
+
+    public PhotonView PhotonView { get { return photonView; } }
 
     public void OnClick()
     {
