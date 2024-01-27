@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using Photon.Realtime;
 
 public class GameManager : MonoBehaviour
 {
@@ -47,6 +48,20 @@ public class GameManager : MonoBehaviour
         {
             GameplayController.instance.OnBoardReady();
         }
+
+
+        Player[] players = PhotonNetwork.PlayerList;
+        string player2_name = string.Empty;
+
+        foreach(Player player in players)
+        {
+            if(player.ActorNumber != actorNumber)
+            {
+                player2_name = player.NickName;
+            }
+        }
+
+        UIController.instance.ShowPlayerInfo(PhotonNetwork.NickName, player2_name);
     }
 
     public void SwitchTurn()
@@ -69,7 +84,7 @@ public class GameManager : MonoBehaviour
     [PunRPC]
     public void GameOver()
     {
-        Debug.Log("Game over........");
+        
     }
 
 

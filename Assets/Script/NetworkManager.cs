@@ -1,11 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
+using TMPro;
 
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
+    public static bool hasUsernameSet = false;
+    public LobbyUIController lobbyUIController;
+
     private void Start()
     {
         if(!PhotonNetwork.IsConnected)
@@ -22,28 +27,26 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
-        Debug.Log("lobby joined");
+
+        lobbyUIController.ToggleConnectingScreen(false);
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
-        Debug.Log("Random Room joining failed");
         RoomOptions options = new RoomOptions();
         options.MaxPlayers = 2;
-
         string roomName = "Room " + Random.Range(1, 1000);
-
         PhotonNetwork.CreateRoom(roomName, options);
     }
 
     public override void OnCreatedRoom()
     {
-        Debug.Log("Room created " + PhotonNetwork.CurrentRoom.Name);
+        
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name);
+        Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name + " " + PhotonNetwork.NickName);
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -53,7 +56,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        Debug.Log("Other player joined");
+        Debug.Log("Other player joined " + newPlayer.NickName);
 
         if(PhotonNetwork.CurrentRoom.PlayerCount >= 2)
         {
@@ -61,9 +64,21 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public void OnPlayButtonClick()
+    public void SetUserName(string username)
     {
-        PhotonNetwork.JoinRandomRoom();
-        Debug.Log("Play button click");
+        if(PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.NickName = username;
+            hasUsernameSet = true;
+        }
     }
+
+    public void JoinRandomRoom()
+    {
+        if(PhotonNetwork.IsConnected)
+        {
+            PhotonNetwork.JoinRandomRoom();
+        }
+    }
+
 }
