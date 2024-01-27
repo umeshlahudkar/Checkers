@@ -68,4 +68,14 @@ public class LobbyUIController : MonoBehaviour
             networkManager.SetUserName(username);
         }
     }
+
+    public void OnProfileButtonClick()
+    {
+        Debug.Log("Profile button click");
+    }
+
+    public void OnUsernameTextClick()
+    {
+        Debug.Log("Username button click");
+    }
 }
