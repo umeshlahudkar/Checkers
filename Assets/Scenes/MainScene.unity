@@ -10648,9 +10648,13 @@ MonoBehaviour:
   player1_profileImg: {fileID: 945620108}
   player1_feestext: {fileID: 384160457}
   player2_nametext: {fileID: 0}
-  player2_profileImg: {fileID: 0}
+  player2_profileImgs:
+  - {fileID: 785714204}
+  - {fileID: 1761785261}
+  - {fileID: 1180366909}
   player2_feestext: {fileID: 0}
   rewardtext: {fileID: 2384955}
+  speed: 1000
 --- !u!1 &1623732936
 GameObject:
   m_ObjectHideFlags: 0
