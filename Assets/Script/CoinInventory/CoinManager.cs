@@ -17,19 +17,6 @@ public class CoinManager : Singleton<CoinManager>
         OnCoinValueIncreased?.Invoke(totalCoin, 0, null);
     }
 
-    private void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.A))
-        {
-            AddCoin(12);
-        }
-
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            DeductCoin(18);
-        }
-    }
-
     public void AddCoin(int amount, Transform target = null)
     {
         totalCoin += amount;

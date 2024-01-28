@@ -19,6 +19,9 @@ public class LobbyUIController : MonoBehaviour
     [Header("Fader screen")]
     [SerializeField] private GameObject faderScreen;
 
+    [Header("MatchMaking screen")]
+    [SerializeField] private GameObject matchmakingScreen;
+
     [SerializeField] private NetworkManager networkManager;
 
     private void Start()
@@ -81,6 +84,15 @@ public class LobbyUIController : MonoBehaviour
     {
         ProfileManager.Instance.SetAvtar();
         ToggleAvtarSelectionScreen(false);
+    }
+
+    public void ToggleMatchmakingScreen(bool status)
+    {
+        if(status == true)
+        {
+            mainMenuScreen.SetActive(false);
+        }
+        matchmakingScreen.SetActive(status);
     }
 
 }

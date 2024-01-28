@@ -15,6 +15,8 @@ public class CoinDisplay : MonoBehaviour
     {
         CoinManager.OnCoinValueIncreased += IncrementCoin;
         CoinManager.OnCoinValueDecreased += DecrementCoin;
+
+        coinValueText.text = CoinManager.Instance.GetCoinAmount().ToString();
     }
 
     private void IncrementCoin(int totalCoin, int amountChanged, Transform target)

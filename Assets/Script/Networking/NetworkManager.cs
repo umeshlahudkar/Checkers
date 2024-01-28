@@ -47,6 +47,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name + " " + PhotonNetwork.NickName);
+        lobbyUIController.ToggleMatchmakingScreen(true);
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
