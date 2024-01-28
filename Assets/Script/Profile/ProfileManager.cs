@@ -9,7 +9,8 @@ public class ProfileManager : Singleton<ProfileManager>
 
     private string userName;
     private Sprite selectedAvtarSprite;
-    private int selectedAvtarIndex;
+    private int avtarIndex;
+    private int selectAvtarIndex;
 
     [SerializeField] private Color defaultColor;
     [SerializeField] private Color selectedColor;
@@ -25,7 +26,8 @@ public class ProfileManager : Singleton<ProfileManager>
         hasUsernameSet = false;
         hasAvtarSelect = false;
         userName = string.Empty;
-        selectedAvtarIndex = -1;
+        avtarIndex = -1;
+        selectAvtarIndex = -1;
     }
 
     public void SetUserName(string name)
@@ -38,22 +40,23 @@ public class ProfileManager : Singleton<ProfileManager>
 
     public void SetAvtarIndex(int index)
     {
-        if (selectedAvtarIndex != -1)
+        if (selectAvtarIndex != -1)
         {
-            avtarSelectionButtons[selectedAvtarIndex - 1].SetAvtarBgColor(defaultColor);
+            avtarSelectionButtons[selectAvtarIndex - 1].SetAvtarBgColor(defaultColor);
         }
 
-        selectedAvtarIndex = index;
+        selectAvtarIndex = index;
 
-        avtarSelectionButtons[selectedAvtarIndex - 1].SetAvtarBgColor(selectedColor);
+        avtarSelectionButtons[selectAvtarIndex - 1].SetAvtarBgColor(selectedColor);
     }
 
     public void SetAvtar()
     {
-        if(selectedAvtarIndex >= 0 && selectedAvtarIndex <= avtars.Length)
+        avtarIndex = selectAvtarIndex;
+        if(avtarIndex >= 0 && avtarIndex <= avtars.Length)
         {
             hasAvtarSelect = true;
-            selectedAvtarSprite = avtars[selectedAvtarIndex - 1];
+            selectedAvtarSprite = avtars[avtarIndex - 1];
 
             OnProfileChange?.Invoke(selectedAvtarSprite, userName);
         }
@@ -84,9 +87,14 @@ public class ProfileManager : Singleton<ProfileManager>
         return defaultColor;
     }
 
+    public Color GetSelectedBgColor()
+    {
+        return selectedColor;
+    }
+
     public int GetSelectedAvtarIndex() 
     { 
-        return hasAvtarSelect == true ? selectedAvtarIndex : -1;
+        return hasAvtarSelect == true ? avtarIndex : -1;
     }
 
     public bool HasAvtarSet { get { return hasAvtarSelect; } }

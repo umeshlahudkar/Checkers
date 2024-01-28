@@ -14,7 +14,11 @@ public class AvtarSelectionButton : MonoBehaviour
 
     private void OnEnable()
     {
-        if(!ProfileManager.Instance.HasAvtarSet)
+        if(ProfileManager.Instance.GetSelectedAvtarIndex() == avtarIndex)
+        {
+            SetAvtarBgColor(ProfileManager.Instance.GetSelectedBgColor());
+        }
+        else
         {
             SetAvtarBgColor(ProfileManager.Instance.GetDefaultBgColor());
         }
