@@ -11,8 +11,9 @@ public class LobbyUIController : MonoBehaviour
     [Header("Main Menu screen")]
     [SerializeField] private GameObject mainMenuScreen;
 
-    [Header("User name input screen")]
+    [Header("Profile screen")]
     [SerializeField] private GameObject userNameInputScreen;
+    [SerializeField] private GameObject avtarSelectionScreen;
     [SerializeField] private TMP_InputField usernameInputField;
 
     [Header("Fader screen")]
@@ -36,6 +37,12 @@ public class LobbyUIController : MonoBehaviour
     {
         faderScreen.SetActive(status);
         userNameInputScreen.SetActive(status);
+    }
+
+    public void ToggleAvtarSelectionScreen(bool status)
+    {
+        faderScreen.SetActive(status);
+        avtarSelectionScreen.SetActive(status);
     }
 
     public void OnPlayButtonClick()
@@ -66,16 +73,14 @@ public class LobbyUIController : MonoBehaviour
             userNameInputScreen.SetActive(false);
 
             networkManager.SetUserName(username);
+            ProfileManager.Instance.SetUserName(username);
         }
     }
 
-    public void OnProfileButtonClick()
+    public void OnAvtarSaveButtonClick()
     {
-        Debug.Log("Profile button click");
+        ProfileManager.Instance.SetAvtar();
+        ToggleAvtarSelectionScreen(false);
     }
 
-    public void OnUsernameTextClick()
-    {
-        Debug.Log("Username button click");
-    }
 }
