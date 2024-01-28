@@ -12,6 +12,14 @@ public class AvtarSelectionButton : MonoBehaviour
         buttonAvtarImg.sprite = ProfileManager.Instance.GetSprite(avtarIndex);
     }
 
+    private void OnEnable()
+    {
+        if(!ProfileManager.Instance.HasAvtarSet)
+        {
+            SetAvtarBgColor(ProfileManager.Instance.GetDefaultBgColor());
+        }
+    }
+
     public void OnClick()
     {
         ProfileManager.Instance.SetAvtarIndex(avtarIndex);

@@ -79,8 +79,15 @@ public class ProfileManager : Singleton<ProfileManager>
         return null;
     }
 
+    public Color GetDefaultBgColor()
+    {
+        return defaultColor;
+    }
+
     public int GetSelectedAvtarIndex() 
     { 
         return hasAvtarSelect == true ? selectedAvtarIndex : -1;
     }
+
+    public bool HasAvtarSet { get { return hasAvtarSelect; } }
 }
