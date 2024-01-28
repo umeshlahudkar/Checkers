@@ -12,12 +12,14 @@ public class CoinMover : MonoBehaviour
     private bool canDisableAtTarget;
 
     private Vector2 dir;
+    private CoinAnimator coinAnimation;
 
-    public void SetTarget(Vector2 targetPos, bool canDisableAtTarget)
+    public void SetTarget(Vector2 targetPos, bool canDisableAtTarget, CoinAnimator coinAnimation)
     {
         target = targetPos;
         canMove = true;
         this.canDisableAtTarget = canDisableAtTarget;
+        this.coinAnimation = coinAnimation;
 
         dir = (target - (Vector2)thisTransform.position).normalized;
     }
@@ -36,6 +38,7 @@ public class CoinMover : MonoBehaviour
                 {
                     this.transform.localPosition = Vector2.zero;
                     gameObject.SetActive(false);
+                    coinAnimation.IncrementReachedToTarget();
                 }
             }
         }

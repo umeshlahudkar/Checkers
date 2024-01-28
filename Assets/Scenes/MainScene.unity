@@ -4826,6 +4826,7 @@ MonoBehaviour:
   usernameInputField: {fileID: 1385521606}
   faderScreen: {fileID: 1982070423}
   networkManager: {fileID: 1703165747}
+  playButton: {fileID: 326887983}
 --- !u!4 &732341209
 Transform:
   m_ObjectHideFlags: 0
@@ -9465,6 +9466,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb71fbd92f70f34696afafc139f8235, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  coinAnimPrefab: {fileID: 6228966408972889272, guid: a192d87636cb8d946be798a20d382035, type: 3}
 --- !u!4 &1715734300
 Transform:
   m_ObjectHideFlags: 0

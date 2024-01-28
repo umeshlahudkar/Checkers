@@ -17,26 +17,33 @@ public class CoinDisplay : MonoBehaviour
         CoinManager.OnCoinValueDecreased += DecrementCoin;
     }
 
-    private void IncrementCoin(int totalCoin, int amountChanged)
+    private void IncrementCoin(int totalCoin, int amountChanged, Transform target)
     {
         if(animCoroutine != null)
         {
             StopCoroutine(animCoroutine);
         }
-        animCoroutine = StartCoroutine(CoinIncrementAnim(totalCoin, amountChanged));
+        animCoroutine = StartCoroutine(CoinIncrementAnim(totalCoin, amountChanged, target));
     }
 
-    private void DecrementCoin(int totalCoin, int amountChanged)
+    private void DecrementCoin(int totalCoin, int amountChanged, Transform target)
     {
         if (animCoroutine != null)
         {
             StopCoroutine(animCoroutine);
         }
-        animCoroutine = StartCoroutine(CoinDecrementAnim(totalCoin, amountChanged));
+        animCoroutine = StartCoroutine(CoinDecrementAnim(totalCoin, amountChanged, target));
     }
 
-    private IEnumerator CoinIncrementAnim(int totalCoin, int amountChanged)
+    private IEnumerator CoinIncrementAnim(int totalCoin, int amountChanged, Transform target)
     {
+        if (target != null)
+        {
+            CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
+                            target.position, Quaternion.identity, transform);
+            yield return StartCoroutine(anim.PlayAnimation(coinImgTran));
+        }
+
         int coinIncreasedPerIteration = amountChanged / iteration;
         int currentIteration = iteration;
         int currentCoin = totalCoin - amountChanged;
@@ -54,8 +61,15 @@ public class CoinDisplay : MonoBehaviour
         coinValueText.text = totalCoin.ToString();
     }
 
-    private IEnumerator CoinDecrementAnim(int totalCoin, int amountChanged)
+    private IEnumerator CoinDecrementAnim(int totalCoin, int amountChanged, Transform target)
     {
+        if (target != null)
+        {
+            CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
+                          coinImgTran.position, Quaternion.identity, transform);
+            StartCoroutine(anim.PlayAnimation(target));
+        }
+
         int coinIncreasedPerIteration = amountChanged / iteration;
         int currentIteration = iteration;
         int currentCoin = totalCoin + amountChanged;
