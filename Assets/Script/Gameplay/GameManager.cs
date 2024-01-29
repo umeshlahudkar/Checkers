@@ -61,14 +61,23 @@ public class GameManager : Singleton<GameManager>
 
         if(!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
         {
-            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All);
+            PieceType winner = pieceType == PieceType.White ? PieceType.Black : PieceType.White;
+            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, (int)winner);
         }
     }
 
     [PunRPC]
-    public void GameOver()
+    public void GameOver(int winner)
     {
-        
+        PieceType winnerPieceType = (PieceType)winner;
+        if(winnerPieceType == pieceType)
+        {
+            UIController.Instance.ToggleGameWinScreen(true);
+        }
+        else
+        {
+            UIController.Instance.ToggleGameLoseScreen(true);
+        }
     }
 
 
