@@ -7,14 +7,14 @@ using TMPro;
 public class MatchMakingManager : MonoBehaviour
 {
     [Header("Player 1 info")]
-    [SerializeField] private TextMeshProUGUI player1_nametext;
-    [SerializeField] private Image player1_profileImg;
-    [SerializeField] private TextMeshProUGUI player1_feestext;
+    [SerializeField] private TextMeshProUGUI ourPlayer_nametext;
+    [SerializeField] private Image ourPlayer_profileImg;
+    [SerializeField] private TextMeshProUGUI ourPlayer_feestext;
 
     [Header("Player 2 info")]
-    [SerializeField] private TextMeshProUGUI player2_nametext;
-    [SerializeField] private Image[] player2_profileImgs;
-    [SerializeField] private TextMeshProUGUI player2_feestext;
+    [SerializeField] private TextMeshProUGUI opponentPlayer_nametext;
+    [SerializeField] private Image[] opponentPlayer_ScrollImgs;
+    [SerializeField] private TextMeshProUGUI opponentPlayer_feestext;
 
     [Header("Reward info")]
     [SerializeField] private TextMeshProUGUI rewardtext;
@@ -25,24 +25,20 @@ public class MatchMakingManager : MonoBehaviour
     private Vector3[] initialPos;
     private int currentIndex = 1;
     private bool opponentFound = false;
-    private bool imageSet = false;
+    private bool hasOpponentSpriteSet = false;
     private bool canScroll = true;
 
     private void OnEnable()
     {
         currentIndex = 1;
         opponentFound = false;
-        imageSet = false;
+        hasOpponentSpriteSet = false;
         canScroll = true;
 
-        player1_nametext.text = ProfileManager.Instance.GetUserName();
-        player1_profileImg.sprite = ProfileManager.Instance.GetSelectedAvtarSprite();
-        player1_feestext.text = "Fee : " + 10.ToString();
-
-
         offset = Vector3.zero; 
-        offset.y = Mathf.Abs(player2_profileImgs[0].transform.position.y - player2_profileImgs[1].transform.position.y);
+        offset.y = Mathf.Abs(opponentPlayer_ScrollImgs[0].transform.position.y - opponentPlayer_ScrollImgs[1].transform.position.y);
 
+        SetOurPlayerProfile();
         SetScrollImages();
     }
 
@@ -52,48 +48,57 @@ public class MatchMakingManager : MonoBehaviour
         {
             ScrollImages();
         }
+    }
 
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            opponentFound = true;
-        }
+    private void SetOurPlayerProfile()
+    {
+        ourPlayer_nametext.text = ProfileManager.Instance.GetUserName();
+        ourPlayer_profileImg.sprite = ProfileManager.Instance.GetSelectedAvtarSprite();
+        ourPlayer_feestext.text = "Fee : " + 10.ToString();
+    }
+
+    private void SetOpponentPlayerProfile()
+    {
+        opponentPlayer_nametext.text = ProfileManager.Instance.GetUserName();
+        opponentPlayer_ScrollImgs[0].sprite = ProfileManager.Instance.GetSelectedAvtarSprite();
+        opponentPlayer_feestext.text = "Fee : " + 10.ToString();
     }
 
     private void SetScrollImages()
     {
-        initialPos = new Vector3[player2_profileImgs.Length];
+        initialPos = new Vector3[opponentPlayer_ScrollImgs.Length];
 
-        for (int i = 0; i < player2_profileImgs.Length; i++)
+        for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
         {
-            player2_profileImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
+            opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
             currentIndex = (currentIndex + 1) % 30;
 
-            initialPos[i] = player2_profileImgs[i].transform.position;
+            initialPos[i] = opponentPlayer_ScrollImgs[i].transform.position;
         }
     }
 
     private void ScrollImages()
     {
-        for (int i = 0; i < player2_profileImgs.Length; i++)
+        for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
         {
-            player2_profileImgs[i].transform.position += speed * Time.deltaTime * Vector3.down;
+            opponentPlayer_ScrollImgs[i].transform.position += speed * Time.deltaTime * Vector3.down;
 
-            if (!imageSet && player2_profileImgs[i].transform.position.y <= (initialPos[0].y - offset.y))
+            if (!hasOpponentSpriteSet && opponentPlayer_ScrollImgs[i].transform.position.y <= (initialPos[0].y - offset.y))
             {
                 if (i == 0 && opponentFound)
                 {
-                    player2_profileImgs[0].transform.position = initialPos[2];
-                    player2_profileImgs[i].sprite = ProfileManager.Instance.GetSprite(4);
-                    imageSet = true;
+                    opponentPlayer_ScrollImgs[0].transform.position = initialPos[2];
+                    opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(4);
+                    hasOpponentSpriteSet = true;
                 }
                 else
                 {
-                    player2_profileImgs[i].transform.position = initialPos[2];
+                    opponentPlayer_ScrollImgs[i].transform.position = initialPos[2];
                     currentIndex = (currentIndex % 30) + 1;
-                    player2_profileImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
+                    opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
                 }
             }
-            else if (imageSet && i == 0 && (player2_profileImgs[0].transform.position.y - initialPos[0].y) <= 0.1f)
+            else if (hasOpponentSpriteSet && i == 0 && (opponentPlayer_ScrollImgs[0].transform.position.y - initialPos[0].y) <= 0.1f)
             {
                 canScroll = false;
                 ResetScrollImages();
@@ -103,9 +108,9 @@ public class MatchMakingManager : MonoBehaviour
 
     private void ResetScrollImages()
     {
-        for (int i = 0; i < player2_profileImgs.Length; i++)
+        for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
         {
-            player2_profileImgs[i].transform.position = initialPos[i];
+            opponentPlayer_ScrollImgs[i].transform.position = initialPos[i];
         }
     }
 }

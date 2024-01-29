@@ -5808,7 +5808,7 @@ GameObject:
   m_Component:
   - component: {fileID: 753923035}
   m_Layer: 5
-  m_Name: Player1_Info
+  m_Name: OurPlayer_Profile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7058,7 +7058,7 @@ GameObject:
   m_Component:
   - component: {fileID: 926028797}
   m_Layer: 5
-  m_Name: Player2_Info
+  m_Name: OpponentPlayer_Profile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10644,15 +10644,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44fdcd936d979d949b28e0da1869ba17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player1_nametext: {fileID: 1207089379}
-  player1_profileImg: {fileID: 945620108}
-  player1_feestext: {fileID: 384160457}
-  player2_nametext: {fileID: 0}
-  player2_profileImgs:
+  ourPlayer_nametext: {fileID: 1207089379}
+  ourPlayer_profileImg: {fileID: 945620108}
+  ourPlayer_feestext: {fileID: 384160457}
+  opponentPlayer_nametext: {fileID: 1332808759}
+  opponentPlayer_ScrollImgs:
   - {fileID: 785714204}
   - {fileID: 1761785261}
   - {fileID: 1180366909}
-  player2_feestext: {fileID: 0}
+  opponentPlayer_feestext: {fileID: 797103630}
   rewardtext: {fileID: 2384955}
   speed: 1000
 --- !u!1 &1623732936
