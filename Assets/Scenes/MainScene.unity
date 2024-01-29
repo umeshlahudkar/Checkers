@@ -2950,7 +2950,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Fee : 250'
+  m_text: ...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5808,7 +5808,7 @@ GameObject:
   m_Component:
   - component: {fileID: 753923035}
   m_Layer: 5
-  m_Name: OurPlayer_Profile
+  m_Name: OwnPlayer_Profile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6123,7 +6123,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Fee : 250'
+  m_text: ...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -8842,7 +8842,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: xyz
+  m_text: ...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9356,7 +9356,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: xyz
+  m_text: ...
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10644,9 +10644,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44fdcd936d979d949b28e0da1869ba17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ourPlayer_nametext: {fileID: 1207089379}
-  ourPlayer_profileImg: {fileID: 945620108}
-  ourPlayer_feestext: {fileID: 384160457}
+  ownPlayer_nametext: {fileID: 1207089379}
+  ownPlayer_profileImg: {fileID: 945620108}
+  ownPlayer_feestext: {fileID: 384160457}
   opponentPlayer_nametext: {fileID: 1332808759}
   opponentPlayer_ScrollImgs:
   - {fileID: 785714204}
@@ -10654,7 +10654,8 @@ MonoBehaviour:
   - {fileID: 1180366909}
   opponentPlayer_feestext: {fileID: 797103630}
   rewardtext: {fileID: 2384955}
-  speed: 1000
+  rewardCoinImg: {fileID: 27596037}
+  coinAnimatorPrefab: {fileID: 6228966408972889272, guid: a192d87636cb8d946be798a20d382035, type: 3}
 --- !u!1 &1623732936
 GameObject:
   m_ObjectHideFlags: 0
@@ -10995,6 +10996,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lobbyUIController: {fileID: 732341208}
+  matchMakingManager: {fileID: 1621400104}
+  gameDataSO: {fileID: 11400000, guid: 5eb203feeb4a0fc4a9fbf9d7545aaea5, type: 2}
 --- !u!4 &1703165748
 Transform:
   m_ObjectHideFlags: 0
@@ -13180,6 +13183,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2075473974}
   - component: {fileID: 2075473973}
+  - component: {fileID: 2075473975}
   m_Layer: 0
   m_Name: ProfileManager
   m_TagString: Untagged
@@ -13278,6 +13282,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2075473975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075473972}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8cbb05bd6eea0a4885a81eb27cc4d2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2087322119
 GameObject:
   m_ObjectHideFlags: 0

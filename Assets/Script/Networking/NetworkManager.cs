@@ -4,12 +4,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
+using ExitGames.Client.Photon;
 using TMPro;
 
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
     public static bool hasUsernameSet = false;
     public LobbyUIController lobbyUIController;
+    public MatchMakingManager matchMakingManager;
+    public GameDataSO gameDataSO;
 
     private void Start()
     {
@@ -47,7 +50,18 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name + " " + PhotonNetwork.NickName);
+        ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
+        hashtable["ProfileIndex"] = ProfileManager.Instance.GetSelectedAvtarIndex();
+
+        PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
+
         lobbyUIController.ToggleMatchmakingScreen(true);
+
+        if(!PhotonNetwork.IsMasterClient)
+        {
+            Player masterPlayer = PhotonNetwork.CurrentRoom.GetPlayer(PhotonNetwork.CurrentRoom.masterClientId);
+            StartCoroutine(CheckForPropertiesSet(masterPlayer));
+        }
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -58,12 +72,40 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log("Other player joined " + newPlayer.NickName);
-
-        if(PhotonNetwork.CurrentRoom.PlayerCount >= 2)
+        if (PhotonNetwork.CurrentRoom.PlayerCount >= 2)
         {
-            PhotonNetwork.LoadLevel(1);
+            StartCoroutine(CheckForPropertiesSet(newPlayer));
         }
     }
+
+    private IEnumerator CheckForPropertiesSet(Player newPlayer)
+    {
+        int index;
+        while (true)
+        {
+            if (newPlayer.CustomProperties.TryGetValue("ProfileIndex", out object profileIndexObj))
+            {
+                index = (int)profileIndexObj;
+                break;
+            }
+            yield return null;
+        }
+        Debug.Log("Other player joined " + newPlayer.NickName + "......." + index);
+        matchMakingManager.SetPlayerFound(newPlayer.NickName, index);
+        SaveGameData(newPlayer, index);
+    }
+
+    private void SaveGameData(Player opponentPlayer, int avtarIndex)
+    {
+        gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
+        gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
+        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetSelectedAvtarIndex();
+
+        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
+        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
+        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
+    }
+
 
     public void SetUserName(string username)
     {

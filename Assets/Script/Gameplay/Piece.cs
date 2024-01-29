@@ -42,7 +42,7 @@ public class Piece : MonoBehaviour
         thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
         thisTransform.localScale = Vector3.one;
 
-        GameplayController.instance.board[row, colum].SetBlockPiece(true, this);
+        GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
 
         if(photonView.IsMine)
         {
@@ -60,15 +60,15 @@ public class Piece : MonoBehaviour
     [PunRPC]
     public void Destroy()
     {
-        GameplayController.instance.board[rowID, columID].SetBlockPiece(false, null);
+        GameplayController.Instance.board[rowID, columID].SetBlockPiece(false, null);
 
         if (pieceType == PieceType.White)
         {
-            GameplayController.instance.whitePieces.Remove(this);
+            GameplayController.Instance.whitePieces.Remove(this);
         }
         else
         {
-            GameplayController.instance.blackPieces.Remove(this);
+            GameplayController.Instance.blackPieces.Remove(this);
         }
 
         if (photonView.IsMine)
@@ -100,9 +100,9 @@ public class Piece : MonoBehaviour
 
     public void OnClick()
     {
-        if(GameManager.instance.ActorNumber == GameManager.instance.CurrentTurn && pieceType == GameManager.instance.PieceType)
+        if(GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType)
         {
-            GameplayController.instance.CheckNextMove(this);
+            GameplayController.Instance.CheckNextMove(this);
         }
     }
 

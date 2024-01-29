@@ -155,7 +155,7 @@ public class Block : MonoBehaviour
     {
         if(isTargetBlockHighlighted)
         {
-            GameplayController.instance.MovePiece(this);
+            GameplayController.Instance.MovePiece(this);
         }
     }
 

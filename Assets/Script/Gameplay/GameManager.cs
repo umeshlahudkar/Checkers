@@ -4,21 +4,15 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
-public class GameManager : MonoBehaviour
+public class GameManager : Singleton<GameManager>
 {
-    public static GameManager instance;
-
-    private void Awake()
-    {
-        instance = this;
-    }
+    [SerializeField] private GameDataSO gameDataSO;
+    [SerializeField] private BoardGenerator boardGenerator;
+    [SerializeField] private PhotonView gameManagerPhotonView;
 
     private PieceType pieceType;
     private int currentTurn;
     private int actorNumber;
-    public BoardGenerator boardGenerator;
-
-    private PhotonView gameManagerPhotonView;
 
     public int ActorNumber { get { return actorNumber; } }
 
@@ -28,7 +22,6 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        gameManagerPhotonView = gameObject.GetComponent<PhotonView>();
         actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
 
         if(PhotonNetwork.IsMasterClient)
@@ -41,27 +34,18 @@ public class GameManager : MonoBehaviour
             pieceType = PieceType.White;
         }
 
+        PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
+        PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
+
+        UIController.Instance.ShowPlayerInfo(player1, player2);
+
         boardGenerator.GenerateBoard();
         boardGenerator.GeneratePieces(pieceType);
 
         if (PhotonNetwork.IsMasterClient)
         {
-            GameplayController.instance.OnBoardReady();
+            GameplayController.Instance.OnBoardReady();
         }
-
-
-        Player[] players = PhotonNetwork.PlayerList;
-        string player2_name = string.Empty;
-
-        foreach(Player player in players)
-        {
-            if(player.ActorNumber != actorNumber)
-            {
-                player2_name = player.NickName;
-            }
-        }
-
-        UIController.instance.ShowPlayerInfo(PhotonNetwork.NickName, player2_name);
     }
 
     public void SwitchTurn()
@@ -75,7 +59,7 @@ public class GameManager : MonoBehaviour
     {
         currentTurn = nextTurn;
 
-        if(!GameplayController.instance.CheckMoves((actorNumber == CurrentTurn)))
+        if(!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
         {
             gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All);
         }
@@ -106,7 +90,7 @@ public class GameManager : MonoBehaviour
         {
             piece = PhotonView.Find(viewId).GetComponent<Piece>();
         }
-        GameplayController.instance.board[row, col].SetBlockPiece((viewId != -1), piece);
+        GameplayController.Instance.board[row, col].SetBlockPiece((viewId != -1), piece);
     }
 
 }

@@ -7,7 +7,7 @@ public class CoinMover : MonoBehaviour
     [SerializeField] private Transform thisTransform;
 
     private Vector2 target;
-    private float speed = 1500f;
+    private readonly float speed = 500f;  // 1500
     private bool canMove = false;
     private bool canDisableAtTarget;
 
@@ -29,9 +29,10 @@ public class CoinMover : MonoBehaviour
         if(canMove) 
         {
             //thisTransform.position = Vector2.Lerp(thisTransform.position, target, Time.deltaTime * speed); 
+            dir = (target - (Vector2)thisTransform.position).normalized;
             thisTransform.position += speed * Time.deltaTime * (Vector3)dir;
 
-            if (Vector2.Distance(target, thisTransform.position) < 10f)
+            if (Vector2.Distance(target, thisTransform.position) < 20f)
             {
                 canMove = false;
                 if(canDisableAtTarget)

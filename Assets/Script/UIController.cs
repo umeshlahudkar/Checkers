@@ -4,26 +4,21 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class UIController : MonoBehaviour
+public class UIController : Singleton<UIController>
 {
-    public static UIController instance;
-
-    private void Awake()
-    {
-        instance = this;
-    }
-
-
     [SerializeField] private TextMeshProUGUI player1_nameText;
-    [SerializeField] private Image player1_pieceImag;
+    [SerializeField] private Image player1_avtarImag;
 
     [SerializeField] private TextMeshProUGUI player2_nameText;
-    [SerializeField] private Image player2_pieceImag;
+    [SerializeField] private Image player2_avtarImag;
 
-    public void ShowPlayerInfo(string player1_Name, string player2_Name)
+    public void ShowPlayerInfo(PlayerInfo player1_info, PlayerInfo player2_info)
     {
-        player1_nameText.text = player1_Name;
-        player2_nameText.text = player2_Name;
+        player1_nameText.text = player1_info.userName;
+        player1_avtarImag.sprite = ProfileManager.Instance.GetSprite(player1_info.avtarIndex);
+
+        player2_nameText.text = player2_info.userName;
+        player2_avtarImag.sprite = ProfileManager.Instance.GetSprite(player2_info.avtarIndex);
     }
 }
 

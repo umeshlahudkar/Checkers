@@ -3,15 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class GameplayController : MonoBehaviour
+public class GameplayController : Singleton<GameplayController>
 {
-    public static GameplayController instance;
-
-    private void Awake()
-    {
-        instance = this;
-    }
-
     public Block[,] board = new Block[8, 8];
     public List<Piece> whitePieces = new List<Piece>();
     public List<Piece> blackPieces = new List<Piece>();
@@ -30,11 +23,11 @@ public class GameplayController : MonoBehaviour
     {
         ResetHighlightedBlocks();
 
-        if (GameManager.instance.PieceType == PieceType.Black)
+        if (GameManager.Instance.PieceType == PieceType.Black)
         {
             return CheckAllBlackPieceMove(canHighlightMoves);
         }
-        else if (GameManager.instance.PieceType == PieceType.White)
+        else if (GameManager.Instance.PieceType == PieceType.White)
         {
             return CheckAllWhitePieceMove(canHighlightMoves);
         }
@@ -692,13 +685,13 @@ public class GameplayController : MonoBehaviour
         //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].Piece = null;
 
         //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].SetBlockPiece(false, null);
-        GameManager.instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
+        GameManager.Instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
 
         //block.IsPiecePresent = true;
         //block.Piece = selectedPiece;
 
         //block.SetBlockPiece(true, selectedPiece);
-        GameManager.instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+        GameManager.Instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
         //selectedPiece.Row_ID = block.Row_ID;
         //selectedPiece.Coloum_ID = block.Coloum_ID;
@@ -719,7 +712,7 @@ public class GameplayController : MonoBehaviour
         }
         else
         {
-            GameManager.instance.SwitchTurn();
+            GameManager.Instance.SwitchTurn();
         }
     }
 
