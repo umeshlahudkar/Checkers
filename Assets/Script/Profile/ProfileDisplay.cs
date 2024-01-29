@@ -11,6 +11,7 @@ public class ProfileDisplay : MonoBehaviour
 
     private void OnEnable()
     {
+        UpdateDisplay(ProfileManager.Instance.GetProfileAvtar(), ProfileManager.Instance.GetUserName());
         ProfileManager.OnProfileChange += UpdateDisplay;
     }
 

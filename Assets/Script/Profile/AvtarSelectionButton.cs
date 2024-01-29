@@ -7,26 +7,36 @@ public class AvtarSelectionButton : MonoBehaviour
     [SerializeField] private Image buttonAvtarImg;
     [SerializeField] private Image avtarBgImg;
 
+    private AvtarController avtarController;
+
     private void Start()
     {
-        buttonAvtarImg.sprite = ProfileManager.Instance.GetSprite(avtarIndex);
+        //buttonAvtarImg.sprite = ProfileManager.Instance.GetAvtarSprite(avtarIndex);
     }
 
-    private void OnEnable()
+    public void SetButton(int index, Sprite avtarSprite, Color bgColor, AvtarController controller)
     {
-        if(ProfileManager.Instance.GetSelectedAvtarIndex() == avtarIndex)
-        {
-            SetAvtarBgColor(ProfileManager.Instance.GetSelectedBgColor());
-        }
-        else
-        {
-            SetAvtarBgColor(ProfileManager.Instance.GetDefaultBgColor());
-        }
+        avtarIndex = index;
+        buttonAvtarImg.sprite = avtarSprite;
+        SetAvtarBgColor(bgColor);
+        avtarController = controller;
     }
+
+    //private void OnEnable()
+    //{
+    //    if(ProfileManager.Instance.GetSelectedAvtarIndex() == avtarIndex)
+    //    {
+    //        SetAvtarBgColor(ProfileManager.Instance.GetSelectedBgColor());
+    //    }
+    //    else
+    //    {
+    //        SetAvtarBgColor(ProfileManager.Instance.GetDefaultBgColor());
+    //    }
+    //}
 
     public void OnClick()
     {
-        ProfileManager.Instance.SetAvtarIndex(avtarIndex);
+        avtarController.OnAvtarButtonClick(avtarIndex);
     }
 
     public void SetAvtarBgColor(Color color)

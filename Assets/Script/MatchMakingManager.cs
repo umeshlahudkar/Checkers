@@ -69,7 +69,7 @@ public class MatchMakingManager : MonoBehaviour
     private void SetOwnPlayerProfile()
     {
         ownPlayer_nametext.text = ProfileManager.Instance.GetUserName();
-        ownPlayer_profileImg.sprite = ProfileManager.Instance.GetSelectedAvtarSprite();
+        ownPlayer_profileImg.sprite = ProfileManager.Instance.GetProfileAvtar();
         ownPlayer_feestext.text = "Fee : " + 250.ToString();
     }
 
@@ -85,7 +85,7 @@ public class MatchMakingManager : MonoBehaviour
 
         for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
         {
-            opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
+            opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetAvtar(currentIndex);
             currentIndex = (currentIndex + 1) % 30;
 
             initialPos[i] = opponentPlayer_ScrollImgs[i].transform.position;
@@ -105,14 +105,14 @@ public class MatchMakingManager : MonoBehaviour
                     if (i == 0 && opponentFound)
                     {
                         opponentPlayer_ScrollImgs[0].transform.position = initialPos[2];
-                        opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(opponentAvtarIndex);
+                        opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetAvtar(opponentAvtarIndex);
                         hasOpponentSpriteSet = true;
                     }
                     else
                     {
                         opponentPlayer_ScrollImgs[i].transform.position = initialPos[2];
                         currentIndex = (currentIndex % 30) + 1;
-                        opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetSprite(currentIndex);
+                        opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetAvtar(currentIndex);
                     }
                 }
             }

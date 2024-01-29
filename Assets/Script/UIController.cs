@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Photon.Pun;
 
 public class UIController : Singleton<UIController>
 {
@@ -21,25 +22,54 @@ public class UIController : Singleton<UIController>
     [SerializeField] private GameObject winScreen;
     [SerializeField] private GameObject loseScreen;
 
+    [Header("Coin Display")]
+    [SerializeField] private GameObject coinDisplay;
+
+    [Header("Exit screen")]
+    [SerializeField] private GameObject exitScreen;
+
     public void ShowPlayerInfo(PlayerInfo player1_info, PlayerInfo player2_info)
     {
         player1_nameText.text = player1_info.userName;
-        player1_avtarImag.sprite = ProfileManager.Instance.GetSprite(player1_info.avtarIndex);
+        player1_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player1_info.avtarIndex);
 
         player2_nameText.text = player2_info.userName;
-        player2_avtarImag.sprite = ProfileManager.Instance.GetSprite(player2_info.avtarIndex);
+        player2_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player2_info.avtarIndex);
     }
 
     public void ToggleGameWinScreen(bool status)
     {
+        coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
         winScreen.SetActive(status);
     }
 
     public void ToggleGameLoseScreen(bool status)
     {
+        coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
         loseScreen.SetActive(status);
+    }
+
+    public void ToggleExitScreen(bool status)
+    {
+        faderScreen.SetActive(status);
+        exitScreen.SetActive(status);
+    }
+
+    public void OnExitScreenYesButtonClick()
+    {
+        if(PhotonNetwork.IsConnected)
+        {
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.DestroyAll();
+            }
+
+            PhotonNetwork.AutomaticallySyncScene = false;
+            PhotonNetwork.LeaveRoom();
+            ToggleExitScreen(false);
+        }
     }
 }
 

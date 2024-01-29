@@ -5557,6 +5557,7 @@ MonoBehaviour:
   faderScreen: {fileID: 1982070423}
   matchmakingScreen: {fileID: 1621400100}
   networkManager: {fileID: 1703165747}
+  avtarController: {fileID: 823017735}
 --- !u!4 &732341209
 Transform:
   m_ObjectHideFlags: 0
@@ -6347,6 +6348,7 @@ GameObject:
   - component: {fileID: 823017734}
   - component: {fileID: 823017733}
   - component: {fileID: 823017732}
+  - component: {fileID: 823017735}
   m_Layer: 5
   m_Name: AvtarSelectionScreen
   m_TagString: Untagged
@@ -6446,6 +6448,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 823017730}
   m_CullTransparentMesh: 1
+--- !u!114 &823017735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 823017730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1c0c2234ed141c4c9aa0cf27307595c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultColor: {r: 0.4509804, g: 0.4509804, b: 0.4509804, a: 1}
+  selectedColor: {r: 0.57254905, g: 0.85882354, b: 0.30980393, a: 1}
+  avtarSelectionButtons:
+  - {fileID: 1580821121}
+  - {fileID: 1662125781}
+  - {fileID: 663895941}
+  - {fileID: 842365025}
+  - {fileID: 393476471}
+  - {fileID: 744071564}
+  - {fileID: 632596178}
+  - {fileID: 1372523235}
+  - {fileID: 1231889861}
+  - {fileID: 2066155437}
+  - {fileID: 2095210977}
+  - {fileID: 1338406610}
+  - {fileID: 455178428}
+  - {fileID: 229558614}
+  - {fileID: 74872359}
+  - {fileID: 922355029}
+  - {fileID: 223159016}
+  - {fileID: 1056469362}
+  - {fileID: 137542997}
+  - {fileID: 211049747}
+  - {fileID: 967037136}
+  - {fileID: 1357446016}
+  - {fileID: 715129839}
+  - {fileID: 1952582533}
+  - {fileID: 846674459}
+  - {fileID: 589638187}
+  - {fileID: 194037474}
+  - {fileID: 27288910}
+  - {fileID: 1883807508}
+  - {fileID: 1783035063}
 --- !u!1 &842365023
 GameObject:
   m_ObjectHideFlags: 0
@@ -11129,6 +11176,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1715734300}
   - component: {fileID: 1715734299}
+  - component: {fileID: 1715734301}
   m_Layer: 0
   m_Name: CoinManager
   m_TagString: Untagged
@@ -11164,6 +11212,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1715734301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1715734298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8cbb05bd6eea0a4885a81eb27cc4d2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1719253207
 GameObject:
   m_ObjectHideFlags: 0
@@ -13203,8 +13263,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db59ee1566357b64b9461f2038dbc69e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultColor: {r: 0.4509804, g: 0.4509804, b: 0.4509804, a: 1}
-  selectedColor: {r: 0.5719537, g: 0.8584906, b: 0.31100032, a: 1}
   avtars:
   - {fileID: 21300000, guid: 1ddfe5673ee5d4fcd90a7f06e4a81569, type: 3}
   - {fileID: 21300000, guid: c64b98248e0df4b32bb6e4e1f7277758, type: 3}
@@ -13236,37 +13294,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: f50c7bcf5e83948f6998522104aaff47, type: 3}
   - {fileID: 21300000, guid: 16999640cc74b4b899744f3ba70770c2, type: 3}
   - {fileID: 21300000, guid: ec1926eda34c34332b9042c0631c0143, type: 3}
-  avtarSelectionButtons:
-  - {fileID: 1580821121}
-  - {fileID: 1662125781}
-  - {fileID: 663895941}
-  - {fileID: 842365025}
-  - {fileID: 393476471}
-  - {fileID: 744071564}
-  - {fileID: 632596178}
-  - {fileID: 1372523235}
-  - {fileID: 1231889861}
-  - {fileID: 2066155437}
-  - {fileID: 2095210977}
-  - {fileID: 1338406610}
-  - {fileID: 455178428}
-  - {fileID: 229558614}
-  - {fileID: 74872359}
-  - {fileID: 922355029}
-  - {fileID: 223159016}
-  - {fileID: 1056469362}
-  - {fileID: 137542997}
-  - {fileID: 211049747}
-  - {fileID: 967037136}
-  - {fileID: 1357446016}
-  - {fileID: 715129839}
-  - {fileID: 1952582533}
-  - {fileID: 846674459}
-  - {fileID: 589638187}
-  - {fileID: 194037474}
-  - {fileID: 27288910}
-  - {fileID: 1883807508}
-  - {fileID: 1783035063}
 --- !u!4 &2075473974
 Transform:
   m_ObjectHideFlags: 0

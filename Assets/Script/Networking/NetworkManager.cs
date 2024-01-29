@@ -30,7 +30,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
-
         lobbyUIController.ToggleConnectingScreen(false);
     }
 
@@ -51,7 +50,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name + " " + PhotonNetwork.NickName);
         ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
-        hashtable["ProfileIndex"] = ProfileManager.Instance.GetSelectedAvtarIndex();
+        hashtable["ProfileIndex"] = ProfileManager.Instance.GetProfileAvtarIndex();
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
@@ -99,7 +98,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
         gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
-        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetSelectedAvtarIndex();
+        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
 
         gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
         gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;

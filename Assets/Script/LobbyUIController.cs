@@ -23,7 +23,11 @@ public class LobbyUIController : MonoBehaviour
     [Header("MatchMaking screen")]
     [SerializeField] private GameObject matchmakingScreen;
 
+    [Header("Network Manager")]
     [SerializeField] private NetworkManager networkManager;
+
+    [Header("Avtar Controller")]
+    [SerializeField] private AvtarController avtarController;
 
     private void Start()
     {
@@ -83,7 +87,7 @@ public class LobbyUIController : MonoBehaviour
 
     public void OnAvtarSaveButtonClick()
     {
-        ProfileManager.Instance.SetAvtar();
+        avtarController.SaveAvtar();
         ToggleAvtarSelectionScreen(false);
     }
 

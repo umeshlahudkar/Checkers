@@ -8,15 +8,10 @@ public class ProfileManager : Singleton<ProfileManager>
     private bool hasAvtarSelect;
 
     private string userName;
-    private Sprite selectedAvtarSprite;
+    private Sprite profileAvtar;
     private int avtarIndex;
-    private int selectAvtarIndex;
-
-    [SerializeField] private Color defaultColor;
-    [SerializeField] private Color selectedColor;
 
     [SerializeField] private Sprite[] avtars;
-    [SerializeField] private AvtarSelectionButton[] avtarSelectionButtons;
 
     public delegate void ProfileChange(Sprite avtar, string name);
     public static event ProfileChange OnProfileChange;
@@ -27,7 +22,6 @@ public class ProfileManager : Singleton<ProfileManager>
         hasAvtarSelect = false;
         userName = string.Empty;
         avtarIndex = -1;
-        selectAvtarIndex = -1;
     }
 
     public void SetUserName(string name)
@@ -35,30 +29,18 @@ public class ProfileManager : Singleton<ProfileManager>
         hasUsernameSet = true;
         userName = name;
 
-        OnProfileChange?.Invoke(selectedAvtarSprite, userName);
+        OnProfileChange?.Invoke(profileAvtar, userName);
     }
 
-    public void SetAvtarIndex(int index)
+    public void SetAvtar(int index)
     {
-        if (selectAvtarIndex != -1)
-        {
-            avtarSelectionButtons[selectAvtarIndex - 1].SetAvtarBgColor(defaultColor);
-        }
-
-        selectAvtarIndex = index;
-
-        avtarSelectionButtons[selectAvtarIndex - 1].SetAvtarBgColor(selectedColor);
-    }
-
-    public void SetAvtar()
-    {
-        avtarIndex = selectAvtarIndex;
-        if(avtarIndex >= 0 && avtarIndex <= avtars.Length)
+        if(index > 0 && index <= avtars.Length)
         {
             hasAvtarSelect = true;
-            selectedAvtarSprite = avtars[avtarIndex - 1];
+            avtarIndex = index;
+            profileAvtar = avtars[index - 1];
 
-            OnProfileChange?.Invoke(selectedAvtarSprite, userName);
+            OnProfileChange?.Invoke(profileAvtar, userName);
         }
     }
 
@@ -67,12 +49,12 @@ public class ProfileManager : Singleton<ProfileManager>
         return hasUsernameSet == true ? userName : string.Empty; 
     }
 
-    public Sprite GetSelectedAvtarSprite() 
+    public Sprite GetProfileAvtar() 
     { 
-        return hasAvtarSelect == true ? selectedAvtarSprite : null;
+        return hasAvtarSelect == true ? profileAvtar : null;
     }
 
-    public Sprite GetSprite(int index)
+    public Sprite GetAvtar(int index)
     {
         if(index <= avtars.Length)
         {
@@ -82,17 +64,7 @@ public class ProfileManager : Singleton<ProfileManager>
         return null;
     }
 
-    public Color GetDefaultBgColor()
-    {
-        return defaultColor;
-    }
-
-    public Color GetSelectedBgColor()
-    {
-        return selectedColor;
-    }
-
-    public int GetSelectedAvtarIndex() 
+    public int GetProfileAvtarIndex() 
     { 
         return hasAvtarSelect == true ? avtarIndex : -1;
     }
