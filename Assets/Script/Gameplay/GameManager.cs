@@ -22,9 +22,16 @@ public class GameManager : Singleton<GameManager>
 
     private void Start()
     {
+        StartCoroutine(InitializeGame());
+    }
+
+
+    private IEnumerator InitializeGame()
+    {
+        yield return new WaitForSeconds(3f);
         actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
 
-        if(PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient)
         {
             currentTurn = actorNumber;
             pieceType = PieceType.Black;
@@ -44,7 +51,8 @@ public class GameManager : Singleton<GameManager>
 
         if (PhotonNetwork.IsMasterClient)
         {
-            GameplayController.Instance.OnBoardReady();
+            //GameplayController.Instance.OnBoardReady();
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
     }
 
@@ -100,6 +108,30 @@ public class GameManager : Singleton<GameManager>
             piece = PhotonView.Find(viewId).GetComponent<Piece>();
         }
         GameplayController.Instance.board[row, col].SetBlockPiece((viewId != -1), piece);
+    }
+
+    private void ResetGameManager()
+    {
+        pieceType = PieceType.None;
+        currentTurn = -1;
+        actorNumber = -1;
+    }
+
+    private void ResetGameplay()
+    {
+        if(PhotonNetwork.IsMasterClient)
+        {
+            PhotonNetwork.DestroyAll();
+        }
+        ResetGameManager();
+        GameplayController.Instance.ResetGameplay();
+        UIController.Instance.DisableAllScreen();
+    }
+
+    public void Rematch()
+    {
+        ResetGameplay();
+        StartCoroutine(InitializeGame());
     }
 
 }

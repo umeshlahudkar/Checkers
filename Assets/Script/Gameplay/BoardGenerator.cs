@@ -30,6 +30,9 @@ public class BoardGenerator : MonoBehaviour
 
     public void GenerateBoard()
     {
+        blockHolderParent.localPosition = Vector3.zero;
+        pieceHolderParent.localPosition = Vector3.zero;
+
         float startX = -((blockSize * colums) / 2  + (blockSize/2));
         float startY = ((blockSize * rows) / 2)  - (blockSize / 2);
 

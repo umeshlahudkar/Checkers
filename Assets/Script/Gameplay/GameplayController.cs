@@ -21,18 +21,19 @@ public class GameplayController : Singleton<GameplayController>
 
     public bool CheckMoves(bool canHighlightMoves = true)
     {
-        ResetHighlightedBlocks();
-
-        if (GameManager.Instance.PieceType == PieceType.Black)
-        {
-            return CheckAllBlackPieceMove(canHighlightMoves);
-        }
-        else if (GameManager.Instance.PieceType == PieceType.White)
-        {
-            return CheckAllWhitePieceMove(canHighlightMoves);
-        }
-
         return false;
+        //ResetHighlightedBlocks();
+
+        //if (GameManager.Instance.PieceType == PieceType.Black)
+        //{
+        //    return CheckAllBlackPieceMove(canHighlightMoves);
+        //}
+        //else if (GameManager.Instance.PieceType == PieceType.White)
+        //{
+        //    return CheckAllWhitePieceMove(canHighlightMoves);
+        //}
+
+        //return false;
     }
 
     private bool IsValidPosition(int row, int col)
@@ -753,5 +754,21 @@ public class GameplayController : Singleton<GameplayController>
             }
         }
         return false;
+    }
+
+    public void ResetGameplay()
+    {
+        for(int i = 0; i < 8; i++)
+        {
+            for(int j = 0; j < 8; j++)
+            {
+                Destroy(board[i, j].gameObject);
+            }
+        }
+
+        highlightedBlocks.Clear();
+        whitePieces.Clear();
+        blackPieces.Clear();
+        selectedPiece = null;
     }
 }

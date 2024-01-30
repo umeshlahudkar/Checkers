@@ -15,18 +15,21 @@ public class UIController : Singleton<UIController>
     [SerializeField] private TextMeshProUGUI player2_nameText;
     [SerializeField] private Image player2_avtarImag;
 
-    [Header("Fader screen")]
-    [SerializeField] private GameObject faderScreen;
-
     [Header("Game Over screens")]
     [SerializeField] private GameObject winScreen;
     [SerializeField] private GameObject loseScreen;
 
-    [Header("Coin Display")]
-    [SerializeField] private GameObject coinDisplay;
+    [Header("Msg screens")]
+    [SerializeField] private GameObject msgScreen;
+    [SerializeField] private TextMeshProUGUI msgText;
+    [SerializeField] private GameObject msgHomeButton;
 
-    [Header("Exit screen")]
+    [Space(15)]
+    [SerializeField] private GameObject faderScreen;
+    [SerializeField] private GameObject coinDisplay;
     [SerializeField] private GameObject exitScreen;
+    [SerializeField] private GameObject rematchScreen;
+    [SerializeField] private EventManager eventManager;
 
     public void ShowPlayerInfo(PlayerInfo player1_info, PlayerInfo player2_info)
     {
@@ -35,6 +38,19 @@ public class UIController : Singleton<UIController>
 
         player2_nameText.text = player2_info.userName;
         player2_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player2_info.avtarIndex);
+    }
+
+    public void DisableAllScreen()
+    {
+        coinDisplay.SetActive(false);
+        faderScreen.SetActive(false);
+
+        winScreen.SetActive(false);
+        loseScreen.SetActive(false);
+
+        exitScreen.SetActive(false);
+        rematchScreen.SetActive(false);
+        msgScreen.SetActive(false);
     }
 
     public void ToggleGameWinScreen(bool status)
@@ -55,6 +71,62 @@ public class UIController : Singleton<UIController>
     {
         faderScreen.SetActive(status);
         exitScreen.SetActive(status);
+    }
+
+    public void ToggleRematchScreen(bool status)
+    {
+        if(status)
+        {
+            ToggleGameWinScreen(false);
+            ToggleGameLoseScreen(false);
+        }
+
+        faderScreen.SetActive(status);
+        rematchScreen.SetActive(status);
+    }
+
+    public void ToggleMsgScreen(bool status, string msg = "", bool homeButtonStatus = false)
+    {
+        faderScreen.SetActive(status);
+        msgScreen.SetActive(status);
+        msgText.text = msg;
+        msgHomeButton.SetActive(homeButtonStatus);
+    }
+
+    public void OnRematchButtonClick()
+    {
+        ToggleGameLoseScreen(false);
+        ToggleGameWinScreen(false);
+
+        ToggleMsgScreen(true, "waiting for opponent confirmation");
+        eventManager.SendRematchConfirmationEvent();
+    }
+
+    public void OnRematchYesButtonClick()
+    {
+        ToggleGameLoseScreen(false);
+        ToggleGameWinScreen(false);
+
+        ToggleMsgScreen(false);
+
+        eventManager.SendRematchAcceptEvent();
+    }
+
+    public void OnRematchNoButtonClick()
+    {
+        ToggleGameLoseScreen(false);
+        ToggleGameWinScreen(false);
+
+        ToggleMsgScreen(false);
+
+        eventManager.SendRematchDeniedEvent();
+
+        OnExitScreenYesButtonClick();
+    }
+
+    public bool IsGameOverScreenActive()
+    {
+        return winScreen.activeSelf || loseScreen.activeSelf;
     }
 
     public void OnExitScreenYesButtonClick()
