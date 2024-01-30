@@ -28,7 +28,7 @@ public class GameManager : Singleton<GameManager>
 
     private IEnumerator InitializeGame()
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2f);
         actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
 
         if (PhotonNetwork.IsMasterClient)
@@ -54,6 +54,8 @@ public class GameManager : Singleton<GameManager>
             //GameplayController.Instance.OnBoardReady();
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
+
+        LoadingScreenManager.Instance.DeactivateLoadingScreen();
     }
 
     public void SwitchTurn()

@@ -70,4 +70,5 @@ public class ProfileManager : Singleton<ProfileManager>
     }
 
     public bool HasAvtarSet { get { return hasAvtarSelect; } }
+    public bool HasUserNameSet { get { return hasUsernameSet; } }
 }

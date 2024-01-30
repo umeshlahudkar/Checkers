@@ -98,7 +98,7 @@ public class MatchMakingManager : MonoBehaviour
         {
             for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
             {
-                opponentPlayer_ScrollImgs[i].transform.position += speed * Time.deltaTime * Vector3.down;
+                opponentPlayer_ScrollImgs[i].transform.position += Vector3.down * speed * Time.deltaTime;
 
                 if (opponentPlayer_ScrollImgs[i].transform.position.y <= (initialPos[0].y - offset.y))
                 {
@@ -147,7 +147,9 @@ public class MatchMakingManager : MonoBehaviour
 
         yield return StartCoroutine(ShowCoinAnimation());
 
-        //yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(1f);
+
+        LoadingScreenManager.Instance.ActivateLoadingScreen();
 
         if (Photon.Pun.PhotonNetwork.IsMasterClient)
         {
@@ -158,10 +160,10 @@ public class MatchMakingManager : MonoBehaviour
     private IEnumerator ShowCoinAnimation()
     {
         CoinAnimator anim1 = Instantiate<CoinAnimator>(coinAnimatorPrefab, ownPlayer_feestext.transform.position, Quaternion.identity, transform);
-        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform));
+        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform, 40f));
 
         CoinAnimator anim2 = Instantiate<CoinAnimator>(coinAnimatorPrefab, opponentPlayer_feestext.transform.position, Quaternion.identity, transform);
-        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform));
+        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform, 40f));
     }
 
     private void ResetScrollImages()

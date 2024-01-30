@@ -30,7 +30,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
-        lobbyUIController.ToggleConnectingScreen(false);
+        lobbyUIController.SetProfile();
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
@@ -41,19 +41,14 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         PhotonNetwork.CreateRoom(roomName, options);
     }
 
-    public override void OnCreatedRoom()
-    {
-        
-    }
-
     public override void OnJoinedRoom()
     {
-        Debug.Log("Room joined " + PhotonNetwork.CurrentRoom.Name + " " + PhotonNetwork.NickName);
         ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
         hashtable["ProfileIndex"] = ProfileManager.Instance.GetProfileAvtarIndex();
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
+        LoadingScreenManager.Instance.DeactivateLoadingScreen();
         lobbyUIController.ToggleMatchmakingScreen(true);
 
         if(!PhotonNetwork.IsMasterClient)
@@ -70,7 +65,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        Debug.Log("Other player joined " + newPlayer.NickName);
         if (PhotonNetwork.CurrentRoom.PlayerCount >= 2)
         {
             StartCoroutine(CheckForPropertiesSet(newPlayer));
@@ -89,7 +83,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             }
             yield return null;
         }
-        Debug.Log("Other player joined " + newPlayer.NickName + "......." + index);
         matchMakingManager.SetPlayerFound(newPlayer.NickName, index);
         SaveGameData(newPlayer, index);
     }

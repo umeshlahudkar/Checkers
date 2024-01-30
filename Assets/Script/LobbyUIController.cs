@@ -6,9 +6,6 @@ using UnityEngine;
 
 public class LobbyUIController : MonoBehaviour
 {
-    [Header("Connecting screen")]
-    [SerializeField] private GameObject connectingScreen;
-
     [Header("Main Menu screen")]
     [SerializeField] private GameObject mainMenuScreen;
 
@@ -31,14 +28,20 @@ public class LobbyUIController : MonoBehaviour
 
     private void Start()
     {
-        faderScreen.SetActive(true);
-        connectingScreen.SetActive(true);
+        LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network...");
     }
 
-    public void ToggleConnectingScreen(bool status)
+    public void SetProfile()
     {
-        faderScreen.SetActive(status);
-        connectingScreen.SetActive(status);
+        LoadingScreenManager.Instance.DeactivateLoadingScreen();
+        if (!ProfileManager.Instance.HasUserNameSet)
+        {
+            ToggleUserNameInputScreen(true);
+        }
+        else if(!ProfileManager.Instance.HasAvtarSet)
+        {
+            ToggleAvtarSelectionScreen(true);
+        }
     }
 
     public void ToggleUserNameInputScreen(bool status)
@@ -55,13 +58,14 @@ public class LobbyUIController : MonoBehaviour
 
     public void OnPlayButtonClick()
     {
-        if (!NetworkManager.hasUsernameSet)
+        if (!ProfileManager.Instance.HasUserNameSet || !ProfileManager.Instance.HasAvtarSet)
         {
-            ToggleUserNameInputScreen(true);
+            SetProfile();
         }
         else
         {
             networkManager.JoinRandomRoom();
+            LoadingScreenManager.Instance.ActivateLoadingScreen();
         }
     }
 
@@ -82,6 +86,8 @@ public class LobbyUIController : MonoBehaviour
 
             networkManager.SetUserName(username);
             ProfileManager.Instance.SetUserName(username);
+
+            SetProfile();
         }
     }
 
@@ -89,6 +95,8 @@ public class LobbyUIController : MonoBehaviour
     {
         avtarController.SaveAvtar();
         ToggleAvtarSelectionScreen(false);
+
+        SetProfile();
     }
 
     public void ToggleMatchmakingScreen(bool status)

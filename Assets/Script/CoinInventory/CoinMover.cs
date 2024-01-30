@@ -32,7 +32,7 @@ public class CoinMover : MonoBehaviour
             dir = (target - (Vector2)thisTransform.position).normalized;
             thisTransform.position += speed * Time.deltaTime * (Vector3)dir;
 
-            if (Vector2.Distance(target, thisTransform.position) < 20f)
+            if (Vector2.Distance(target, thisTransform.position) < 10f)
             {
                 canMove = false;
                 if(canDisableAtTarget)

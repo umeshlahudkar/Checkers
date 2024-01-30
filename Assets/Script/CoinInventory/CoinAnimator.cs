@@ -6,11 +6,12 @@ using UnityEngine.UI;
 public class CoinAnimator : MonoBehaviour
 {
     [SerializeField] private CoinMover[] coinMovers;
-    private readonly float radius = 40f;   //150
+    private float radius = 75f;   //150 //40
     private int reachedToTargetCount = 0;
 
-    public IEnumerator PlayAnimation(Transform target)
+    public IEnumerator PlayAnimation(Transform target, float spreadRadius = 75f)
     {
+        radius = spreadRadius;
         SpreadCoin();
 
         yield return new WaitForSeconds(0.25f);
@@ -38,7 +39,7 @@ public class CoinAnimator : MonoBehaviour
 
     private IEnumerator HasAllReachedToTarget()
     {
-        while(reachedToTargetCount < coinMovers.Length)
+        while(reachedToTargetCount >= coinMovers.Length)
         {
             yield return null;
         }
