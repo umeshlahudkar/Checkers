@@ -158,6 +158,8 @@ public class MatchMakingManager : MonoBehaviour
 
     private IEnumerator ShowCoinAnimation()
     {
+        CoinManager.Instance.DeductCoin(250);
+
         CoinAnimator anim1 = Instantiate<CoinAnimator>(coinAnimatorPrefab, ownPlayer_feestext.transform.position, Quaternion.identity, transform);
         StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform, 40f));
 

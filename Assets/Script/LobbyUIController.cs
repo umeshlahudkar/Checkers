@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class LobbyUIController : MonoBehaviour
 {
@@ -25,6 +26,11 @@ public class LobbyUIController : MonoBehaviour
 
     [Header("Avtar Controller")]
     [SerializeField] private AvtarController avtarController;
+
+    [Header("Shop screen")]
+    [SerializeField] private GameObject shopScreen;
+    [SerializeField] private Button getButton;
+    [SerializeField] private Transform shopScreenCoinImg;
 
     private void Start()
     {
@@ -56,17 +62,28 @@ public class LobbyUIController : MonoBehaviour
         avtarSelectionScreen.SetActive(status);
     }
 
+    public void ToggleShopScreen(bool status)
+    {
+        faderScreen.SetActive(status);
+        shopScreen.SetActive(status);
+    }
+
     public void OnPlayButtonClick()
     {
         if (!ProfileManager.Instance.HasUserNameSet || !ProfileManager.Instance.HasAvtarSet)
         {
             SetProfile();
+            return;
         }
-        else
+
+        if(CoinManager.Instance.GetCoinAmount() < 250)
         {
-            networkManager.JoinRandomRoom();
-            LoadingScreenManager.Instance.ActivateLoadingScreen();
+            ToggleShopScreen(true);
+            return;
         }
+      
+        networkManager.JoinRandomRoom();
+        LoadingScreenManager.Instance.ActivateLoadingScreen();
     }
 
     public void OnQuitButtonClick()
@@ -97,6 +114,12 @@ public class LobbyUIController : MonoBehaviour
         ToggleAvtarSelectionScreen(false);
 
         SetProfile();
+    }
+
+    public void OnShopScreenGetButtonClick(int coinAmount)
+    {
+        getButton.interactable = false;
+        CoinManager.Instance.AddCoin(coinAmount, shopScreenCoinImg);
     }
 
     public void ToggleMatchmakingScreen(bool status)

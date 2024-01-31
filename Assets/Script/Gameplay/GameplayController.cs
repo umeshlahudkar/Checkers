@@ -21,16 +21,16 @@ public class GameplayController : Singleton<GameplayController>
 
     public bool CheckMoves(bool canHighlightMoves = true)
     {
-        ResetHighlightedBlocks();
+        //ResetHighlightedBlocks();
 
-        if (GameManager.Instance.PieceType == PieceType.Black)
-        {
-            return CheckAllBlackPieceMove(canHighlightMoves);
-        }
-        else if (GameManager.Instance.PieceType == PieceType.White)
-        {
-            return CheckAllWhitePieceMove(canHighlightMoves);
-        }
+        //if (GameManager.Instance.PieceType == PieceType.Black)
+        //{
+        //    return CheckAllBlackPieceMove(canHighlightMoves);
+        //}
+        //else if (GameManager.Instance.PieceType == PieceType.White)
+        //{
+        //    return CheckAllWhitePieceMove(canHighlightMoves);
+        //}
 
         return false;
     }
