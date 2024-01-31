@@ -49,6 +49,8 @@ public class MatchMakingManager : MonoBehaviour
         ResetScrollImages();
 
         canScroll = true;
+
+        AudioManager.Instance.PlayMatchmakingScrollSound();
     }
 
     private void Update()
@@ -136,6 +138,7 @@ public class MatchMakingManager : MonoBehaviour
     {
         canScroll = false;
         ResetScrollImages();
+        AudioManager.Instance.StopMatchmakingScrollSound();
 
         for (int j = 1; j < opponentPlayer_ScrollImgs.Length; j++)
         {

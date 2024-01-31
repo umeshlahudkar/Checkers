@@ -65,6 +65,8 @@ public class Piece : MonoBehaviour
         whitePieceImage.gameObject.SetActive(false);
         crownImage.gameObject.SetActive(false);
 
+        AudioManager.Instance.PlayPieceKillSound();
+
         if (pieceType == PieceType.White)
         {
             GameplayController.Instance.whitePieces.Remove(this);

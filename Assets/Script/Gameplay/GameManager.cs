@@ -110,6 +110,7 @@ public class GameManager : Singleton<GameManager>
         if(viewId != -1)
         {
             piece = PhotonView.Find(viewId).GetComponent<Piece>();
+            AudioManager.Instance.PlayPieceMoveSound();
         }
         GameplayController.Instance.board[row, col].SetBlockPiece((viewId != -1), piece);
     }

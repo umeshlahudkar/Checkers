@@ -21,6 +21,7 @@ public class CoinManager : Singleton<CoinManager>
         totalCoin = Mathf.Clamp(totalCoin, 0, totalCoin);
 
         OnCoinValueIncreased?.Invoke(totalCoin, amount, target);
+        AudioManager.Instance.PlayCoinSound();
     }
 
     public void DeductCoin(int amount, Transform target = null)
@@ -31,6 +32,7 @@ public class CoinManager : Singleton<CoinManager>
             totalCoin = Mathf.Clamp(totalCoin, 0, totalCoin);
 
             OnCoinValueDecreased?.Invoke(totalCoin, amount, target);
+            AudioManager.Instance.PlayCoinSound();
         }
     }
 

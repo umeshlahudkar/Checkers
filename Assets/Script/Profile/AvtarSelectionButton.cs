@@ -9,11 +9,6 @@ public class AvtarSelectionButton : MonoBehaviour
 
     private AvtarController avtarController;
 
-    private void Start()
-    {
-        //buttonAvtarImg.sprite = ProfileManager.Instance.GetAvtarSprite(avtarIndex);
-    }
-
     public void SetButton(int index, Sprite avtarSprite, Color bgColor, AvtarController controller)
     {
         avtarIndex = index;
@@ -22,20 +17,9 @@ public class AvtarSelectionButton : MonoBehaviour
         avtarController = controller;
     }
 
-    //private void OnEnable()
-    //{
-    //    if(ProfileManager.Instance.GetSelectedAvtarIndex() == avtarIndex)
-    //    {
-    //        SetAvtarBgColor(ProfileManager.Instance.GetSelectedBgColor());
-    //    }
-    //    else
-    //    {
-    //        SetAvtarBgColor(ProfileManager.Instance.GetDefaultBgColor());
-    //    }
-    //}
-
     public void OnClick()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         avtarController.OnAvtarButtonClick(avtarIndex);
     }
 

@@ -136,14 +136,14 @@ public class UIController : Singleton<UIController>
 
     public void ToggleGameWinScreen(bool status)
     {
-        if(status)
-        {
-            CoinManager.Instance.AddCoin(500, winScreenCoinImg);
-        }
-
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
         winScreen.SetActive(status);
+
+        if (status)
+        {
+            CoinManager.Instance.AddCoin(500, winScreenCoinImg);
+        }
     }
 
     public void ToggleGameLoseScreen(bool status)

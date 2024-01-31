@@ -21,16 +21,16 @@ public class GameplayController : Singleton<GameplayController>
 
     public bool CheckMoves(bool canHighlightMoves = true)
     {
-        //ResetHighlightedBlocks();
+        ResetHighlightedBlocks();
 
-        //if (GameManager.Instance.PieceType == PieceType.Black)
-        //{
-        //    return CheckAllBlackPieceMove(canHighlightMoves);
-        //}
-        //else if (GameManager.Instance.PieceType == PieceType.White)
-        //{
-        //    return CheckAllWhitePieceMove(canHighlightMoves);
-        //}
+        if (GameManager.Instance.PieceType == PieceType.Black)
+        {
+            return CheckAllBlackPieceMove(canHighlightMoves);
+        }
+        else if (GameManager.Instance.PieceType == PieceType.White)
+        {
+            return CheckAllWhitePieceMove(canHighlightMoves);
+        }
 
         return false;
     }
@@ -222,8 +222,9 @@ public class GameplayController : Singleton<GameplayController>
 
       
         GameManager.Instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
-      
+
         //selectedPiece.transform.position = block.transform.position;
+        //AudioManager.Instance.PlayPieceMoveSound();
         yield return StartCoroutine(MovePiece(selectedPiece.transform, block.transform.position));
 
         UIController.Instance.StopPlayerHighlightAnim();

@@ -50,26 +50,36 @@ public class LobbyUIController : MonoBehaviour
         }
     }
 
-    public void ToggleUserNameInputScreen(bool status)
+    private void ToggleUserNameInputScreen(bool status)
     {
         faderScreen.SetActive(status);
         userNameInputScreen.SetActive(status);
     }
 
-    public void ToggleAvtarSelectionScreen(bool status)
+    private void ToggleAvtarSelectionScreen(bool status)
     {
         faderScreen.SetActive(status);
         avtarSelectionScreen.SetActive(status);
     }
 
-    public void ToggleShopScreen(bool status)
+    private void ToggleShopScreen(bool status)
     {
         faderScreen.SetActive(status);
         shopScreen.SetActive(status);
     }
 
+    public void ToggleMatchmakingScreen(bool status)
+    {
+        if (status == true)
+        {
+            mainMenuScreen.SetActive(false);
+        }
+        matchmakingScreen.SetActive(status);
+    }
+
     public void OnPlayButtonClick()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         if (!ProfileManager.Instance.HasUserNameSet || !ProfileManager.Instance.HasAvtarSet)
         {
             SetProfile();
@@ -88,6 +98,7 @@ public class LobbyUIController : MonoBehaviour
 
     public void OnQuitButtonClick()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         Application.Quit();
     }
 
@@ -105,11 +116,14 @@ public class LobbyUIController : MonoBehaviour
             ProfileManager.Instance.SetUserName(username);
 
             SetProfile();
+
+            AudioManager.Instance.PlayButtonClickSound();
         }
     }
 
     public void OnAvtarSaveButtonClick()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         avtarController.SaveAvtar();
         ToggleAvtarSelectionScreen(false);
 
@@ -118,17 +132,40 @@ public class LobbyUIController : MonoBehaviour
 
     public void OnShopScreenGetButtonClick(int coinAmount)
     {
+        AudioManager.Instance.PlayButtonClickSound();
         getButton.interactable = false;
         CoinManager.Instance.AddCoin(coinAmount, shopScreenCoinImg);
     }
 
-    public void ToggleMatchmakingScreen(bool status)
+    public void OnShopScreenCloseButtonClick()
     {
-        if(status == true)
-        {
-            mainMenuScreen.SetActive(false);
-        }
-        matchmakingScreen.SetActive(status);
+        AudioManager.Instance.PlayButtonClickSound();
+        getButton.interactable = true;
+        ToggleShopScreen(false);
+    }
+
+    public void OnAvtarButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleAvtarSelectionScreen(true);
+    }
+
+    public void OnAvtarCloseButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleAvtarSelectionScreen(false);
+    }
+
+    public void OnUsernameClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleUserNameInputScreen(true);
+    }
+
+    public void OnUsernameCloseClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleUserNameInputScreen(false);
     }
 
 }
