@@ -61,6 +61,9 @@ public class Piece : MonoBehaviour
     public void Destroy()
     {
         GameplayController.Instance.board[rowID, columID].SetBlockPiece(false, null);
+        blackPieceImage.gameObject.SetActive(false);
+        whitePieceImage.gameObject.SetActive(false);
+        crownImage.gameObject.SetActive(false);
 
         if (pieceType == PieceType.White)
         {

@@ -155,7 +155,7 @@ public class Block : MonoBehaviour
     {
         if(isTargetBlockHighlighted)
         {
-            GameplayController.Instance.MovePiece(this);
+            StartCoroutine(GameplayController.Instance.HandlePieceMovement(this));
         }
     }
 

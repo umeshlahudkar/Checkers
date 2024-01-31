@@ -82,84 +82,6 @@ public class GameplayController : Singleton<GameplayController>
                 //diagonally up right
                 moveFound |= CheckPieceMoveAndHighlightBlock(row - 1, coloum + 1, row - 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
             }
-
-            /*
-            // diagonally down left
-            if (row + 1 < 8 && coloum - 1 >= 0)
-            {
-                if (!board[row + 1, coloum - 1].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-                else if (board[row + 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum - 1].Piece.PieceType
-                        && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-            }
-
-            //diagonally down right
-            if (row + 1 < 8 && coloum + 1 < 8)
-            {
-                if (!board[row + 1, coloum + 1].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-                else if (board[row + 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum + 1].Piece.PieceType
-                        && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-            }
-
-            if(piece.IsCrownedKing)
-            {
-                // diagonally up left
-                if (row - 1 >= 0 && coloum - 1 >= 0)
-                {
-                    if (!board[row - 1, coloum - 1].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                    else if (board[row - 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum - 1].Piece.PieceType
-                            && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                }
-
-                //diagonally up right
-                if (row - 1 >= 0 && coloum + 1 < 8)
-                {
-                    if (!board[row - 1, coloum + 1].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                    else if (board[row - 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum + 1].Piece.PieceType
-                            && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                }
-            }
-
-            */
         }
         return moveFound;
     }
@@ -186,83 +108,6 @@ public class GameplayController : Singleton<GameplayController>
                 //diagonally down right
                 moveFound |= CheckPieceMoveAndHighlightBlock(row + 1, coloum + 1, row + 2, coloum + 2, piece, pieceBlock, canHighlightMoves);
             }
-
-            /*
-            // diagonally up left
-            if (row - 1 >= 0 && coloum - 1 >= 0)
-            {
-                if (!board[row - 1, coloum - 1].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-                else if (board[row - 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum - 1].Piece.PieceType
-                            && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-            }
-
-            // diagonally up right
-            if (row - 1 >= 0 && coloum + 1 < 8)
-            {
-                if (!board[row - 1, coloum + 1].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-                else if (board[row - 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row - 1, coloum + 1].Piece.PieceType
-                         && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
-                {
-                    pieceBlock.HighlightPieceBlock();
-                    highlightedBlocks.Add(pieceBlock);
-                    blockFound = true;
-                }
-            }
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonally down left
-                if (row + 1 < 8 && coloum - 1 >= 0)
-                {
-                    if (!board[row + 1, coloum - 1].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                    else if (board[row + 1, coloum - 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum - 1].Piece.PieceType
-                            && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                }
-
-                //diagonally down right
-                if (row + 1 < 8 && coloum + 1 < 8)
-                {
-                    if (!board[row + 1, coloum + 1].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                    else if (board[row + 1, coloum + 1].IsPiecePresent && piece.PieceType != board[row + 1, coloum + 1].Piece.PieceType
-                            && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
-                    {
-                        pieceBlock.HighlightPieceBlock();
-                        highlightedBlocks.Add(pieceBlock);
-                        blockFound = true;
-                    }
-                }
-            }
-            */
         }
         return moveFound;
     }
@@ -321,84 +166,6 @@ public class GameplayController : Singleton<GameplayController>
                 //diagonally up right
                 moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceToMove);
             }
-
-            /*
-            // diagonally down left
-            if (row + 1 < 8 && coloum - 1 >= 0)
-            {
-                if (!board[row + 1, coloum - 1].IsPiecePresent)
-                {
-                    board[row + 1, coloum - 1].HighlightNextMoveBlock();
-                    highlightedBlocks.Add(board[row + 1, coloum - 1]);
-                    moveFound = true;
-                }
-                else if (board[row + 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum - 1].Piece.PieceType
-                         && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent) 
-                {
-                    board[row + 2, coloum - 2].HighlightNextMoveBlock(true);
-                    highlightedBlocks.Add(board[row + 2, coloum - 2]);
-                    moveFound = true;
-                }
-            }
-
-            // diagonally down right
-            if (row + 1 < 8 && coloum + 1 < 8)
-            {
-                if (!board[row + 1, coloum + 1].IsPiecePresent)
-                {
-                    board[row + 1, coloum + 1].HighlightNextMoveBlock();
-                    highlightedBlocks.Add(board[row + 1, coloum + 1]);
-                    moveFound = true;
-                }
-                else if (board[row + 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum + 1].Piece.PieceType
-                         && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
-                {
-                    board[row + 2, coloum + 2].HighlightNextMoveBlock(true);
-                    highlightedBlocks.Add(board[row + 2, coloum + 2]);
-                    moveFound = true;
-                }
-            }
-
-            if (pieceToMove.IsCrownedKing)
-            {
-                // diagonally up left
-                if (row - 1 >= 0 && coloum - 1 >= 0)
-                {
-                    if (!board[row - 1, coloum - 1].IsPiecePresent)
-                    {
-                        board[row - 1, coloum - 1].HighlightNextMoveBlock();
-                        highlightedBlocks.Add(board[row - 1, coloum - 1]);
-                        moveFound = true;
-                    }
-                    else if (board[row - 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum - 1].Piece.PieceType
-                            && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
-                    {
-                        board[row - 2, coloum - 2].HighlightNextMoveBlock(true);
-                        highlightedBlocks.Add(board[row - 2, coloum - 2]);
-                        moveFound = true;
-                    }
-                }
-
-                //diagonally up right
-                if (row - 1 >= 0 && coloum + 1 < 8)
-                {
-                    if (!board[row - 1, coloum + 1].IsPiecePresent)
-                    {
-                        board[row - 1, coloum + 1].HighlightNextMoveBlock();
-                        highlightedBlocks.Add(board[row - 1, coloum + 1]);
-                        moveFound = true;
-                    }
-                    else if (board[row - 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum + 1].Piece.PieceType
-                            && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
-                    {
-                        board[row - 2, coloum + 2].HighlightNextMoveBlock(true);
-                        highlightedBlocks.Add(board[row - 2, coloum + 2]);
-                        moveFound = true;
-                    }
-                }
-            }
-
-            */
         }
         else if (pieceToMove.PieceType == PieceType.Black)
         {
@@ -414,83 +181,6 @@ public class GameplayController : Singleton<GameplayController>
                 //diagonally down right
                 moveFound |= CheckPieceNextMoveAndHighlightTargetBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceToMove);
             }
-
-            /*
-            // diagonally up left
-            if (row - 1 >= 0 && coloum - 1 >= 0)
-            {
-                if (!board[row - 1, coloum - 1].IsPiecePresent)
-                {
-                    board[row - 1, coloum - 1].HighlightNextMoveBlock();
-                    highlightedBlocks.Add(board[row - 1, coloum - 1]);
-                    moveFound = true;
-                }
-                else if (board[row - 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum - 1].Piece.PieceType
-                        && row - 2 >= 0 && coloum - 2 >= 0 && !board[row - 2, coloum - 2].IsPiecePresent)
-                {
-                    board[row - 2, coloum - 2].HighlightNextMoveBlock(true);
-                    highlightedBlocks.Add(board[row - 2, coloum - 2]);
-                    moveFound = true;
-                }
-            }
-
-            // diagonally up right
-            if (row - 1 >= 0 && coloum + 1 < 8)
-            {
-                if (!board[row - 1, coloum + 1].IsPiecePresent)
-                {
-                    board[row - 1, coloum + 1].HighlightNextMoveBlock();
-                    highlightedBlocks.Add(board[row - 1, coloum + 1]);
-                    moveFound = true;
-                }
-                else if (board[row - 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row - 1, coloum + 1].Piece.PieceType
-                       && row - 2 >= 0 && coloum + 2 < 8 && !board[row - 2, coloum + 2].IsPiecePresent)
-                {
-                    board[row - 2, coloum + 2].HighlightNextMoveBlock(true);
-                    highlightedBlocks.Add(board[row - 2, coloum + 2]);
-                    moveFound = true;
-                }
-            }
-
-            if (pieceToMove.IsCrownedKing)
-            {
-                // diagonally down left
-                if (row + 1 < 8 && coloum - 1 >= 0)
-                {
-                    if (!board[row + 1, coloum - 1].IsPiecePresent)
-                    {
-                        board[row + 1, coloum - 1].HighlightNextMoveBlock();
-                        highlightedBlocks.Add(board[row + 1, coloum - 1]);
-                        moveFound = true;
-                    }
-                    else if (board[row + 1, coloum - 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum - 1].Piece.PieceType
-                            && row + 2 < 8 && coloum - 2 >= 0 && !board[row + 2, coloum - 2].IsPiecePresent)
-                    {
-                        board[row + 2, coloum - 2].HighlightNextMoveBlock(true);
-                        highlightedBlocks.Add(board[row + 2, coloum - 2]);
-                        moveFound = true;
-                    }
-                }
-
-                //diagonally down right
-                if (row + 1 < 8 && coloum + 1 < 8)
-                {
-                    if (!board[row + 1, coloum + 1].IsPiecePresent)
-                    {
-                        board[row + 1, coloum + 1].HighlightNextMoveBlock();
-                        highlightedBlocks.Add(board[row + 1, coloum + 1]);
-                        moveFound = true;
-                    }
-                    else if (board[row + 1, coloum + 1].IsPiecePresent && pieceToMove.PieceType != board[row + 1, coloum + 1].Piece.PieceType
-                            && row + 2 < 8 && coloum + 2 < 8 && !board[row + 2, coloum + 2].IsPiecePresent)
-                    {
-                        board[row + 2, coloum + 2].HighlightNextMoveBlock(true);
-                        highlightedBlocks.Add(board[row + 2, coloum + 2]);
-                        moveFound = true;
-                    }
-                }
-            }
-            */
         }
 
         if (moveFound)
@@ -509,7 +199,7 @@ public class GameplayController : Singleton<GameplayController>
         return moveFound;
     }
 
-    public void MovePiece(Block block)
+    public IEnumerator HandlePieceMovement(Block block)
     {
         ResetHighlightedBlocks();
 
@@ -524,183 +214,23 @@ public class GameplayController : Singleton<GameplayController>
             int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
             Piece piece = board[targetRow, targetCol].Piece;
-            //if (blackPieces.Contains(piece))
-            {
-                //blackPieces.Remove(piece);
-            }
-            //PhotonNetwork.Destroy(piece.gameObject);
             piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
-            //board[targetRow, targetCol].SetBlockPiece(false, null);
-
-           // GameManager.instance.UpdateGrid(targetRow, targetCol, null);
-            //if (selectedPiece.PieceType == PieceType.White)
-            //{
-            //    bool onLeftSide = coloum < selectedPiece.Coloum_ID;
-               
-
-            //    if (onLeftSide)
-            //    {
-            //        bool onDownSide = row > selectedPiece.Row_ID;
-
-            //        if (onDownSide)
-            //        {
-            //            Piece piece = board[row - 1, coloum + 1].Piece;
-            //            if (blackPieces.Contains(piece))
-            //            {
-            //                blackPieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row - 1, coloum + 1].Piece = null;
-            //            //board[row - 1, coloum + 1].IsPiecePresent = false;
-
-            //            board[row - 1, coloum + 1].SetBlockPiece(false, null);
-            //        }
-            //        else
-            //        {
-            //            Piece piece = board[row + 1, coloum + 1].Piece;
-            //            if (blackPieces.Contains(piece))
-            //            {
-            //                blackPieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row + 1, coloum + 1].Piece = null;
-            //            //board[row + 1, coloum + 1].IsPiecePresent = false;
-
-            //            board[row + 1, coloum + 1].SetBlockPiece(false, null);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
-
-            //        if(onDownSide)
-            //        {
-            //            Piece piece = board[row - 1, coloum - 1].Piece;
-            //            if (blackPieces.Contains(piece))
-            //            {
-            //                blackPieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row - 1, coloum - 1].Piece = null;
-            //            //board[row - 1, coloum - 1].IsPiecePresent = false;
-
-            //            board[row - 1, coloum - 1].SetBlockPiece(false, null);
-            //        }
-            //        else
-            //        {
-            //            Piece piece = board[row + 1, coloum - 1].Piece;
-            //            if (blackPieces.Contains(piece))
-            //            {
-            //                blackPieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row + 1, coloum - 1].Piece = null;
-            //            //board[row + 1, coloum - 1].IsPiecePresent = false;
-
-            //            board[row + 1, coloum - 1].SetBlockPiece(false, null);
-            //        }
-            //    }
-                
-            //}
-            //else if (selectedPiece.PieceType == PieceType.Black)
-            //{
-            //    bool onLeftSide = block.Coloum_ID < selectedPiece.Coloum_ID;
-
-               
-            //    if (onLeftSide)
-            //    {
-            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
-
-            //        if(onDownSide)
-            //        {
-            //            Piece piece = board[row - 1, coloum + 1].Piece;
-            //            if (whitePieces.Contains(piece))
-            //            {
-            //                whitePieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row - 1, coloum + 1].Piece = null;
-            //            //board[row - 1, coloum + 1].IsPiecePresent = false;
-
-            //            board[row - 1, coloum + 1].SetBlockPiece(false, null);
-            //        }
-            //        else
-            //        {
-            //            Piece piece = board[row + 1, coloum + 1].Piece;
-            //            if (whitePieces.Contains(piece))
-            //            {
-            //                whitePieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row + 1, coloum + 1].Piece = null;
-            //            //board[row + 1, coloum + 1].IsPiecePresent = false;
-
-            //            board[row + 1, coloum + 1].SetBlockPiece(false, null);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        bool onDownSide = block.Row_ID > selectedPiece.Row_ID;
-
-            //        if(onDownSide)
-            //        {
-            //            Piece piece = board[row - 1, coloum - 1].Piece;
-            //            if (whitePieces.Contains(piece))
-            //            {
-            //                whitePieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row - 1, coloum - 1].Piece = null;
-            //            //board[row - 1, coloum - 1].IsPiecePresent = false;
-
-            //            board[row - 1, coloum - 1].SetBlockPiece(false, null);
-            //        }
-            //        else
-            //        {
-            //            Piece piece = board[row + 1, coloum - 1].Piece;
-            //            if (whitePieces.Contains(piece))
-            //            {
-            //                whitePieces.Remove(piece);
-            //            }
-
-            //            Destroy(piece.gameObject);
-            //            //board[row + 1, coloum - 1].Piece = null;
-            //            //board[row + 1, coloum - 1].IsPiecePresent = false;
-
-            //            board[row + 1, coloum - 1].SetBlockPiece(false, null);
-            //        }
-            //    }
-            //}
             hasDeleted = true;
         }
-
-        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].IsPiecePresent = false;
-        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].Piece = null;
-
-        //board[selectedPiece.Row_ID, selectedPiece.Coloum_ID].SetBlockPiece(false, null);
+       
         GameManager.Instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
 
-        //block.IsPiecePresent = true;
-        //block.Piece = selectedPiece;
-
-        //block.SetBlockPiece(true, selectedPiece);
+      
         GameManager.Instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+      
+        //selectedPiece.transform.position = block.transform.position;
+        yield return StartCoroutine(MovePiece(selectedPiece.transform, block.transform.position));
 
-        //selectedPiece.Row_ID = block.Row_ID;
-        //selectedPiece.Coloum_ID = block.Coloum_ID;
-        selectedPiece.transform.position = block.transform.position;
+        UIController.Instance.StopPlayerHighlightAnim();
 
         if ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
             (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0))
         {
-            //selectedPiece.SetCrownKing();
             selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
         }
 
@@ -712,8 +242,26 @@ public class GameplayController : Singleton<GameplayController>
         }
         else
         {
-            GameManager.Instance.SwitchTurn();
+           GameManager.Instance.SwitchTurn();
         }
+    }
+
+    private IEnumerator MovePiece(Transform pieceToMove, Vector3 targetPos)
+    {
+        float time = 0.25f;
+        float elapcedTime = 0;
+
+        Vector3 initialPos = pieceToMove.position;
+
+        while (elapcedTime <  time)
+        {
+            elapcedTime += Time.deltaTime;
+            Vector3 pos = Vector3.Lerp(initialPos, targetPos, elapcedTime / time);
+            pieceToMove.position = pos;
+            yield return null;
+        }
+
+        pieceToMove.position = targetPos;
     }
 
     private bool CanMove()
