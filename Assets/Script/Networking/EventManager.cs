@@ -139,6 +139,7 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         if(UIController.Instance.CanOpenGameOverScreen())
         {
             UIController.Instance.ToggleGameWinScreen(true);
+            UIController.Instance.StopPlayerHighlightAnim();
         }
     }
 

@@ -67,8 +67,9 @@ public class GameManager : Singleton<GameManager>
     public void ChangeTurn(int nextTurn)
     {
         currentTurn = nextTurn;
+        UIController.Instance.PlayHighlightAnimation(currentTurn);
 
-        if(!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
+        if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
         {
             PieceType winner = pieceType == PieceType.White ? PieceType.Black : PieceType.White;
             gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, (int)winner);
@@ -87,6 +88,8 @@ public class GameManager : Singleton<GameManager>
         {
             UIController.Instance.ToggleGameLoseScreen(true);
         }
+
+        UIController.Instance.StopPlayerHighlightAnim();
     }
 
 
