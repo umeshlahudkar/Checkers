@@ -7,6 +7,7 @@ public class LoadingScreenManager : Singleton<LoadingScreenManager>
 {
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private GameObject faderScreen;
+    [SerializeField] private GameObject BgScreen;
     [SerializeField] private TextMeshProUGUI msgText;
 
     public void ActivateLoadingScreen(string msgToShow = "Loading...")
@@ -24,5 +25,6 @@ public class LoadingScreenManager : Singleton<LoadingScreenManager>
     {
         loadingScreen.SetActive(status);
         faderScreen.SetActive(status);
+        BgScreen.SetActive(status);
     }
 }

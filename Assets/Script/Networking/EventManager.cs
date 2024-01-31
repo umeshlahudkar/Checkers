@@ -8,9 +8,41 @@ using ExitGames.Client.Photon;
 
 public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
+    private readonly float rematchConfirmationWiatTime = 10f;
+    private float confirmationElapcedTime = 0;
+
+    private readonly float rematchConfirmationAcknoTime = 10f;
+    private float confirmationAcknoElapcedTime = 0;
+
+    private bool isReadyToRematch = false;
+
     public override void OnEnable()
     {
         PhotonNetwork.AddCallbackTarget(this);
+    }
+
+    private void Update()
+    {
+        if(confirmationElapcedTime > 0)
+        {
+            confirmationElapcedTime -= Time.deltaTime;
+            if(confirmationElapcedTime <= 0)
+            {
+                confirmationElapcedTime = 0;
+                isReadyToRematch = false;
+                OnRematchDenied();
+            }
+        }
+
+        if(confirmationAcknoElapcedTime > 0)
+        {
+            confirmationAcknoElapcedTime -= Time.deltaTime;
+            if (confirmationAcknoElapcedTime <= 0)
+            {
+                confirmationAcknoElapcedTime = 0;
+                OnRematchDenied();
+            }
+        }
     }
 
     public void OnEvent(EventData photonEvent)
@@ -20,20 +52,31 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         switch(type)
         {
             case EventType.RematchConfirmation:
+                UIController.Instance.DisableAllScreen();
                 UIController.Instance.ToggleRematchScreen(true);
                 break;
 
             case EventType.RematchAccept:
-                UIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
-                SendRematchEvent();
+                if(isReadyToRematch)
+                {
+                    confirmationElapcedTime = 0;
+                    UIController.Instance.DisableAllScreen();
+                    UIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
+                    SendRematchEvent();
+                }
+                else
+                {
+                    SendRematchDeniedEvent();
+                }
                 break;
 
             case EventType.RematchDenied:
-                UIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
+                OnRematchDenied();
                 break;
 
             case EventType.Rematch:
-                GameManager.Instance.Rematch();
+                confirmationAcknoElapcedTime = 0;
+                StartCoroutine(GameManager.Instance.Rematch());
                 break;
         }
     }
@@ -49,6 +92,9 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void SendRematchConfirmationEvent()
     {
+        confirmationElapcedTime = rematchConfirmationWiatTime;
+        isReadyToRematch = true;
+
         PhotonNetwork.RaiseEvent(
             (byte)EventType.RematchConfirmation,
             null,
@@ -67,11 +113,19 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public void SendRematchAcceptEvent()
     {
+        confirmationAcknoElapcedTime = rematchConfirmationAcknoTime;
+
         PhotonNetwork.RaiseEvent(
             (byte)EventType.RematchAccept,
             null,
             new RaiseEventOptions { Receivers = ReceiverGroup.Others },
             SendOptions.SendReliable);
+    }
+
+    private void OnRematchDenied()
+    {
+        UIController.Instance.DisableAllScreen();
+        UIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
     }
 
     public override void OnLeftRoom()
@@ -82,7 +136,10 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        UIController.Instance.ToggleGameWinScreen(true);
+        if(UIController.Instance.CanOpenGameOverScreen())
+        {
+            UIController.Instance.ToggleGameWinScreen(true);
+        }
     }
 
     public override void OnDisable()

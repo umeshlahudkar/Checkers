@@ -134,7 +134,6 @@ public class MatchMakingManager : MonoBehaviour
 
     private IEnumerator HandleOnOpponentPlayerFound()
     {
-        
         canScroll = false;
         ResetScrollImages();
 
@@ -149,7 +148,7 @@ public class MatchMakingManager : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        LoadingScreenManager.Instance.ActivateLoadingScreen();
+        LoadingScreenManager.Instance.ActivateLoadingScreen("starting match");
 
         if (Photon.Pun.PhotonNetwork.IsMasterClient)
         {

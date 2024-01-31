@@ -494,6 +494,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 5186007475172544976, guid: 924e49de31b455544add4d929b8d0a63, type: 3}
   m_PrefabInstance: {fileID: 149418898}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &149418900 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5186007475172544979, guid: 924e49de31b455544add4d929b8d0a63, type: 3}
+  m_PrefabInstance: {fileID: 149418898}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &151160736
 GameObject:
   m_ObjectHideFlags: 0
@@ -1979,6 +1984,7 @@ MonoBehaviour:
   msgScreen: {fileID: 1177531253}
   msgText: {fileID: 335468923}
   msgHomeButton: {fileID: 204342433}
+  loadingBar: {fileID: 149418900}
   faderScreen: {fileID: 1604409232}
   coinDisplay: {fileID: 8985568280988952710}
   exitScreen: {fileID: 7575360944128152037}

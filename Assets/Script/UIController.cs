@@ -23,6 +23,7 @@ public class UIController : Singleton<UIController>
     [SerializeField] private GameObject msgScreen;
     [SerializeField] private TextMeshProUGUI msgText;
     [SerializeField] private GameObject msgHomeButton;
+    [SerializeField] private GameObject loadingBar;
 
     [Space(15)]
     [SerializeField] private GameObject faderScreen;
@@ -75,12 +76,6 @@ public class UIController : Singleton<UIController>
 
     public void ToggleRematchScreen(bool status)
     {
-        if(status)
-        {
-            ToggleGameWinScreen(false);
-            ToggleGameLoseScreen(false);
-        }
-
         faderScreen.SetActive(status);
         rematchScreen.SetActive(status);
     }
@@ -91,12 +86,12 @@ public class UIController : Singleton<UIController>
         msgScreen.SetActive(status);
         msgText.text = msg;
         msgHomeButton.SetActive(homeButtonStatus);
+        loadingBar.SetActive(!homeButtonStatus);
     }
 
     public void OnRematchButtonClick()
     {
-        ToggleGameLoseScreen(false);
-        ToggleGameWinScreen(false);
+        DisableAllScreen();
 
         ToggleMsgScreen(true, "waiting for opponent confirmation");
         eventManager.SendRematchConfirmationEvent();
@@ -104,29 +99,25 @@ public class UIController : Singleton<UIController>
 
     public void OnRematchYesButtonClick()
     {
-        ToggleGameLoseScreen(false);
-        ToggleGameWinScreen(false);
-
-        ToggleMsgScreen(false);
+        DisableAllScreen();
 
         eventManager.SendRematchAcceptEvent();
+
+        ToggleMsgScreen(true, "waiting for match restart");
     }
 
     public void OnRematchNoButtonClick()
     {
-        ToggleGameLoseScreen(false);
-        ToggleGameWinScreen(false);
-
-        ToggleMsgScreen(false);
+        DisableAllScreen();
 
         eventManager.SendRematchDeniedEvent();
 
         OnExitScreenYesButtonClick();
     }
 
-    public bool IsGameOverScreenActive()
+    public bool CanOpenGameOverScreen()
     {
-        return winScreen.activeSelf || loseScreen.activeSelf;
+        return !(winScreen.activeSelf || loseScreen.activeSelf || msgScreen.activeSelf);
     }
 
     public void OnExitScreenYesButtonClick()

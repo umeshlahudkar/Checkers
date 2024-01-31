@@ -22,13 +22,12 @@ public class GameManager : Singleton<GameManager>
 
     private void Start()
     {
-        StartCoroutine(InitializeGame());
+        InitializeGame();
     }
 
 
-    private IEnumerator InitializeGame()
+    private void InitializeGame()
     {
-        yield return new WaitForSeconds(2f);
         actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
 
         if (PhotonNetwork.IsMasterClient)
@@ -130,10 +129,12 @@ public class GameManager : Singleton<GameManager>
         UIController.Instance.DisableAllScreen();
     }
 
-    public void Rematch()
+    public IEnumerator Rematch()
     {
+        LoadingScreenManager.Instance.ActivateLoadingScreen("starting match");
         ResetGameplay();
-        StartCoroutine(InitializeGame());
+        yield return new WaitForSeconds(2f);
+        InitializeGame();
     }
 
 }
