@@ -31,6 +31,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         PhotonNetwork.AutomaticallySyncScene = true;
         lobbyUIController.SetProfile();
+        Debug.Log("Joined lobby");
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
@@ -69,6 +70,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         {
             StartCoroutine(CheckForPropertiesSet(newPlayer));
         }
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network");
+        lobbyUIController.ToggleMainMenuScreen(true);
     }
 
     private IEnumerator CheckForPropertiesSet(Player newPlayer)
@@ -113,6 +120,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if(PhotonNetwork.IsConnected)
         {
             PhotonNetwork.JoinRandomRoom();
+            LoadingScreenManager.Instance.ActivateLoadingScreen();
         }
     }
 

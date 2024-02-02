@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
@@ -141,6 +139,11 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
             UIController.Instance.ToggleGameWinScreen(true);
             UIController.Instance.StopPlayerHighlightAnim();
         }
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        SceneManager.LoadScene(0);
     }
 
     public override void OnDisable()

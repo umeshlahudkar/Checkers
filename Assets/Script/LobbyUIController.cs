@@ -40,6 +40,22 @@ public class LobbyUIController : MonoBehaviour
         LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network...");
     }
 
+    private void DisableAllScreen()
+    {
+        userNameInputScreen.SetActive(false);
+        avtarSelectionScreen.SetActive(false);
+        faderScreen.SetActive(false);
+        shopScreen.SetActive(false);
+        settingScreen.SetActive(false);
+        matchmakingScreen.SetActive(false);
+    }
+
+    public void ToggleMainMenuScreen(bool status)
+    {
+        DisableAllScreen();
+        mainMenuScreen.SetActive(status);
+    }
+
     public void SetProfile()
     {
         LoadingScreenManager.Instance.DeactivateLoadingScreen();
@@ -102,7 +118,6 @@ public class LobbyUIController : MonoBehaviour
         }
       
         networkManager.JoinRandomRoom();
-        LoadingScreenManager.Instance.ActivateLoadingScreen();
     }
 
     public void OnQuitButtonClick()
