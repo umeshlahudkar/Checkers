@@ -32,6 +32,9 @@ public class LobbyUIController : MonoBehaviour
     [SerializeField] private Button getButton;
     [SerializeField] private Transform shopScreenCoinImg;
 
+    [Header("Setting screen")]
+    [SerializeField] private GameObject settingScreen;
+
     private void Start()
     {
         LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network...");
@@ -75,6 +78,12 @@ public class LobbyUIController : MonoBehaviour
             mainMenuScreen.SetActive(false);
         }
         matchmakingScreen.SetActive(status);
+    }
+
+    private void ToggleSettingScreen(bool status)
+    {
+        faderScreen.SetActive(status);
+        settingScreen.SetActive(status);
     }
 
     public void OnPlayButtonClick()
@@ -167,5 +176,18 @@ public class LobbyUIController : MonoBehaviour
         AudioManager.Instance.PlayButtonClickSound();
         ToggleUserNameInputScreen(false);
     }
+
+    public void OnSettingButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleSettingScreen(true);
+    } 
+
+    public void OnSettingScreenCloseButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleSettingScreen(false);
+    }
+        
 
 }

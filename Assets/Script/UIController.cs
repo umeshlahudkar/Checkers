@@ -176,23 +176,33 @@ public class UIController : Singleton<UIController>
 
     public void OnRematchButtonClick()
     {
-        DisableAllScreen();
+        AudioManager.Instance.PlayButtonClickSound();
+        if(CoinManager.Instance.GetCoinAmount() >= 250)
+        {
+            DisableAllScreen();
 
-        ToggleMsgScreen(true, "waiting for opponent confirmation");
-        eventManager.SendRematchConfirmationEvent();
+            ToggleMsgScreen(true, "waiting for opponent confirmation");
+            eventManager.SendRematchConfirmationEvent();
+        }
     }
 
     public void OnRematchYesButtonClick()
     {
-        DisableAllScreen();
+        AudioManager.Instance.PlayButtonClickSound();
 
-        eventManager.SendRematchAcceptEvent();
+        if (CoinManager.Instance.GetCoinAmount() >= 250)
+        {
+            DisableAllScreen();
 
-        ToggleMsgScreen(true, "waiting for match restart");
+            eventManager.SendRematchAcceptEvent();
+
+            ToggleMsgScreen(true, "waiting for match restart");
+        }
     }
 
     public void OnRematchNoButtonClick()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         DisableAllScreen();
 
         eventManager.SendRematchDeniedEvent();
@@ -217,7 +227,20 @@ public class UIController : Singleton<UIController>
             PhotonNetwork.AutomaticallySyncScene = false;
             PhotonNetwork.LeaveRoom();
             ToggleExitScreen(false);
+            AudioManager.Instance.PlayButtonClickSound();
         }
+    }
+
+    public void OnPauseButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleExitScreen(true);
+    }
+
+    public void OnExitScreenCloseButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        ToggleExitScreen(false);
     }
 }
 
