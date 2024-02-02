@@ -3088,6 +3088,7 @@ MonoBehaviour:
   pieceHolderParent: {fileID: 0}
   blockHolderParent: {fileID: 0}
   boardBorder: {fileID: 0}
+  canvasRect: {fileID: 0}
 --- !u!1 &917614582
 GameObject:
   m_ObjectHideFlags: 0
@@ -3449,6 +3450,7 @@ MonoBehaviour:
   pieceHolderParent: {fileID: 1665746719}
   blockHolderParent: {fileID: 901666821}
   boardBorder: {fileID: 563798878}
+  canvasRect: {fileID: 392054791}
 --- !u!1 &1126123591
 GameObject:
   m_ObjectHideFlags: 0

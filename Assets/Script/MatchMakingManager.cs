@@ -23,7 +23,7 @@ public class MatchMakingManager : MonoBehaviour
     [Header("Coin Anim Prefab")]
     [SerializeField] private CoinAnimator coinAnimatorPrefab;
 
-    private readonly float speed = 500f; //1000
+    private readonly float speed = 1000f; //500
     Vector3 offset;
 
     private Vector3[] initialPos;
@@ -155,6 +155,8 @@ public class MatchMakingManager : MonoBehaviour
 
         if (Photon.Pun.PhotonNetwork.IsMasterClient)
         {
+            Photon.Pun.PhotonNetwork.CurrentRoom.IsOpen = false;
+            Photon.Pun.PhotonNetwork.CurrentRoom.IsVisible = false;
             Photon.Pun.PhotonNetwork.LoadLevel(1);
         }
     }

@@ -27,11 +27,18 @@ public class BoardGenerator : MonoBehaviour
     [Header("Piece Holder")]
     [SerializeField] private RectTransform boardBorder;
 
+    [Header("Board Canvas")]
+    [SerializeField] private RectTransform canvasRect;
 
     public void GenerateBoard()
     {
         blockHolderParent.localPosition = Vector3.zero;
         pieceHolderParent.localPosition = Vector3.zero;
+
+        float screenWidth = canvasRect.rect.width;
+        float totalWidth = screenWidth * 0.75f;
+
+        blockSize = (totalWidth / 8);
 
         float startX = -((blockSize * colums) / 2  + (blockSize/2));
         float startY = ((blockSize * rows) / 2)  - (blockSize / 2);
@@ -54,25 +61,6 @@ public class BoardGenerator : MonoBehaviour
                 }
                 else
                 {
-                    /*
-                    Piece piece = null;
-                    if (i < 3)
-                    {
-                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetBlock(i, j, PieceType.White, whitePieceSprite);
-                        GameplayController.instance.whitePieces.Add(piece);
-                    }
-
-                    if (i > 4)
-                    {
-                        piece = Instantiate(piecePrefab, block.transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetBlock(i, j, PieceType.Black, blackPieceSprite);
-                        GameplayController.instance.blackPieces.Add(piece);
-                    }
-
-                   
-                    block.SetBlock(i, j, blackBlockSprite, piece == null ? false : true, piece);
-                    */
                     block.SetBlock(i, j, blackBlockSprite);
                 }
 
