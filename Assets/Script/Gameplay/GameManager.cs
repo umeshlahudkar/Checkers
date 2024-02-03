@@ -2,12 +2,12 @@ using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 
-
 public class GameManager : Singleton<GameManager>
 {
     [SerializeField] private GameDataSO gameDataSO;
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
+    [SerializeField] private GameplayTimer timer;
 
     private PieceType pieceType;
     private int currentTurn;
@@ -23,7 +23,6 @@ public class GameManager : Singleton<GameManager>
     {
         InitializeGame();
     }
-
 
     private void InitializeGame()
     {
@@ -66,6 +65,7 @@ public class GameManager : Singleton<GameManager>
     public void ChangeTurn(int nextTurn)
     {
         currentTurn = nextTurn;
+        timer.ResetTimer();
         UIController.Instance.PlayHighlightAnimation(currentTurn);
 
         if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))

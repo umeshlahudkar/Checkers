@@ -5,6 +5,7 @@ public class AudioManager : Singleton<AudioManager>
     [SerializeField] private AudioSource bgAudioSource;
     [SerializeField] private AudioSource sfxAudioSource;
     [SerializeField] private AudioSource pieceKillAudioSource;
+    [SerializeField] private AudioSource timeTickingAudioSource;
 
     [SerializeField] private AudioClip buttonClickClip;
     [SerializeField] private AudioClip pieceKilledClip;
@@ -31,10 +32,12 @@ public class AudioManager : Singleton<AudioManager>
         bgAudioSource.mute = isBgMute;
         sfxAudioSource.mute = isSfxMute;
         pieceKillAudioSource.mute = isSfxMute;
+        timeTickingAudioSource.mute = isSfxMute;
 
         bgAudioSource.volume = bgVolume;
         sfxAudioSource.volume = sfxVolume;
         pieceKillAudioSource.volume = sfxVolume;
+        timeTickingAudioSource.volume = sfxVolume;
     }
 
     public void ToggleBgMusicMute()
@@ -48,6 +51,7 @@ public class AudioManager : Singleton<AudioManager>
         isSfxMute = !isSfxMute;
         sfxAudioSource.mute = isSfxMute;
         pieceKillAudioSource.mute = isSfxMute;
+        timeTickingAudioSource.mute = isSfxMute;
     }
 
     public void UpdateBgVolume(float volume)
@@ -63,6 +67,7 @@ public class AudioManager : Singleton<AudioManager>
         sfxVolume = Mathf.Clamp(sfxVolume, 0, 1);
         sfxAudioSource.volume = sfxVolume;
         pieceKillAudioSource.volume = sfxVolume;
+        timeTickingAudioSource.volume = sfxVolume;
     }
 
     public void PlayButtonClickSound()
@@ -130,6 +135,20 @@ public class AudioManager : Singleton<AudioManager>
             sfxAudioSource.clip = crownKingClip;
             sfxAudioSource.Play();
         }
+    }
+
+    public void PlayTimeTickingSound()
+    {
+        if (!isSfxMute)
+        {
+            timeTickingAudioSource.Stop();
+            timeTickingAudioSource.Play();
+        }
+    }
+
+    public void StopTimeTickingSound()
+    {
+        timeTickingAudioSource.Stop();
     }
 }
 
