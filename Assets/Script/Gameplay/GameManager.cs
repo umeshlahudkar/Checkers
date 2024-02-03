@@ -15,13 +15,12 @@ public class GameManager : Singleton<GameManager>
 
     private GameState gameState = GameState.Waiting;
 
-    private int turnMissCount = 0;
+    [SerializeField] private int turnMissCount = 0;
     private readonly int maxTurnMissCount = 3;
 
     public GameState GameState 
     { 
         get { return gameState; }
-        set { gameState = value; }
     }
 
     public int ActorNumber { get { return actorNumber; } }
@@ -62,7 +61,6 @@ public class GameManager : Singleton<GameManager>
 
         if (PhotonNetwork.IsMasterClient)
         {
-            //GameplayController.Instance.OnBoardReady();
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
@@ -72,8 +70,16 @@ public class GameManager : Singleton<GameManager>
 
     public void UpdateTurnMissCount()
     {
-        turnMissCount++;
-        if(turnMissCount >= maxTurnMissCount)
+        if(currentTurn == actorNumber)
+        {
+            turnMissCount++;
+            CheckForMissTurnExceed();
+        }
+    }
+
+    private void CheckForMissTurnExceed()
+    {
+        if (turnMissCount >= maxTurnMissCount)
         {
             turnMissCount = 0;
             PieceType winner = pieceType == PieceType.White ? PieceType.Black : PieceType.White;
@@ -113,9 +119,6 @@ public class GameManager : Singleton<GameManager>
     [PunRPC]
     public void GameOver(int winner)
     {
-        gameState = GameState.Ending;
-        AudioManager.Instance.StopTimeTickingSound();
-
         PieceType winnerPieceType = (PieceType)winner;
 
         if(winnerPieceType == pieceType)
@@ -127,6 +130,13 @@ public class GameManager : Singleton<GameManager>
             UIController.Instance.ToggleGameLoseScreen(true);
         }
 
+        SetGameOver();
+    }
+
+    public void SetGameOver()
+    {
+        gameState = GameState.Ending;
+        AudioManager.Instance.StopTimeTickingSound();
         UIController.Instance.StopPlayerHighlightAnim();
     }
 
