@@ -40,6 +40,7 @@ public class Piece : MonoBehaviour
 
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
         //thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
+        thisTransform.position = GameplayController.Instance.board[row, colum].ThisTransform.position;
         thisTransform.sizeDelta = GameplayController.Instance.board[row, colum].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
