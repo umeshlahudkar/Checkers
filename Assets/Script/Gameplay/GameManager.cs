@@ -13,11 +13,25 @@ public class GameManager : Singleton<GameManager>
     private int currentTurn;
     private int actorNumber;
 
+    private GameState gameState = GameState.Waiting;
+
+    private int turnMissCount = 0;
+    private readonly int maxTurnMissCount = 3;
+
+    public GameState GameState 
+    { 
+        get { return gameState; }
+        set { gameState = value; }
+    }
+
     public int ActorNumber { get { return actorNumber; } }
 
     public int CurrentTurn { get { return currentTurn; } }
 
     public PieceType PieceType { get { return pieceType; } }
+
+    public int TurnMissCount { get { return turnMissCount; } }
+    public int MaxTurnMissCount { get { return maxTurnMissCount; } }
 
     private void Start()
     {
@@ -52,7 +66,28 @@ public class GameManager : Singleton<GameManager>
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
+        gameState = GameState.Playing;
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+    }
+
+    public void UpdateTurnMissCount()
+    {
+        turnMissCount++;
+        if(turnMissCount >= maxTurnMissCount)
+        {
+            turnMissCount = 0;
+            PieceType winner = pieceType == PieceType.White ? PieceType.Black : PieceType.White;
+            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, (int)winner);
+        }
+        else
+        {
+            SwitchTurn();
+        }
+    }
+
+    public void ResetTurnMissCount()
+    {
+        turnMissCount = 0;
     }
 
     public void SwitchTurn()
@@ -78,7 +113,11 @@ public class GameManager : Singleton<GameManager>
     [PunRPC]
     public void GameOver(int winner)
     {
+        gameState = GameState.Ending;
+        AudioManager.Instance.StopTimeTickingSound();
+
         PieceType winnerPieceType = (PieceType)winner;
+
         if(winnerPieceType == pieceType)
         {
             UIController.Instance.ToggleGameWinScreen(true);
@@ -96,6 +135,8 @@ public class GameManager : Singleton<GameManager>
         pieceType = PieceType.None;
         currentTurn = -1;
         actorNumber = -1;
+        turnMissCount = 0;
+        gameState = GameState.Waiting;
     }
 
     private void ResetGameplay()
@@ -116,5 +157,11 @@ public class GameManager : Singleton<GameManager>
         yield return new WaitForSeconds(2f);
         InitializeGame();
     }
+}
 
+public enum GameState
+{
+    Waiting,
+    Playing,
+    Ending
 }

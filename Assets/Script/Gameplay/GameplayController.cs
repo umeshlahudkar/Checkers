@@ -202,6 +202,7 @@ public class GameplayController : Singleton<GameplayController>
 
     public IEnumerator HandlePieceMovement(Block block)
     {
+        GameManager.Instance.ResetTurnMissCount();
         ResetHighlightedBlocks();
 
         bool hasDeleted = false;
@@ -229,8 +230,8 @@ public class GameplayController : Singleton<GameplayController>
 
         UIController.Instance.StopPlayerHighlightAnim();
 
-        if ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
-            (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0))
+        if (!selectedPiece.IsCrownedKing && ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
+            (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0)))
         {
             selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
         }

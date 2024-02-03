@@ -10,9 +10,9 @@ public class GameplayTimer : MonoBehaviour
     [SerializeField] private Color normalColor;
     [SerializeField] private Color timeUpColor;
 
-    private readonly float turnTime = 10f;
+    private readonly float turnTime = 20f;
     private float currentTime = 0f;
-    private bool hasTimeEndColorSet;
+    private bool hasTimeEndColorSet = false;
 
     public void ResetTimer()
     {
@@ -25,14 +25,14 @@ public class GameplayTimer : MonoBehaviour
 
     private void Update()
     {
-        if (currentTime > 0)
+        if (currentTime > 0 && GameManager.Instance.GameState == GameState.Playing)
         {
             currentTime -= Time.deltaTime;
             if (currentTime <= 0)
             {
                 currentTime = 0;
                 AudioManager.Instance.StopTimeTickingSound();
-                GameManager.Instance.SwitchTurn();
+                GameManager.Instance.UpdateTurnMissCount();
             }
 
             timerText.text = ((int)currentTime).ToString();

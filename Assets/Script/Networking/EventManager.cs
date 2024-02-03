@@ -136,6 +136,8 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         if(UIController.Instance.CanOpenGameOverScreen())
         {
+            AudioManager.Instance.StopTimeTickingSound();
+            GameManager.Instance.GameState = GameState.Ending;
             UIController.Instance.ToggleGameWinScreen(true);
             UIController.Instance.StopPlayerHighlightAnim();
         }
