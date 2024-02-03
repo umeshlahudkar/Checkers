@@ -92,29 +92,6 @@ public class GameManager : Singleton<GameManager>
         UIController.Instance.StopPlayerHighlightAnim();
     }
 
-
-    public void UpdateGrid(int row, int col, Piece piece)
-    {
-        int viewId = -1;
-        if(piece != null)
-        {
-            viewId = piece.GetComponent<PhotonView>().ViewID;
-        }
-        gameManagerPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, row, col, viewId);
-    }
-
-    [PunRPC]
-    public void UpdateGrid(int row, int col, int viewId)
-    {
-        Piece piece = null;
-        if(viewId != -1)
-        {
-            piece = PhotonView.Find(viewId).GetComponent<Piece>();
-            AudioManager.Instance.PlayPieceMoveSound();
-        }
-        GameplayController.Instance.board[row, col].SetBlockPiece((viewId != -1), piece);
-    }
-
     private void ResetGameManager()
     {
         pieceType = PieceType.None;

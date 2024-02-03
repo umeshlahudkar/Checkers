@@ -218,13 +218,14 @@ public class GameplayController : Singleton<GameplayController>
             piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
             hasDeleted = true;
         }
-       
-        GameManager.Instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
-        GameManager.Instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+
+        //UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
+        UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
         //selectedPiece.transform.position = block.transform.position;
-        //AudioManager.Instance.PlayPieceMoveSound();
-        yield return StartCoroutine(MovePiece(selectedPiece.transform, block.transform.position));
+        //yield return StartCoroutine(MovePiece(selectedPiece.transform, block.transform.position));
+
+        yield return new WaitForSeconds(0.25f);
 
         UIController.Instance.StopPlayerHighlightAnim();
 
@@ -246,6 +247,31 @@ public class GameplayController : Singleton<GameplayController>
         }
     }
 
+    public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
+    {
+        int viewId = -1;
+        if (pieceToMove != null)
+        {
+            viewId = pieceToMove.GetComponent<PhotonView>().ViewID;
+        }
+        thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, viewId);
+    }
+
+    [PunRPC]
+    public void UpdateGrid(int targetRow, int targetCol, int viewId)
+    {
+        Piece piece = null;
+        if (viewId != -1)
+        {
+            piece = PhotonView.Find(viewId).GetComponent<Piece>();
+            board[piece.Row_ID, piece.Coloum_ID].SetBlockPiece(false, null);
+
+            StartCoroutine(MovePiece(piece.transform, board[targetRow, targetCol].transform.position));
+            AudioManager.Instance.PlayPieceMoveSound();
+        }
+        board[targetRow, targetCol].SetBlockPiece((viewId != -1), piece);
+    }
+
     private IEnumerator MovePiece(Transform pieceToMove, Vector3 targetPos)
     {
         float time = 0.25f;
@@ -260,7 +286,6 @@ public class GameplayController : Singleton<GameplayController>
             pieceToMove.position = pos;
             yield return null;
         }
-
         pieceToMove.position = targetPos;
     }
 
