@@ -1,8 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
-using Photon.Realtime;
+
 
 public class GameManager : Singleton<GameManager>
 {
@@ -112,7 +111,7 @@ public class GameManager : Singleton<GameManager>
 
     public IEnumerator Rematch()
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("starting match");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting match");
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();

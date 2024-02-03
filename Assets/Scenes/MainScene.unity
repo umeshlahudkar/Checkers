@@ -6709,6 +6709,7 @@ MonoBehaviour:
   pieceMoveClip: {fileID: 8300000, guid: b615063de0f2ea34094bb50979941153, type: 3}
   coinClip: {fileID: 8300000, guid: ba7f962b43d9b17499b7e3c9230d2358, type: 3}
   scrollingMatchmakingClip: {fileID: 8300000, guid: d290ff2e0f513224ab213bc1f0c37a65, type: 3}
+  crownKingClip: {fileID: 8300000, guid: ffb34ee9797fd214cbb335698fc0ddf3, type: 3}
 --- !u!4 &666345487
 Transform:
   m_ObjectHideFlags: 0

@@ -13,6 +13,7 @@ public class AudioManager : Singleton<AudioManager>
     [SerializeField] private AudioClip pieceMoveClip;
     [SerializeField] private AudioClip coinClip;
     [SerializeField] private AudioClip scrollingMatchmakingClip;
+    [SerializeField] private AudioClip crownKingClip;
 
     private float bgVolume = 0.5f;
     private float sfxVolume = 0.5f;
@@ -112,7 +113,6 @@ public class AudioManager : Singleton<AudioManager>
             pieceKillAudioSource.Play();
         }
     }
-        
 
     public void PlayCoinSound()
     {
@@ -120,6 +120,16 @@ public class AudioManager : Singleton<AudioManager>
         {
             sfxAudioSource.Stop();
             sfxAudioSource.clip = coinClip;
+            sfxAudioSource.Play();
+        }
+    }
+
+    public void PlayCrownKingSound()
+    {
+        if (!isSfxMute)
+        {
+            sfxAudioSource.Stop();
+            sfxAudioSource.clip = crownKingClip;
             sfxAudioSource.Play();
         }
     }
