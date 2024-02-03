@@ -177,9 +177,12 @@ public class UIController : Singleton<UIController>
         if(CoinManager.Instance.GetCoinAmount() >= 250)
         {
             DisableAllScreen();
-
             ToggleMsgScreen(true, "waiting for opponent confirmation");
             eventManager.SendRematchConfirmationEvent();
+        }
+        else
+        {
+            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
         }
     }
 
