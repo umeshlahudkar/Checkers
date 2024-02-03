@@ -497,7 +497,7 @@ GameObject:
   - component: {fileID: 29541550}
   - component: {fileID: 29541549}
   m_Layer: 5
-  m_Name: SoundOnOffButton
+  m_Name: SoundToggleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -567,9 +567,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 537630332}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnSoundToggleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1684,9 +1684,8 @@ GameObject:
   - component: {fileID: 153267602}
   - component: {fileID: 153267604}
   - component: {fileID: 153267603}
-  - component: {fileID: 153267605}
   m_Layer: 5
-  m_Name: BgSound
+  m_Name: MusicSetting (Bg)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1755,23 +1754,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 153267601}
   m_CullTransparentMesh: 1
---- !u!114 &153267605
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 153267601}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa1e5120ec9019746978412792a7ed95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  musicOn: {fileID: -663011761, guid: 156ec492e516ccb4099add479601d65e, type: 3}
-  musicOff: {fileID: 53940023, guid: 156ec492e516ccb4099add479601d65e, type: 3}
-  musicOnOffButtonImg: {fileID: 1387993430}
-  volumeSlider: {fileID: 212486868}
-  soundType: 1
 --- !u!1 &171813900
 GameObject:
   m_ObjectHideFlags: 0
@@ -1811,7 +1793,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.23988888, y: 0.26987502}
   m_AnchorMax: {x: 0.74277776, y: 0.3824792}
-  m_AnchoredPosition: {x: -0.02166748, y: 0.46655273}
+  m_AnchoredPosition: {x: -0.021728516, y: 0.46655273}
   m_SizeDelta: {x: -3.0406036, y: -2.955101}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &171813902
@@ -3222,7 +3204,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.28174073, y: 0.273}
   m_AnchorMax: {x: 0.7036297, y: 0.35860416}
-  m_AnchoredPosition: {x: 3.282837, y: -1.0557861}
+  m_AnchoredPosition: {x: 3.282837, y: -1.0559082}
   m_SizeDelta: {x: -6, y: 6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &326887984
@@ -5283,9 +5265,8 @@ GameObject:
   - component: {fileID: 537630329}
   - component: {fileID: 537630331}
   - component: {fileID: 537630330}
-  - component: {fileID: 537630332}
   m_Layer: 5
-  m_Name: SFXSound
+  m_Name: SoundSetting (SFX)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5354,23 +5335,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 537630328}
   m_CullTransparentMesh: 1
---- !u!114 &537630332
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537630328}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa1e5120ec9019746978412792a7ed95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  musicOn: {fileID: -213356348, guid: 156ec492e516ccb4099add479601d65e, type: 3}
-  musicOff: {fileID: 1897002124, guid: 156ec492e516ccb4099add479601d65e, type: 3}
-  musicOnOffButtonImg: {fileID: 29541550}
-  volumeSlider: {fileID: 695711862}
-  soundType: 0
 --- !u!1 &551051516
 GameObject:
   m_ObjectHideFlags: 0
@@ -5833,9 +5797,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 153267605}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicUpButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnMusicVolumeUpButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6869,7 +6833,7 @@ GameObject:
   - component: {fileID: 695711861}
   - component: {fileID: 695711862}
   m_Layer: 5
-  m_Name: MusicVolumeSlider
+  m_Name: SoundVolumeSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8627,9 +8591,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 153267605}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicDownButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnMusicVolumeDownButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -9313,6 +9277,7 @@ GameObject:
   - component: {fileID: 970456267}
   - component: {fileID: 970456269}
   - component: {fileID: 970456268}
+  - component: {fileID: 970456270}
   m_Layer: 5
   m_Name: SettingScreen
   m_TagString: Untagged
@@ -9382,6 +9347,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 970456266}
   m_CullTransparentMesh: 1
+--- !u!114 &970456270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 970456266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 856e87152cd54bb4398743e0b3990e3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  musicOnSprite: {fileID: -663011761, guid: 156ec492e516ccb4099add479601d65e, type: 3}
+  musicOffSprite: {fileID: 53940023, guid: 156ec492e516ccb4099add479601d65e, type: 3}
+  musicOnOffButtonImg: {fileID: 1387993430}
+  musicVolumeSlider: {fileID: 212486868}
+  soundOnSprite: {fileID: -213356348, guid: 156ec492e516ccb4099add479601d65e, type: 3}
+  soundOffSprite: {fileID: 1897002124, guid: 156ec492e516ccb4099add479601d65e, type: 3}
+  soundOnOffButtonImg: {fileID: 29541550}
+  soundVolumeSlider: {fileID: 695711862}
 --- !u!1 &971951783
 GameObject:
   m_ObjectHideFlags: 0
@@ -12216,7 +12201,7 @@ GameObject:
   - component: {fileID: 1387993430}
   - component: {fileID: 1387993429}
   m_Layer: 5
-  m_Name: MusicOnOffButton
+  m_Name: MusicToggleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12286,9 +12271,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 153267605}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnMusicToggleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -12495,9 +12480,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 537630332}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicDownButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnSoundVolumeDownButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -12962,7 +12947,7 @@ GameObject:
   - component: {fileID: 1462901055}
   - component: {fileID: 1462901054}
   m_Layer: 5
-  m_Name: MusicLable
+  m_Name: SoundLable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16204,9 +16189,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 537630332}
-        m_TargetAssemblyTypeName: SoundInputController, Assembly-CSharp
-        m_MethodName: OnMusicUpButtonClick
+      - m_Target: {fileID: 970456270}
+        m_TargetAssemblyTypeName: SettingScreen, Assembly-CSharp
+        m_MethodName: OnSoundVolumeUpButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
