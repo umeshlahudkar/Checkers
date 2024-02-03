@@ -13,7 +13,6 @@ public class LobbyUIController : MonoBehaviour
     [Header("Profile screen")]
     [SerializeField] private GameObject userNameInputScreen;
     [SerializeField] private GameObject avtarSelectionScreen;
-    [SerializeField] private TMP_InputField usernameInputField;
 
     [Header("Fader screen")]
     [SerializeField] private GameObject faderScreen;
@@ -25,19 +24,14 @@ public class LobbyUIController : MonoBehaviour
     [SerializeField] private NetworkManager networkManager;
 
     [Header("Avtar Controller")]
-    [SerializeField] private AvtarController avtarController;
-
-    [Header("Shop screen")]
-    [SerializeField] private GameObject shopScreen;
-    [SerializeField] private Button getButton;
-    [SerializeField] private Transform shopScreenCoinImg;
+    [SerializeField] private AvtarSelectionScreen avtarController;
 
     [Header("Setting screen")]
     [SerializeField] private GameObject settingScreen;
 
     private void Start()
     {
-        LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network...");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
     }
 
     private void DisableAllScreen()
@@ -45,7 +39,6 @@ public class LobbyUIController : MonoBehaviour
         userNameInputScreen.SetActive(false);
         avtarSelectionScreen.SetActive(false);
         faderScreen.SetActive(false);
-        shopScreen.SetActive(false);
         settingScreen.SetActive(false);
         matchmakingScreen.SetActive(false);
     }
@@ -58,7 +51,7 @@ public class LobbyUIController : MonoBehaviour
 
     public void SetProfile()
     {
-        LoadingScreenManager.Instance.DeactivateLoadingScreen();
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         if (!ProfileManager.Instance.HasUserNameSet)
         {
             ToggleUserNameInputScreen(true);
@@ -81,12 +74,6 @@ public class LobbyUIController : MonoBehaviour
         avtarSelectionScreen.SetActive(status);
     }
 
-    private void ToggleShopScreen(bool status)
-    {
-        faderScreen.SetActive(status);
-        shopScreen.SetActive(status);
-    }
-
     public void ToggleMatchmakingScreen(bool status)
     {
         if (status == true)
@@ -94,12 +81,6 @@ public class LobbyUIController : MonoBehaviour
             mainMenuScreen.SetActive(false);
         }
         matchmakingScreen.SetActive(status);
-    }
-
-    private void ToggleSettingScreen(bool status)
-    {
-        faderScreen.SetActive(status);
-        settingScreen.SetActive(status);
     }
 
     public void OnPlayButtonClick()
@@ -113,7 +94,7 @@ public class LobbyUIController : MonoBehaviour
 
         if(CoinManager.Instance.GetCoinAmount() < 250)
         {
-            ToggleShopScreen(true);
+            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
             return;
         }
       
@@ -126,58 +107,10 @@ public class LobbyUIController : MonoBehaviour
         Application.Quit();
     }
 
-    public void OnUsernameSaveButtonClick()
-    {
-        string username = usernameInputField.text;
-        if (!string.IsNullOrEmpty(username))
-        {
-            mainMenuScreen.SetActive(true);
-
-            faderScreen.SetActive(false);
-            userNameInputScreen.SetActive(false);
-
-            networkManager.SetUserName(username);
-            ProfileManager.Instance.SetUserName(username);
-
-            SetProfile();
-
-            AudioManager.Instance.PlayButtonClickSound();
-        }
-    }
-
-    public void OnAvtarSaveButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        avtarController.SaveAvtar();
-        ToggleAvtarSelectionScreen(false);
-
-        SetProfile();
-    }
-
-    public void OnShopScreenGetButtonClick(int coinAmount)
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        getButton.interactable = false;
-        CoinManager.Instance.AddCoin(coinAmount, shopScreenCoinImg);
-    }
-
-    public void OnShopScreenCloseButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        getButton.interactable = true;
-        ToggleShopScreen(false);
-    }
-
     public void OnAvtarButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
         ToggleAvtarSelectionScreen(true);
-    }
-
-    public void OnAvtarCloseButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        ToggleAvtarSelectionScreen(false);
     }
 
     public void OnUsernameClick()
@@ -186,23 +119,10 @@ public class LobbyUIController : MonoBehaviour
         ToggleUserNameInputScreen(true);
     }
 
-    public void OnUsernameCloseClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        ToggleUserNameInputScreen(false);
-    }
-
     public void OnSettingButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        ToggleSettingScreen(true);
+        faderScreen.SetActive(true);
+        settingScreen.SetActive(true);
     } 
-
-    public void OnSettingScreenCloseButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        ToggleSettingScreen(false);
-    }
-        
-
 }

@@ -1,10 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Photon.Pun;
 
-public class MatchMakingManager : MonoBehaviour
+public class MatchMakingController : MonoBehaviour
 {
     [Header("Player 1 info")]
     [SerializeField] private TextMeshProUGUI ownPlayer_nametext;
@@ -151,13 +151,13 @@ public class MatchMakingManager : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        LoadingScreenManager.Instance.ActivateLoadingScreen("starting match");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting match");
 
-        if (Photon.Pun.PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient)
         {
-            Photon.Pun.PhotonNetwork.CurrentRoom.IsOpen = false;
-            Photon.Pun.PhotonNetwork.CurrentRoom.IsVisible = false;
-            Photon.Pun.PhotonNetwork.LoadLevel(1);
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.CurrentRoom.IsVisible = false;
+            PhotonNetwork.LoadLevel(1);
         }
     }
 

@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class LoadingScreenManager : Singleton<LoadingScreenManager>
+public class LoadingScreen : MonoBehaviour
 {
-    [SerializeField] private GameObject loadingScreen;
     [SerializeField] private GameObject faderScreen;
-    [SerializeField] private GameObject BgScreen;
+    [SerializeField] private GameObject Bg;
     [SerializeField] private TextMeshProUGUI msgText;
 
     public void ActivateLoadingScreen(string msgToShow = "Loading...")
@@ -23,8 +20,8 @@ public class LoadingScreenManager : Singleton<LoadingScreenManager>
 
     private void ToggleLoadingScreen(bool status)
     {
-        loadingScreen.SetActive(status);
+        gameObject.SetActive(status);
         faderScreen.SetActive(status);
-        BgScreen.SetActive(status);
+        Bg.SetActive(status);
     }
 }

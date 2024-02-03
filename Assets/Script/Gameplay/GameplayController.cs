@@ -5,6 +5,8 @@ using Photon.Pun;
 
 public class GameplayController : Singleton<GameplayController>
 {
+    [SerializeField] private PhotonView thisPhotonView;
+
     public Block[,] board = new Block[8, 8];
     public List<Piece> whitePieces = new List<Piece>();
     public List<Piece> blackPieces = new List<Piece>();
@@ -12,7 +14,6 @@ public class GameplayController : Singleton<GameplayController>
     [SerializeField] private List<Block> highlightedBlocks = new List<Block>();
 
     public Piece selectedPiece;
-
 
     public void OnBoardReady()
     {
@@ -219,8 +220,6 @@ public class GameplayController : Singleton<GameplayController>
         }
        
         GameManager.Instance.UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
-
-      
         GameManager.Instance.UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
         //selectedPiece.transform.position = block.transform.position;

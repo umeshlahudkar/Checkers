@@ -54,7 +54,7 @@ public class GameManager : Singleton<GameManager>
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
-        LoadingScreenManager.Instance.DeactivateLoadingScreen();
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
 
     public void SwitchTurn()
@@ -135,7 +135,7 @@ public class GameManager : Singleton<GameManager>
 
     public IEnumerator Rematch()
     {
-        LoadingScreenManager.Instance.ActivateLoadingScreen("starting match");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("starting match");
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();

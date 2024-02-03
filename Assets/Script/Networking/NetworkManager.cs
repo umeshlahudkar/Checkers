@@ -9,9 +9,8 @@ using TMPro;
 
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
-    public static bool hasUsernameSet = false;
     public LobbyUIController lobbyUIController;
-    public MatchMakingManager matchMakingManager;
+    public MatchMakingController matchMakingManager;
     public GameDataSO gameDataSO;
 
     private void Start()
@@ -31,7 +30,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     {
         PhotonNetwork.AutomaticallySyncScene = true;
         lobbyUIController.SetProfile();
-        Debug.Log("Joined lobby");
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
@@ -44,12 +42,14 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
+        PhotonNetwork.NickName = ProfileManager.Instance.GetUserName();
+
         ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
         hashtable["ProfileIndex"] = ProfileManager.Instance.GetProfileAvtarIndex();
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
-        LoadingScreenManager.Instance.DeactivateLoadingScreen();
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         lobbyUIController.ToggleMatchmakingScreen(true);
 
         if(!PhotonNetwork.IsMasterClient)
@@ -74,7 +74,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        LoadingScreenManager.Instance.ActivateLoadingScreen("Connecting to network");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
         lobbyUIController.ToggleMainMenuScreen(true);
     }
 
@@ -105,22 +105,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
     }
 
-
-    public void SetUserName(string username)
-    {
-        if(PhotonNetwork.IsConnected)
-        {
-            PhotonNetwork.NickName = username;
-            hasUsernameSet = true;
-        }
-    }
-
     public void JoinRandomRoom()
     {
         if(PhotonNetwork.IsConnected)
         {
             PhotonNetwork.JoinRandomRoom();
-            LoadingScreenManager.Instance.ActivateLoadingScreen();
+            PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
         }
     }
 

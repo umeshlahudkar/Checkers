@@ -42,7 +42,7 @@ public class CoinDisplay : MonoBehaviour
         if (target != null)
         {
             CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
-                            target.position, Quaternion.identity, LoadingScreenManager.Instance.transform);
+                            target.position, Quaternion.identity, PersistentUI.Instance.transform);
             yield return StartCoroutine(anim.PlayAnimation(coinImgTran));
         }
 
@@ -68,7 +68,7 @@ public class CoinDisplay : MonoBehaviour
         if (target != null)
         {
             CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
-                          coinImgTran.position, Quaternion.identity, LoadingScreenManager.Instance.transform);
+                          coinImgTran.position, Quaternion.identity, PersistentUI.Instance.transform);
             StartCoroutine(anim.PlayAnimation(target));
         }
 

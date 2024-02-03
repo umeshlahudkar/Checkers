@@ -7,9 +7,9 @@ public class AvtarSelectionButton : MonoBehaviour
     [SerializeField] private Image buttonAvtarImg;
     [SerializeField] private Image avtarBgImg;
 
-    private AvtarController avtarController;
+    private AvtarSelectionScreen avtarController;
 
-    public void SetButton(int index, Sprite avtarSprite, Color bgColor, AvtarController controller)
+    public void SetButton(int index, Sprite avtarSprite, Color bgColor, AvtarSelectionScreen controller)
     {
         avtarIndex = index;
         buttonAvtarImg.sprite = avtarSprite;
@@ -20,7 +20,7 @@ public class AvtarSelectionButton : MonoBehaviour
     public void OnClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        avtarController.OnAvtarButtonClick(avtarIndex);
+        avtarController.HighlightSelectedAvtar(avtarIndex);
     }
 
     public void SetAvtarBgColor(Color color)

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,6 +22,9 @@ public class SettingScreen : MonoBehaviour
 
     private float soundVolume;
     private bool isSoundMute;
+
+    [Header("Fader")]
+    [SerializeField] private GameObject faderScreen;
 
     private void OnEnable()
     {
@@ -118,5 +119,12 @@ public class SettingScreen : MonoBehaviour
             soundVolumeSlider.value = soundVolume;
             AudioManager.Instance.UpdateSFXVolume(soundVolume);
         }
+    }
+
+    public void OnCloseButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        faderScreen.SetActive(false);
+        gameObject.SetActive(false);
     }
 }
