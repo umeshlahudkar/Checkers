@@ -16,7 +16,7 @@ public class CoinAnimator : MonoBehaviour
 
         for (int i = 0; i < coinMovers.Length; i++)
         {
-            coinMovers[i].SetTarget(target.position, true, this);
+            coinMovers[i].SetTarget(target.position, true, this, 0.5f);
         }
 
         yield return StartCoroutine(HasAllReachedToTarget());
@@ -31,7 +31,7 @@ public class CoinAnimator : MonoBehaviour
             Vector2 randomDirection = Random.insideUnitCircle.normalized * Random.Range(radius/2, radius);
             Vector2 targetPosition = (Vector2)transform.position + randomDirection;
 
-            coinMovers[i].SetTarget(targetPosition, false, this);
+            coinMovers[i].SetTarget(targetPosition, false, this, 0.15f);
         }
     }
 

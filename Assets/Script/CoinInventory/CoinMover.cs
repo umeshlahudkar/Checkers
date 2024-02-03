@@ -14,7 +14,7 @@ public class CoinMover : MonoBehaviour
     private Vector2 dir;
     private CoinAnimator coinAnimation;
 
-    public void SetTarget(Vector2 targetPos, bool canDisableAtTarget, CoinAnimator coinAnimation)
+    public void SetTarget(Vector2 targetPos, bool canDisableAtTarget, CoinAnimator coinAnimation, float timeToMove)
     {
         target = targetPos;
         canMove = true;
@@ -22,13 +22,36 @@ public class CoinMover : MonoBehaviour
         this.coinAnimation = coinAnimation;
 
         dir = (target - (Vector2)thisTransform.position).normalized;
+
+        StartCoroutine(Move(thisTransform.position, targetPos, timeToMove));
     }
 
+    private IEnumerator Move(Vector2 initialPos, Vector2 targetPos, float timeToMove)
+    {
+        float elapcedTime = 0;
+
+        while(elapcedTime < timeToMove)
+        {
+            elapcedTime += Time.deltaTime;
+            thisTransform.position = Vector2.Lerp(initialPos, targetPos, elapcedTime/ timeToMove);
+            yield return null;
+        }
+
+        thisTransform.position = targetPos;
+        if (canDisableAtTarget)
+        {
+            this.transform.localPosition = Vector2.zero;
+            gameObject.SetActive(false);
+            coinAnimation.IncrementReachedToTarget();
+        }
+    }
+
+    /*
     private void Update()
     {
         if(canMove) 
         {
-            //thisTransform.position = Vector2.Lerp(thisTransform.position, target, Time.deltaTime * speed); 
+            //thisTransform.position = Vector2.Lerp(thisTransform.position, target, Time.deltaTime); 
             dir = (target - (Vector2)thisTransform.position).normalized;
             thisTransform.position += speed * Time.deltaTime * (Vector3)dir;
 
@@ -44,5 +67,5 @@ public class CoinMover : MonoBehaviour
             }
         }
     }
-
+    */
 }
