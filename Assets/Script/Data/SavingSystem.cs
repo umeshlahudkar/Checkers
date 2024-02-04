@@ -8,6 +8,8 @@ public class SavingSystem : Singleton<SavingSystem>
 
     private void Awake()
     {
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
+
         filePath = Path.Combine(Application.persistentDataPath, fileName);
 
         if (!File.Exists(filePath))
@@ -24,6 +26,8 @@ public class SavingSystem : Singleton<SavingSystem>
 
             Save(data);
         }
+
+#endif
     }
 
     public void Save(SaveData data)

@@ -28,12 +28,14 @@ public class AudioManager : Singleton<AudioManager>
 
     private void Start()
     {
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
         AudioData data = SavingSystem.Instance.Load().audioData;
 
         isBgMute = data.isMusicMute;
         isSfxMute = data.isSoundMute;
         bgVolume = data.musicVolume;
         sfxVolume = data.soundVolume;
+#endif
 
         bgAudioSource.mute = isBgMute;
         sfxAudioSource.mute = isSfxMute;
@@ -167,6 +169,7 @@ public class AudioManager : Singleton<AudioManager>
 
     private void SaveAudioData()
     {
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
         SaveData saveData = SavingSystem.Instance.Load();
 
         saveData.audioData.isMusicMute = isBgMute;
@@ -175,6 +178,7 @@ public class AudioManager : Singleton<AudioManager>
         saveData.audioData.soundVolume = sfxVolume;
 
         SavingSystem.Instance.Save(saveData);
+#endif
     }
 }
 

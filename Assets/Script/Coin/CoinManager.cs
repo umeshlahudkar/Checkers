@@ -11,8 +11,12 @@ public class CoinManager : Singleton<CoinManager>
 
     private void Start()
     {
+        totalCoin = 0;
+
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
         SaveData data = SavingSystem.Instance.Load();
         totalCoin = data.coins;
+#endif
 
         OnCoinValueIncreased?.Invoke(totalCoin, 0, null);
     }
@@ -44,9 +48,11 @@ public class CoinManager : Singleton<CoinManager>
 
     private void SaveCoin()
     {
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
         SaveData data = SavingSystem.Instance.Load();
         data.coins = totalCoin;
         SavingSystem.Instance.Save(data);
+#endif
     }
 
     public int GetCoinAmount() { return totalCoin; }
