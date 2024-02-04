@@ -26,7 +26,7 @@ public class MatchMakingController : MonoBehaviour
     [Header("Back Button")]
     [SerializeField] private Button backButton;
 
-    private readonly float speed = 333f; //1000
+    private readonly float speed = 1000f; //333
     Vector3 offset;
 
     private Vector3[] initialPos;
