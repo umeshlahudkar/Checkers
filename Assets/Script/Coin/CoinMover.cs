@@ -1,28 +1,23 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CoinMover : MonoBehaviour
 {
     [SerializeField] private Transform thisTransform;
-
-    private Vector2 target;
-    private readonly float speed = 2000f;  // 500
-    private bool canMove = false;
+    //private Vector2 target;
+    //private readonly float speed = 2000f;  // 500
+    //private bool canMove = false;
     private bool canDisableAtTarget;
-
-    private Vector2 dir;
+    //private Vector2 dir;
     private CoinAnimator coinAnimation;
 
     public void SetTarget(Vector2 targetPos, bool canDisableAtTarget, CoinAnimator coinAnimation, float timeToMove)
     {
-        target = targetPos;
-        canMove = true;
+        //target = targetPos;
+        //canMove = true;
         this.canDisableAtTarget = canDisableAtTarget;
         this.coinAnimation = coinAnimation;
-
-        dir = (target - (Vector2)thisTransform.position).normalized;
-
+        //dir = (target - (Vector2)thisTransform.position).normalized;
         StartCoroutine(Move(thisTransform.position, targetPos, timeToMove));
     }
 

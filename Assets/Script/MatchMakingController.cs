@@ -26,7 +26,7 @@ public class MatchMakingController : MonoBehaviour
     [Header("Back Button")]
     [SerializeField] private Button backButton;
 
-    private readonly float speed = 1000f; //500
+    private readonly float speed = 1000f; //333
     Vector3 offset;
 
     private Vector3[] initialPos;
@@ -186,10 +186,10 @@ public class MatchMakingController : MonoBehaviour
         CoinManager.Instance.DeductCoin(250);
 
         CoinAnimator anim1 = Instantiate<CoinAnimator>(coinAnimatorPrefab, ownPlayer_feestext.transform.position, Quaternion.identity, transform);
-        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform, 40f));
+        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform));
 
         CoinAnimator anim2 = Instantiate<CoinAnimator>(coinAnimatorPrefab, opponentPlayer_feestext.transform.position, Quaternion.identity, transform);
-        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform, 40f));
+        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform));
     }
 
     private void ResetScrollImages()
