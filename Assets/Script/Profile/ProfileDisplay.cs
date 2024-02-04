@@ -10,7 +10,7 @@ public class ProfileDisplay : MonoBehaviour
     private void OnEnable()
     {
         ProfileManager.OnProfileChange += UpdateDisplay;
-        //UpdateDisplay(ProfileManager.Instance.GetProfileAvtar(), ProfileManager.Instance.GetUserName());
+        UpdateDisplay(ProfileManager.Instance.GetProfileAvtar(), ProfileManager.Instance.GetUserName());
     }
 
     private void UpdateDisplay(Sprite avtarSprite, string name)
