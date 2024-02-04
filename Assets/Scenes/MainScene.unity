@@ -18134,6 +18134,7 @@ MonoBehaviour:
   faderScreen: {fileID: 1982070423}
   usernameInputField: {fileID: 1385521606}
   closeButton: {fileID: 2134709518}
+  lobbyUIController: {fileID: 732341208}
 --- !u!1 &2075473972
 GameObject:
   m_ObjectHideFlags: 0
