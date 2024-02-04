@@ -23,6 +23,9 @@ public class MatchMakingController : MonoBehaviour
     [Header("Coin Anim Prefab")]
     [SerializeField] private CoinAnimator coinAnimatorPrefab;
 
+    [Header("Back Button")]
+    [SerializeField] private Button backButton;
+
     private readonly float speed = 1000f; //500
     Vector3 offset;
 
@@ -34,6 +37,11 @@ public class MatchMakingController : MonoBehaviour
 
     private string opponentName = string.Empty;
     private int opponentAvtarIndex = -1;
+
+    private void Awake()
+    {
+        SetInitialImgsPos();
+    }
 
     private void OnEnable()
     {
@@ -50,6 +58,7 @@ public class MatchMakingController : MonoBehaviour
 
         canScroll = true;
 
+        backButton.interactable = true;
         AudioManager.Instance.PlayMatchmakingScrollSound();
     }
 
@@ -63,6 +72,7 @@ public class MatchMakingController : MonoBehaviour
 
     public void SetPlayerFound(string name, int avtarIndex)
     {
+        backButton.interactable = false;
         this.opponentName = name;
         this.opponentAvtarIndex = avtarIndex;
         opponentFound = true;
@@ -81,16 +91,26 @@ public class MatchMakingController : MonoBehaviour
         opponentPlayer_feestext.text = "Fee : " + 250.ToString();
     }
 
-    private void SetScrollImages()
+    private void SetInitialImgsPos()
     {
         initialPos = new Vector3[opponentPlayer_ScrollImgs.Length];
+
+        for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
+        {
+            initialPos[i] = opponentPlayer_ScrollImgs[i].transform.position;
+        }
+    }
+
+    private void SetScrollImages()
+    {
+        //initialPos = new Vector3[opponentPlayer_ScrollImgs.Length];
 
         for (int i = 0; i < opponentPlayer_ScrollImgs.Length; i++)
         {
             opponentPlayer_ScrollImgs[i].sprite = ProfileManager.Instance.GetAvtar(currentIndex);
             currentIndex = (currentIndex + 1) % 30;
 
-            initialPos[i] = opponentPlayer_ScrollImgs[i].transform.position;
+            //initialPos[i] = opponentPlayer_ScrollImgs[i].transform.position;
         }
     }
 
@@ -178,6 +198,25 @@ public class MatchMakingController : MonoBehaviour
         {
             opponentPlayer_ScrollImgs[i].enabled = true;
             opponentPlayer_ScrollImgs[i].transform.position = initialPos[i];
+        }
+    }
+
+    private void OnDisable()
+    {
+        canScroll = false;
+        ResetScrollImages();
+        AudioManager.Instance.StopMatchmakingScrollSound();
+    }
+
+    public void OnBackButtonClick()
+    {
+        if(!opponentFound)
+        {
+            PhotonNetwork.AutomaticallySyncScene = false;
+            PhotonNetwork.LeaveRoom();
+
+            AudioManager.Instance.StopMatchmakingScrollSound();
+            gameObject.SetActive(false);
         }
     }
 }

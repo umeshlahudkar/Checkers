@@ -10,6 +10,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public MatchMakingController matchMakingManager;
     public GameDataSO gameDataSO;
 
+    private readonly float roomJoinWaitTime = 10f;
+    private float elapcedTime = 0;
+
+
     private void Start()
     {
         if(!PhotonNetwork.IsConnected)
@@ -18,14 +22,39 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
+    private void Update()
+    {
+        if (elapcedTime > 0)
+        {
+            elapcedTime -= Time.deltaTime;
+            if (elapcedTime <= 0)
+            {
+                elapcedTime = 0;
+                if (PhotonNetwork.InRoom)
+                {
+                    PhotonNetwork.LeaveRoom();
+                }
+                AudioManager.Instance.StopMatchmakingScrollSound();
+                PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+                lobbyUIController.ToggleMainMenuScreen(true);
+            }
+        }
+    }
+
     public override void OnConnectedToMaster()
     {
-        PhotonNetwork.JoinLobby();
+        if(!PhotonNetwork.InLobby)
+        {
+            PhotonNetwork.JoinLobby();
+        }
+        else
+        {
+            PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        }
     }
 
     public override void OnJoinedLobby()
     {
-        PhotonNetwork.AutomaticallySyncScene = true;
         lobbyUIController.SetProfile();
     }
 
@@ -39,6 +68,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
+        PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.NickName = ProfileManager.Instance.GetUserName();
 
         ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
@@ -54,11 +84,17 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             Player masterPlayer = PhotonNetwork.CurrentRoom.GetPlayer(PhotonNetwork.CurrentRoom.masterClientId);
             StartCoroutine(CheckForPropertiesSet(masterPlayer));
         }
+
+        elapcedTime = 0;
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        Debug.Log("Room creation failed " + message);
+        elapcedTime = 0;
+
+        AudioManager.Instance.StopMatchmakingScrollSound();
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        lobbyUIController.ToggleMainMenuScreen(true);
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
@@ -77,6 +113,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     private IEnumerator CheckForPropertiesSet(Player newPlayer)
     {
+        elapcedTime = 0;
         int index;
         while (true)
         {
@@ -104,8 +141,9 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public void JoinRandomRoom()
     {
-        if(PhotonNetwork.IsConnected)
+        if(PhotonNetwork.IsConnectedAndReady)
         {
+            elapcedTime = roomJoinWaitTime;
             PhotonNetwork.JoinRandomRoom();
             PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
         }

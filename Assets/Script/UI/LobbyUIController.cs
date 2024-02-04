@@ -73,7 +73,7 @@ public class LobbyUIController : MonoBehaviour
     {
         if (status == true)
         {
-            mainMenuScreen.SetActive(false);
+            //mainMenuScreen.SetActive(false);
         }
         matchmakingScreen.SetActive(status);
     }
