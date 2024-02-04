@@ -6,16 +6,21 @@ public class SavingSystem : Singleton<SavingSystem>
     private readonly string fileName = "SaveData.json";
     private string filePath = string.Empty;
 
-    private void Start()
+    private void Awake()
     {
         filePath = Path.Combine(Application.persistentDataPath, fileName);
 
-        if(!File.Exists(filePath))
+        if (!File.Exists(filePath))
         {
             SaveData data = new();
-            data.username = "Checkers" + Random.Range(101, 999);
-            data.avtarIndex = Random.Range(1, 30);
-            data.coins = 1000;
+            data.username = string.Empty;
+            data.avtarIndex = 0;
+            data.coins = 0;
+
+            data.audioData.isMusicMute = false;
+            data.audioData.isSoundMute = false;
+            data.audioData.musicVolume = 0.5f;
+            data.audioData.soundVolume = 0.5f;
 
             Save(data);
         }
@@ -42,6 +47,7 @@ public class SavingSystem : Singleton<SavingSystem>
         if(File.Exists(filePath))
         {
             File.Delete(filePath);
+            Debug.Log("File delete");
         }
     }
 }
@@ -52,4 +58,15 @@ public struct SaveData
     public string username;
     public int avtarIndex;
     public int coins;
+
+    public AudioData audioData;
+}
+
+[System.Serializable]
+public struct AudioData
+{
+    public bool isMusicMute;
+    public bool isSoundMute;
+    public float musicVolume;
+    public float soundVolume;
 }

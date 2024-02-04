@@ -97,7 +97,7 @@ public class SettingScreen : MonoBehaviour
 
     public void OnSoundVolumeUpButtonClick()
     {
-        if (!isMusicMute)
+        if (!isSoundMute)
         {
             AudioManager.Instance.PlayButtonClickSound();
 
@@ -110,7 +110,7 @@ public class SettingScreen : MonoBehaviour
 
     public void OnSoundVolumeDownButtonClick()
     {
-        if (!isMusicMute)
+        if (!isSoundMute)
         {
             AudioManager.Instance.PlayButtonClickSound();
 

@@ -11,7 +11,9 @@ public class CoinManager : Singleton<CoinManager>
 
     private void Start()
     {
-        totalCoin = 100;
+        SaveData data = SavingSystem.Instance.Load();
+        totalCoin = data.coins;
+
         OnCoinValueIncreased?.Invoke(totalCoin, 0, null);
     }
 
@@ -22,6 +24,8 @@ public class CoinManager : Singleton<CoinManager>
 
         OnCoinValueIncreased?.Invoke(totalCoin, amount, target);
         AudioManager.Instance.PlayCoinSound();
+
+        SaveCoin();
     }
 
     public void DeductCoin(int amount, Transform target = null)
@@ -33,7 +37,16 @@ public class CoinManager : Singleton<CoinManager>
 
             OnCoinValueDecreased?.Invoke(totalCoin, amount, target);
             AudioManager.Instance.PlayCoinSound();
+
+            SaveCoin();
         }
+    }
+
+    private void SaveCoin()
+    {
+        SaveData data = SavingSystem.Instance.Load();
+        data.coins = totalCoin;
+        SavingSystem.Instance.Save(data);
     }
 
     public int GetCoinAmount() { return totalCoin; }

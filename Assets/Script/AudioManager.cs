@@ -26,9 +26,15 @@ public class AudioManager : Singleton<AudioManager>
     public bool IsBgMute { get { return isBgMute; } }
     public bool IsSFXMute { get { return isSfxMute; } }
 
-
-    private void OnEnable()
+    private void Start()
     {
+        AudioData data = SavingSystem.Instance.Load().audioData;
+
+        isBgMute = data.isMusicMute;
+        isSfxMute = data.isSoundMute;
+        bgVolume = data.musicVolume;
+        sfxVolume = data.soundVolume;
+
         bgAudioSource.mute = isBgMute;
         sfxAudioSource.mute = isSfxMute;
         pieceKillAudioSource.mute = isSfxMute;
@@ -44,6 +50,8 @@ public class AudioManager : Singleton<AudioManager>
     {
         isBgMute = !isBgMute;
         bgAudioSource.mute = isBgMute;
+
+        SaveAudioData();
     }
 
     public void ToggleSFXMusicMute()
@@ -52,6 +60,8 @@ public class AudioManager : Singleton<AudioManager>
         sfxAudioSource.mute = isSfxMute;
         pieceKillAudioSource.mute = isSfxMute;
         timeTickingAudioSource.mute = isSfxMute;
+
+        SaveAudioData();
     }
 
     public void UpdateBgVolume(float volume)
@@ -59,6 +69,8 @@ public class AudioManager : Singleton<AudioManager>
         bgVolume = volume;
         bgVolume = Mathf.Clamp(bgVolume, 0, 1);
         bgAudioSource.volume = bgVolume;
+
+        SaveAudioData();
     }
 
     public void UpdateSFXVolume(float volume)
@@ -68,6 +80,8 @@ public class AudioManager : Singleton<AudioManager>
         sfxAudioSource.volume = sfxVolume;
         pieceKillAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
+
+        SaveAudioData();
     }
 
     public void PlayButtonClickSound()
@@ -149,6 +163,18 @@ public class AudioManager : Singleton<AudioManager>
     public void StopTimeTickingSound()
     {
         timeTickingAudioSource.Stop();
+    }
+
+    private void SaveAudioData()
+    {
+        SaveData saveData = SavingSystem.Instance.Load();
+
+        saveData.audioData.isMusicMute = isBgMute;
+        saveData.audioData.isSoundMute = isSfxMute;
+        saveData.audioData.musicVolume = bgVolume;
+        saveData.audioData.soundVolume = sfxVolume;
+
+        SavingSystem.Instance.Save(saveData);
     }
 }
 
