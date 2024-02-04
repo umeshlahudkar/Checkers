@@ -14963,7 +14963,6 @@ MonoBehaviour:
   lobbyUIController: {fileID: 732341208}
   matchMakingManager: {fileID: 1621400104}
   gameDataSO: {fileID: 11400000, guid: 5eb203feeb4a0fc4a9fbf9d7545aaea5, type: 2}
-  elapcedTime: 0
 --- !u!4 &1703165748
 Transform:
   m_ObjectHideFlags: 0
