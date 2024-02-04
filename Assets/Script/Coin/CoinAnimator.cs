@@ -4,7 +4,7 @@ using UnityEngine;
 public class CoinAnimator : MonoBehaviour
 {
     [SerializeField] private CoinMover[] coinMovers;
-    private float radius = 50f;   //150
+    private float radius = 150f;   //50
     private int reachedToTargetCount = 0;
 
     public IEnumerator PlayAnimation(Transform target)
