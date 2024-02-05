@@ -54,11 +54,11 @@ public class GameManager : Singleton<GameManager>
             if (PhotonNetwork.IsMasterClient)
             {
                 currentTurn = actorNumber;
-                pieceType = PieceType.Black;
+                pieceType = PieceType.White;
             }
             else
             {
-                pieceType = PieceType.White;
+                pieceType = PieceType.Black;
             }
 
             PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
@@ -80,6 +80,7 @@ public class GameManager : Singleton<GameManager>
             boardGenerator.GenerateBoard();
             boardGenerator.GeneratePieces();
 
+            currentTurn = 1;
             pieceType = PieceType.Black;
             GameplayController.Instance.CheckMoves();
         }
@@ -126,12 +127,12 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
-            pieceType = (pieceType == PieceType.Black) ? PieceType.White : PieceType.Black;
+            currentTurn = (currentTurn == 1) ? 2 : 1;
+            pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
-            if(!GameplayController.Instance.CheckMoves())
+            if (!GameplayController.Instance.CheckMoves())
             {
-                pieceType = (pieceType == PieceType.Black) ? PieceType.White : PieceType.Black;
-                if (pieceType == PieceType.Black)
+                if(pieceType == PieceType.White)
                 {
                     GameplayUIController.Instance.ToggleGameWinScreen(true);
                 }
