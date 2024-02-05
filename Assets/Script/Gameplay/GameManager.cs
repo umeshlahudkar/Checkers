@@ -54,11 +54,11 @@ public class GameManager : Singleton<GameManager>
             if (PhotonNetwork.IsMasterClient)
             {
                 currentTurn = actorNumber;
-                pieceType = PieceType.White;
+                pieceType = PieceType.Black;
             }
             else
             {
-                pieceType = PieceType.Black;
+                pieceType = PieceType.White;
             }
 
             PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
