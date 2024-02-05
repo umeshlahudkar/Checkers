@@ -361,6 +361,10 @@ public class GameplayController : Singleton<GameplayController>
         {
             for(int j = 0; j < 8; j++)
             {
+                if(board[i,j].Piece != null)
+                {
+                    Destroy(board[i, j].Piece.gameObject);
+                }
                 Destroy(board[i, j].gameObject);
             }
         }

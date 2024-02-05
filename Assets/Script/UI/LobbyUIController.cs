@@ -31,7 +31,7 @@ public class LobbyUIController : MonoBehaviour
 
     private void Start()
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
+        //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
     }
 
     public void SetPlayerData(Player opponentPlayer, int avtarIndex)

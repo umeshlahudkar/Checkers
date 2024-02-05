@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
@@ -181,9 +182,17 @@ public class GameplayUIController : Singleton<GameplayUIController>
         AudioManager.Instance.PlayButtonClickSound();
         if(CoinManager.Instance.GetCoinAmount() >= 250)
         {
-            DisableAllScreen();
-            ToggleMsgScreen(true, "waiting for opponent confirmation");
-            eventManager.SendRematchConfirmationEvent();
+            if (GameManager.Instance.GameMode == GameMode.Online)
+            {
+                DisableAllScreen();
+                ToggleMsgScreen(true, "waiting for opponent confirmation");
+                eventManager.SendRematchConfirmationEvent();
+            }
+            else
+            {
+                DisableAllScreen();
+                StartCoroutine(GameManager.Instance.Rematch());
+            }
         }
         else
         {
@@ -222,17 +231,24 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void OnExitScreenYesButtonClick()
     {
-        if(PhotonNetwork.IsConnected)
+        if(GameManager.Instance.GameMode == GameMode.Online)
         {
-            if (PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.IsConnected)
             {
-                PhotonNetwork.DestroyAll();
-            }
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    PhotonNetwork.DestroyAll();
+                }
 
-            PhotonNetwork.AutomaticallySyncScene = false;
-            PhotonNetwork.LeaveRoom();
-            ToggleExitScreen(false);
-            AudioManager.Instance.PlayButtonClickSound();
+                PhotonNetwork.AutomaticallySyncScene = false;
+                PhotonNetwork.LeaveRoom();
+                ToggleExitScreen(false);
+                AudioManager.Instance.PlayButtonClickSound();
+            }
+        }
+        else
+        {
+            SceneManager.LoadScene(0);
         }
     }
 

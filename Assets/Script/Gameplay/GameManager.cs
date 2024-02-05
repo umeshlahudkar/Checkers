@@ -193,7 +193,7 @@ public class GameManager : Singleton<GameManager>
 
     private void ResetGameplay()
     {
-        if(PhotonNetwork.IsMasterClient)
+        if( gameMode == GameMode.Online && PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.DestroyAll();
         }
