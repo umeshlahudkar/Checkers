@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
+//using System.Collections;
+using System.Collections.Generic;
 
 public class Piece : MonoBehaviour
 {
@@ -17,7 +19,10 @@ public class Piece : MonoBehaviour
     [SerializeField] private int columID;
 
     [SerializeField] private bool isCrownedKing;
-    
+
+    public List<BoardPosition> movableBlockPositions = new List<BoardPosition>();
+    public List<BoardPosition> killerBlockPositions = new List<BoardPosition>();
+
 
     [PunRPC]
     public void SetPiece(int row, int colum, int pieceType, float blockSize)
@@ -115,7 +120,6 @@ public class Piece : MonoBehaviour
             GameplayController.Instance.CheckNextMove(this);
         }
     }
-
 }
 
 public enum PieceType

@@ -36,6 +36,392 @@ public class GameplayController : Singleton<GameplayController>
         return false;
     }
 
+    #region AI
+    //AI
+    public bool CanMove(PieceType pieceType)
+    {
+        if (pieceType == PieceType.Black)
+        {
+            return CanBlackPieceMove();
+        }
+        else if (pieceType == PieceType.White)
+        {
+            return CanWhitePieceMove();
+        }
+
+        return false;
+    }
+
+    //AI
+    private bool CanWhitePieceMove()
+    {
+        bool moveFound = false;
+        foreach (Piece piece in whitePieces)
+        {
+            int row = piece.Row_ID;
+            int coloum = piece.Coloum_ID;
+            Block pieceBlock = board[row, coloum];
+
+            // diagonally down left
+            moveFound |= CheckPieceCanMove(row + 1, coloum - 1, row + 2, coloum - 2, PieceType.White);
+            //diagonally down right
+            moveFound |= CheckPieceCanMove(row + 1, coloum + 1, row + 2, coloum + 2, PieceType.White);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally up left
+                moveFound |= CheckPieceCanMove(row - 1, coloum - 1, row - 2, coloum - 2, PieceType.White);
+                //diagonally up right
+                moveFound |= CheckPieceCanMove(row - 1, coloum + 1, row - 2, coloum + 2, PieceType.White);
+            }
+
+            if (moveFound)
+            {
+                break;
+            }
+        }
+        return moveFound;
+    }
+
+    //AI
+    private bool CanBlackPieceMove()
+    {
+        bool moveFound = false;
+        foreach (Piece piece in blackPieces)
+        {
+            int row = piece.Row_ID;
+            int coloum = piece.Coloum_ID;
+
+            Block pieceBlock = board[row, coloum];
+
+            // diagonally up left
+            moveFound |= CheckPieceCanMove(row - 1, coloum - 1, row - 2, coloum - 2, PieceType.Black);
+            // diagonally up right
+            moveFound |= CheckPieceCanMove(row - 1, coloum + 1, row - 2, coloum + 2, PieceType.Black);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                moveFound |= CheckPieceCanMove(row + 1, coloum - 1, row + 2, coloum - 2, PieceType.Black);
+                //diagonally down right
+                moveFound |= CheckPieceCanMove(row + 1, coloum + 1, row + 2, coloum + 2, PieceType.Black);
+            }
+
+            if (moveFound)
+            {
+                break;
+            }
+        }
+        return moveFound;
+    }
+
+    //AI
+    private bool CheckPieceCanMove(int row, int col, int jumpRow, int jumpCol, PieceType pieceType)
+    {
+        if (!IsValidPosition(row, col)) { return false; }
+
+        bool moveFound = false;
+
+        if ((!board[row, col].IsPiecePresent) ||
+            (board[row, col].IsPiecePresent && pieceType != board[row, col].Piece.PieceType &&
+                IsValidPosition(jumpRow, jumpCol) && !board[jumpRow, jumpCol].IsPiecePresent))
+        {
+            moveFound = true;
+        }
+        return moveFound;
+    }
+
+    //AI 
+    public void CheckMovablePieces(PieceType pieceType, List<Piece> movablePieces)
+    {
+        if (pieceType == PieceType.Black)
+        {
+            CheckBlackMovablePieces(movablePieces);
+        }
+        else if (pieceType == PieceType.White)
+        {
+            CheckWhiteMovablePieces(movablePieces);
+        }
+    }
+
+    //AI 
+    private void CheckWhiteMovablePieces(List<Piece> movablePieces)
+    {
+        foreach (Piece piece in whitePieces)
+        {
+            bool moveFound = false;
+            int row = piece.Row_ID;
+            int coloum = piece.Coloum_ID;
+
+            // diagonally down left
+            moveFound |= CheckPieceCanMove(row + 1, coloum - 1, row + 2, coloum - 2, PieceType.White);
+            //diagonally down right
+            moveFound |= CheckPieceCanMove(row + 1, coloum + 1, row + 2, coloum + 2, PieceType.White);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally up left
+                moveFound |= CheckPieceCanMove(row - 1, coloum - 1, row - 2, coloum - 2, PieceType.White);
+                //diagonally up right
+                moveFound |= CheckPieceCanMove(row - 1, coloum + 1, row - 2, coloum + 2, PieceType.White);
+            }
+
+            if (moveFound)
+            {
+                movablePieces.Add(piece);
+            }
+        }
+    }
+
+    //AI 
+    private void CheckBlackMovablePieces(List<Piece> movablePieces)
+    {
+        foreach (Piece piece in blackPieces)
+        {
+            bool moveFound = false;
+            int row = piece.Row_ID;
+            int coloum = piece.Coloum_ID;
+
+            // diagonally up left
+            moveFound |= CheckPieceCanMove(row - 1, coloum - 1, row - 2, coloum - 2, PieceType.Black);
+            // diagonally up right
+            moveFound |= CheckPieceCanMove(row - 1, coloum + 1, row - 2, coloum + 2, PieceType.Black);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                moveFound |= CheckPieceCanMove(row + 1, coloum - 1, row + 2, coloum - 2, PieceType.Black);
+                //diagonally down right
+                moveFound |= CheckPieceCanMove(row + 1, coloum + 1, row + 2, coloum + 2, PieceType.Black);
+            }
+
+            if (moveFound)
+            {
+                movablePieces.Add(piece);
+            }
+        }
+    }
+
+    //AI 
+    public void SetMovablePosition(Piece piece)
+    {
+        if (piece.PieceType == PieceType.Black)
+        {
+            SetBlackPieceMovablePositions(piece);
+        }
+        else if (piece.PieceType == PieceType.White)
+        {
+            SetWhitePieceMovablePositions(piece);
+        }
+    }
+
+    //AI 
+    private void SetWhitePieceMovablePositions(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+        PieceType pieceType = piece.PieceType;
+
+        bool canMove;
+
+        canMove = CanMoveAtAdjacentBlock(row + 1, coloum - 1);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row + 1, coloum - 1));
+        }
+
+        canMove = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+        }
+
+        canMove = CanMoveAtAdjacentBlock(row + 1, coloum + 1);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row + 1, coloum + 1));
+        }
+
+        canMove = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+        }
+
+        if (piece.IsCrownedKing)
+        {
+            canMove = CanMoveAtAdjacentBlock(row - 1, coloum - 1);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row - 1, coloum - 1));
+            }
+
+            canMove = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+            }
+
+            canMove = CanMoveAtAdjacentBlock(row - 1, coloum + 1);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row - 1, coloum + 1));
+            }
+
+            canMove = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+            }
+        }
+    }
+
+    //AI 
+    private void SetBlackPieceMovablePositions(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+        PieceType pieceType = piece.PieceType;
+
+        bool canMove;
+
+        canMove = CanMoveAtAdjacentBlock(row - 1, coloum - 1);
+        if(canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row - 1, coloum - 1));
+        }
+
+        canMove = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+        }
+
+        canMove = CanMoveAtAdjacentBlock(row - 1, coloum + 1);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row - 1, coloum + 1));
+        }
+
+        canMove = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+        if (canMove)
+        {
+            piece.movableBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+        }
+
+        if(piece.IsCrownedKing)
+        {
+            canMove = CanMoveAtAdjacentBlock(row + 1, coloum - 1);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row + 1, coloum - 1));
+            }
+
+            canMove = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+            }
+
+            canMove = CanMoveAtAdjacentBlock(row + 1, coloum + 1);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row + 1, coloum + 1));
+            }
+
+            canMove = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+            if (canMove)
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+            }
+        }
+    }
+
+    //AI 
+    private bool CanMoveAtAdjacentBlock(int row, int col)
+    {
+        if(!IsValidPosition(row, col)) { return false; }
+
+        if(!board[row, col].IsPiecePresent)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    //AI 
+    private bool CanMoveAtJumpBlock(int row, int col, int jumpRow, int jumpCol, PieceType pieceType)
+    {
+        if (!IsValidPosition(jumpRow, jumpCol)) { return false; }
+
+        if(!board[jumpRow, jumpCol].IsPiecePresent && IsValidPosition(row, col) &&
+            board[row, col].IsPiecePresent && pieceType != board[row, col].Piece.PieceType)
+        {
+            return true;
+        }
+        
+        return false;
+    }
+
+    //AI 
+    public bool CanKillOpponentPiece(Piece piece)
+    {
+        if (piece.PieceType == PieceType.Black)
+        {
+            return CanKillOpponent_BlackPiece(piece);
+        }
+        else if (piece.PieceType == PieceType.White)
+        {
+            return CanKillOpponent_WhitePiece(piece);
+        }
+        return false;
+    }
+
+    //AI 
+    private bool CanKillOpponent_WhitePiece(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+        PieceType pieceType = piece.PieceType;
+
+        bool canKill = false;
+
+        canKill |= CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+        canKill |= CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+
+        if (piece.IsCrownedKing)
+        {
+            canKill |= CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+            canKill |= CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+        }
+
+        return canKill;
+    }
+
+    //AI 
+    private bool CanKillOpponent_BlackPiece(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+        PieceType pieceType = piece.PieceType;
+
+        bool canKill = false;
+
+        canKill |= CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+        canKill |= CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+
+        if (piece.IsCrownedKing)
+        {
+            canKill |= CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+            canKill |= CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+        }
+
+        return canKill;
+    }
+
+
+    #endregion
+
     private bool IsValidPosition(int row, int col)
     {
         return row >= 0 && row < 8 && col >= 0 && col < 8;

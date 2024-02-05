@@ -124,6 +124,12 @@ public class LobbyUIController : MonoBehaviour
         SceneManager.LoadScene(1);
     }
 
+    public void OnPlay_PVC_ButtonClick()
+    {
+        SetGameMode(GameMode.PVC);
+        SceneManager.LoadScene(1);
+    }
+
     public void OnQuitButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();

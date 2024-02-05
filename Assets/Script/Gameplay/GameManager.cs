@@ -8,6 +8,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private GameplayTimer timer;
+    [SerializeField] private CheckerAI ai;
 
     private PieceType pieceType;
     private int currentTurn;
@@ -74,7 +75,7 @@ public class GameManager : Singleton<GameManager>
                 gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
             }
         }
-        else if(gameMode == GameMode.PVP)
+        else
         {
             GameplayUIController.Instance.DisablePlayerInfo();
             boardGenerator.GenerateBoard();
@@ -125,7 +126,7 @@ public class GameManager : Singleton<GameManager>
             int nextTurn = currentTurn == 1 ? 2 : 1;
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
         }
-        else
+        else if (gameMode == GameMode.PVP)
         {
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
@@ -140,6 +141,20 @@ public class GameManager : Singleton<GameManager>
                 {
                     GameplayUIController.Instance.ToggleGameLoseScreen(true);
                 }
+            }
+        }
+        else
+        {
+            currentTurn = (currentTurn == 1) ? 2 : 1;
+            pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
+
+            if(currentTurn == 2)
+            {
+                ai.Play();
+            }
+            else
+            {
+                GameplayController.Instance.CheckMoves();
             }
         }
     }
