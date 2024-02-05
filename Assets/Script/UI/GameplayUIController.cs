@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 
-public class UIController : Singleton<UIController>
+public class GameplayUIController : Singleton<GameplayUIController>
 {
     [Header("Player1 profile")]
     [SerializeField] private TextMeshProUGUI player1_nameText;
@@ -32,11 +32,11 @@ public class UIController : Singleton<UIController>
     [SerializeField] private GameObject exitScreen;
     [SerializeField] private GameObject rematchScreen;
     [SerializeField] private EventManager eventManager;
+    [SerializeField] private GameObject upperStrip;
 
     [Header("Color")]
     [SerializeField] private Color defaultColor;
     [SerializeField] private Color highlightColor;
-
 
     private float animationDuration = 1f;
     private float startTime = 0;
@@ -54,6 +54,11 @@ public class UIController : Singleton<UIController>
 
         player2_nameText.text = player2_info.userName;
         player2_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player2_info.avtarIndex);
+    }
+
+    public void DisablePlayerInfo()
+    {
+        upperStrip.SetActive(false);
     }
 
     public void PlayHighlightAnimation(int turn)

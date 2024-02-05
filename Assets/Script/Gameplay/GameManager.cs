@@ -14,6 +14,7 @@ public class GameManager : Singleton<GameManager>
     private int actorNumber;
 
     private GameState gameState = GameState.Waiting;
+    private GameMode gameMode;
 
     [SerializeField] private int turnMissCount = 0;
     private readonly int maxTurnMissCount = 3;
@@ -21,6 +22,11 @@ public class GameManager : Singleton<GameManager>
     public GameState GameState 
     { 
         get { return gameState; }
+    }
+
+    public GameMode GameMode
+    {
+        get { return gameMode; }
     }
 
     public int ActorNumber { get { return actorNumber; } }
@@ -39,34 +45,49 @@ public class GameManager : Singleton<GameManager>
 
     private void InitializeGame()
     {
-        actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
-
-        if (PhotonNetwork.IsMasterClient)
-        {
-            currentTurn = actorNumber;
-            pieceType = PieceType.Black;
-        }
-        else
-        {
-            pieceType = PieceType.White;
-        }
-
-        PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
-        PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
-
-        UIController.Instance.ShowPlayerInfo(player1, player2);
-
-        boardGenerator.GenerateBoard();
-        boardGenerator.GeneratePieces(pieceType);
-
-        if (PhotonNetwork.IsMasterClient)
-        {
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
-        }
-
+        gameMode = gameDataSO.gameMode;
         gameState = GameState.Playing;
+
+        if (gameMode == GameMode.Online)
+        {
+            actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
+            if (PhotonNetwork.IsMasterClient)
+            {
+                currentTurn = actorNumber;
+                pieceType = PieceType.Black;
+            }
+            else
+            {
+                pieceType = PieceType.White;
+            }
+
+            PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
+            PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
+
+            GameplayUIController.Instance.ShowPlayerInfo(player1, player2);
+
+            boardGenerator.GenerateBoard();
+            boardGenerator.GeneratePieces(pieceType);
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
+            }
+        }
+        else if(gameMode == GameMode.PVP)
+        {
+            GameplayUIController.Instance.DisablePlayerInfo();
+            boardGenerator.GenerateBoard();
+            boardGenerator.GeneratePieces();
+
+            pieceType = PieceType.Black;
+            GameplayController.Instance.CheckMoves();
+        }
+
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
+
+    
 
     public void UpdateTurnMissCount()
     {
@@ -98,8 +119,28 @@ public class GameManager : Singleton<GameManager>
 
     public void SwitchTurn()
     {
-        int nextTurn = currentTurn == 1 ? 2 : 1;
-        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
+        if(gameMode == GameMode.Online)
+        {
+            int nextTurn = currentTurn == 1 ? 2 : 1;
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
+        }
+        else
+        {
+            pieceType = (pieceType == PieceType.Black) ? PieceType.White : PieceType.Black;
+
+            if(!GameplayController.Instance.CheckMoves())
+            {
+                pieceType = (pieceType == PieceType.Black) ? PieceType.White : PieceType.Black;
+                if (pieceType == PieceType.Black)
+                {
+                    GameplayUIController.Instance.ToggleGameWinScreen(true);
+                }
+                else
+                {
+                    GameplayUIController.Instance.ToggleGameLoseScreen(true);
+                }
+            }
+        }
     }
 
     [PunRPC]
@@ -107,7 +148,7 @@ public class GameManager : Singleton<GameManager>
     {
         currentTurn = nextTurn;
         timer.ResetTimer();
-        UIController.Instance.PlayHighlightAnimation(currentTurn);
+        GameplayUIController.Instance.PlayHighlightAnimation(currentTurn);
 
         if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
         {
@@ -123,11 +164,11 @@ public class GameManager : Singleton<GameManager>
 
         if(winnerPieceType == pieceType)
         {
-            UIController.Instance.ToggleGameWinScreen(true);
+            GameplayUIController.Instance.ToggleGameWinScreen(true);
         }
         else
         {
-            UIController.Instance.ToggleGameLoseScreen(true);
+            GameplayUIController.Instance.ToggleGameLoseScreen(true);
         }
 
         SetGameOver();
@@ -137,7 +178,7 @@ public class GameManager : Singleton<GameManager>
     {
         gameState = GameState.Ending;
         AudioManager.Instance.StopTimeTickingSound();
-        UIController.Instance.StopPlayerHighlightAnim();
+        GameplayUIController.Instance.StopPlayerHighlightAnim();
     }
 
     private void ResetGameManager()
@@ -157,7 +198,7 @@ public class GameManager : Singleton<GameManager>
         }
         ResetGameManager();
         GameplayController.Instance.ResetGameplay();
-        UIController.Instance.DisableAllScreen();
+        GameplayUIController.Instance.DisableAllScreen();
     }
 
     public IEnumerator Rematch()

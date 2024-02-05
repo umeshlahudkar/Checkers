@@ -50,16 +50,16 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         switch(type)
         {
             case EventType.RematchConfirmation:
-                UIController.Instance.DisableAllScreen();
-                UIController.Instance.ToggleRematchScreen(true);
+                GameplayUIController.Instance.DisableAllScreen();
+                GameplayUIController.Instance.ToggleRematchScreen(true);
                 break;
 
             case EventType.RematchAccept:
                 if(isReadyToRematch)
                 {
                     confirmationElapcedTime = 0;
-                    UIController.Instance.DisableAllScreen();
-                    UIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
+                    GameplayUIController.Instance.DisableAllScreen();
+                    GameplayUIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
                     SendRematchEvent();
                 }
                 else
@@ -122,8 +122,8 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void OnRematchDenied()
     {
-        UIController.Instance.DisableAllScreen();
-        UIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
+        GameplayUIController.Instance.DisableAllScreen();
+        GameplayUIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
     }
 
     public override void OnLeftRoom()
@@ -134,10 +134,10 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        if(UIController.Instance.CanOpenGameOverScreen())
+        if(GameplayUIController.Instance.CanOpenGameOverScreen())
         {
             GameManager.Instance.SetGameOver();
-            UIController.Instance.ToggleGameWinScreen(true);
+            GameplayUIController.Instance.ToggleGameWinScreen(true);
         }
     }
 

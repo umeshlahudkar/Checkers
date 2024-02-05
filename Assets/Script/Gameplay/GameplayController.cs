@@ -216,7 +216,14 @@ public class GameplayController : Singleton<GameplayController>
             int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
             Piece piece = board[targetRow, targetCol].Piece;
-            piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
+            if(GameManager.Instance.GameMode == GameMode.Online)
+            {
+                piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
+            }
+            else
+            {
+                piece.Destroy();
+            }
             hasDeleted = true;
         }
 
@@ -228,12 +235,19 @@ public class GameplayController : Singleton<GameplayController>
 
         yield return new WaitForSeconds(0.25f);
 
-        UIController.Instance.StopPlayerHighlightAnim();
+        GameplayUIController.Instance.StopPlayerHighlightAnim();
 
         if (!selectedPiece.IsCrownedKing && ((selectedPiece.PieceType == PieceType.White && selectedPiece.Row_ID == 7) ||
             (selectedPiece.PieceType == PieceType.Black && selectedPiece.Row_ID == 0)))
         {
-            selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
+            if(GameManager.Instance.GameMode == GameMode.Online)
+            {
+                selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
+            }
+            else
+            {
+                selectedPiece.SetCrownKing();
+            }
         }
 
         selectedPiece = block.Piece;
@@ -250,12 +264,24 @@ public class GameplayController : Singleton<GameplayController>
 
     public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
     {
-        int viewId = -1;
-        if (pieceToMove != null)
+        if(GameManager.Instance.GameMode == GameMode.Online)
         {
-            viewId = pieceToMove.GetComponent<PhotonView>().ViewID;
+            int viewId = -1;
+            if (pieceToMove != null)
+            {
+                viewId = pieceToMove.GetComponent<PhotonView>().ViewID;
+            }
+            thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, viewId);
         }
-        thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, viewId);
+        else
+        {
+            board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].SetBlockPiece(false, null);
+
+            StartCoroutine(MovePiece(pieceToMove.transform, board[targetRow, targetCol].transform.position));
+            AudioManager.Instance.PlayPieceMoveSound();
+            board[targetRow, targetCol].SetBlockPiece(true, pieceToMove);
+        }
+        
     }
 
     [PunRPC]

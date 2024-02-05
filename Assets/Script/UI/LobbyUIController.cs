@@ -1,4 +1,7 @@
 using UnityEngine;
+using Photon.Pun;
+using Photon.Realtime;
+using UnityEngine.SceneManagement;
 
 public class LobbyUIController : MonoBehaviour
 {
@@ -24,10 +27,29 @@ public class LobbyUIController : MonoBehaviour
     [Header("Setting screen")]
     [SerializeField] private GameObject settingScreen;
 
+    [SerializeField] private GameDataSO gameDataSO;
+
     private void Start()
     {
         PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
     }
+
+    public void SetPlayerData(Player opponentPlayer, int avtarIndex)
+    {
+        gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
+        gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
+        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
+
+        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
+        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
+        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
+    }
+
+    private void SetGameMode(GameMode gameMode)
+    {
+        gameDataSO.gameMode = gameMode;
+    }
+
 
     private void DisableAllScreen()
     {
@@ -94,6 +116,12 @@ public class LobbyUIController : MonoBehaviour
         }
       
         networkManager.JoinRandomRoom();
+    }
+
+    public void OnPlay_PVP_ButtonClick()
+    {
+        SetGameMode(GameMode.PVP);
+        SceneManager.LoadScene(1);
     }
 
     public void OnQuitButtonClick()

@@ -20,7 +20,7 @@ public class Piece : MonoBehaviour
     
 
     [PunRPC]
-    public void SetBlock(int row, int colum, int pieceType, float blockSize)
+    public void SetPiece(int row, int colum, int pieceType, float blockSize)
     {
         columID = colum;
         rowID = row;
@@ -37,14 +37,13 @@ public class Piece : MonoBehaviour
         }
 
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
-        //thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
         thisTransform.position = GameplayController.Instance.board[row, colum].ThisTransform.position;
         thisTransform.sizeDelta = GameplayController.Instance.board[row, colum].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
         GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
 
-        if(photonView.IsMine)
+        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || GameManager.Instance.GameMode != GameMode.Online)
         {
             button.interactable = true;
         }
@@ -77,9 +76,13 @@ public class Piece : MonoBehaviour
             GameplayController.Instance.blackPieces.Remove(this);
         }
 
-        if (photonView.IsMine)
+        if (GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine)
         {
             PhotonNetwork.Destroy(this.gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -106,7 +109,8 @@ public class Piece : MonoBehaviour
 
     public void OnClick()
     {
-        if(GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType)
+        if(( GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType) ||
+            (GameManager.Instance.GameMode != GameMode.Online && pieceType == GameManager.Instance.PieceType))
         {
             GameplayController.Instance.CheckNextMove(this);
         }

@@ -1317,6 +1317,7 @@ MonoBehaviour:
   boardGenerator: {fileID: 1096947540}
   gameManagerPhotonView: {fileID: 347150546}
   timer: {fileID: 1355503154}
+  turnMissCount: 0
 --- !u!114 &347150546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2008,6 +2009,7 @@ MonoBehaviour:
   exitScreen: {fileID: 7575360944128152037}
   rematchScreen: {fileID: 308294166}
   eventManager: {fileID: 1725770431}
+  upperStrip: {fileID: 1201889705}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 0, g: 0.4695983, b: 1, a: 1}
 --- !u!1 &563798877
@@ -3289,7 +3291,6 @@ RectTransform:
   - {fileID: 1665746719}
   - {fileID: 1201889706}
   - {fileID: 624539030}
-  - {fileID: 1355503151}
   m_Father: {fileID: 392054791}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3727,7 +3728,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1201889706}
   m_Layer: 5
-  m_Name: PlayerInfo
+  m_Name: UpperStrip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3747,6 +3748,7 @@ RectTransform:
   m_Children:
   - {fileID: 6760401675493915891}
   - {fileID: 706295505436547959}
+  - {fileID: 1355503151}
   m_Father: {fileID: 1078420545}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3788,8 +3790,8 @@ RectTransform:
   m_Children:
   - {fileID: 1831371919}
   - {fileID: 2432670}
-  m_Father: {fileID: 1078420545}
-  m_RootOrder: 5
+  m_Father: {fileID: 1201889706}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}

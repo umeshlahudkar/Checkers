@@ -93,7 +93,7 @@ public class BoardGenerator : MonoBehaviour
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = obj.GetComponent<PhotonView>();
 
-                        view.RPC(nameof(piece.SetBlock), RpcTarget.All, i, j, (int)PieceType.White, blockSize);
+                        view.RPC(nameof(piece.SetPiece), RpcTarget.All, i, j, (int)PieceType.White, blockSize);
                         //piece.SetBlock(i, j, (int)PieceType.White);
                         GameplayController.Instance.whitePieces.Add(piece);
                         //obj.transform.SetParent(pieceHolderParent);
@@ -105,11 +105,38 @@ public class BoardGenerator : MonoBehaviour
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = obj.GetComponent<PhotonView>();
 
-                        view.RPC(nameof(piece.SetBlock), RpcTarget.All, i, j, (int)PieceType.Black, blockSize);
+                        view.RPC(nameof(piece.SetPiece), RpcTarget.All, i, j, (int)PieceType.Black, blockSize);
 
                         //piece.SetBlock(i, j, (int)PieceType.Black);
                         GameplayController.Instance.blackPieces.Add(piece);
                         //obj.transform.SetParent(pieceHolderParent);
+                    }
+                }
+            }
+        }
+    }
+
+    public void GeneratePieces()
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < colums; j++)
+            {
+                if ((i + j) % 2 != 0)
+                {
+                    if (i < 3)
+                    {
+                        Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
+                        piece.SetPiece(i, j, (int)PieceType.White, blockSize);
+                        GameplayController.Instance.whitePieces.Add(piece);
+                        
+                    }
+
+                    if (i > 4)
+                    {
+                        Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
+                        piece.SetPiece(i, j, (int)PieceType.Black, blockSize);
+                        GameplayController.Instance.blackPieces.Add(piece);
                     }
                 }
             }

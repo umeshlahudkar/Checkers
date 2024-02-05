@@ -124,21 +124,12 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             }
             yield return null;
         }
+
         matchMakingManager.SetPlayerFound(newPlayer.NickName, index);
-        SaveGameData(newPlayer, index);
+        lobbyUIController.SetPlayerData(newPlayer, index);
     }
 
-    private void SaveGameData(Player opponentPlayer, int avtarIndex)
-    {
-        gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
-        gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
-        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
-
-        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
-        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
-        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
-    }
-
+   
     public void JoinRandomRoom()
     {
         if(PhotonNetwork.IsConnectedAndReady)
