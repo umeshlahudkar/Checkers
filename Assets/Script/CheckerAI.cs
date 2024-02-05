@@ -8,11 +8,13 @@ public class CheckerAI : MonoBehaviour
     private readonly List<Piece> movablePieces = new List<Piece>();
     private readonly List<Block> highlightBlocks = new List<Block>();
     private readonly List<Piece> killerPieces = new List<Piece>();
+    private readonly List<Piece> doubleKillerPieces = new List<Piece>();
 
     public void Play()
     {
         movablePieces.Clear();
         killerPieces.Clear();
+        doubleKillerPieces.Clear();
         ResetHighlightBlock();
 
         if (GameplayController.Instance.CanMove(pieceType))
@@ -29,12 +31,28 @@ public class CheckerAI : MonoBehaviour
                 if(killerPieces.Count > 0)
                 {
                     Debug.Log("Killer piece Count : " + killerPieces.Count);
-                    PrintKillerPieces();
+                    //PrintKillerPieces();
+                    CheckForDoubleKillerPieces();
+                    if(doubleKillerPieces.Count > 0)
+                    {
+                        Debug.Log("Double_Killer piece Count : " + doubleKillerPieces.Count);
+                    }
                 }
             }
         }
 
         GameManager.Instance.SwitchTurn();
+    }
+
+    private void CheckForDoubleKillerPieces()
+    {
+        for (int i = 0; i < killerPieces.Count; i++)
+        {
+            if(GameplayController.Instance.CanDoubleKill(killerPieces[i]))
+            {
+                doubleKillerPieces.Add(killerPieces[i]);
+            }
+        }
     }
 
     private void PrintKillerPieces()

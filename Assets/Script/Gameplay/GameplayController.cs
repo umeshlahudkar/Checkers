@@ -384,15 +384,44 @@ public class GameplayController : Singleton<GameplayController>
         int coloum = piece.Coloum_ID;
         PieceType pieceType = piece.PieceType;
 
-        bool canKill = false;
+        piece.killerBlockPositions.Clear();
 
-        canKill |= CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
-        canKill |= CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+        bool canKill = false;
+        bool canJump;
+
+        canJump = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+        if(canJump)
+        {
+            piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+        }
+
+        canKill |= canJump;
+
+        canJump = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+        if (canJump)
+        {
+            piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+        }
+
+        canKill |= canJump;
 
         if (piece.IsCrownedKing)
         {
-            canKill |= CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
-            canKill |= CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+            canJump = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+            if (canJump)
+            {
+                piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+            }
+
+            canKill |= canJump;
+
+            canJump = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+            if (canJump)
+            {
+                piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+            }
+
+            canKill |= canJump;
         }
 
         return canKill;
@@ -405,20 +434,174 @@ public class GameplayController : Singleton<GameplayController>
         int coloum = piece.Coloum_ID;
         PieceType pieceType = piece.PieceType;
 
-        bool canKill = false;
+        piece.killerBlockPositions.Clear();
 
-        canKill |= CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
-        canKill |= CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+        bool canKill = false;
+        bool canJump;
+
+        canJump = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+        if(canJump)
+        {
+            piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+        }
+
+        canKill |= canJump;
+
+        canJump = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+        if (canJump)
+        {
+            piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+        }
+
+        canKill |= canJump;
 
         if (piece.IsCrownedKing)
         {
-            canKill |= CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
-            canKill |= CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
-        }
+            canJump = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+            if (canJump)
+            {
+                piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+            }
 
+            canKill |= canJump;
+
+            canJump = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+            if (canJump)
+            {
+                piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+            }
+            canKill |= canJump;
+        }
         return canKill;
     }
 
+    //AI 
+    public bool CanDoubleKill(Piece piece)
+    {
+        if (piece.PieceType == PieceType.Black)
+        {
+            return CanDoubleKill_BlackPiece(piece);
+        }
+        else if (piece.PieceType == PieceType.White)
+        {
+            return CanDoubleKill_WhitePiece(piece);
+        }
+        return false;
+    }
+
+    private bool CanDoubleKill_WhitePiece(Piece piece)
+    {
+        if(piece.killerBlockPositions.Count > 0)
+        {
+            piece.doubleKillerBlockPositions.Clear();
+
+            PieceType pieceType = piece.PieceType;
+            List<BoardPosition> killerPos = piece.killerBlockPositions;
+            bool canKill = false;
+
+            for (int i = 0; i < killerPos.Count; i++)
+            {
+                int row = killerPos[i].row_ID;
+                int coloum = killerPos[i].col_ID;
+                
+                bool canJump;
+
+                canJump = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+                if (canJump)
+                {
+                    piece.doubleKillerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                }
+
+                canKill |= canJump;
+
+                canJump = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+                if (canJump)
+                {
+                    piece.doubleKillerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                }
+
+                canKill |= canJump;
+
+                if (piece.IsCrownedKing)
+                {
+                    canJump = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+                    if (canJump)
+                    {
+                        piece.doubleKillerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                    }
+
+                    canKill |= canJump;
+
+                    canJump = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+                    if (canJump)
+                    {
+                        piece.doubleKillerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                    }
+
+                    canKill |= canJump;
+                }
+            }
+            return canKill;
+        }
+        return false;
+    }
+
+
+    private bool CanDoubleKill_BlackPiece(Piece piece)
+    {
+        if (piece.killerBlockPositions.Count > 0)
+        {
+            piece.doubleKillerBlockPositions.Clear();
+
+            PieceType pieceType = piece.PieceType;
+            List<BoardPosition> killerPos = piece.killerBlockPositions;
+            bool canKill = false;
+
+            for (int i = 0; i < killerPos.Count; i++)
+            {
+                int row = killerPos[i].row_ID;
+                int coloum = killerPos[i].col_ID;
+
+                bool canJump;
+
+                canJump = CanMoveAtJumpBlock(row - 1, coloum - 1, row - 2, coloum - 2, pieceType);
+                if (canJump)
+                {
+                    piece.doubleKillerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                }
+
+                canKill |= canJump;
+
+                canJump = CanMoveAtJumpBlock(row - 1, coloum + 1, row - 2, coloum + 2, pieceType);
+                if (canJump)
+                {
+                    piece.doubleKillerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                }
+
+                canKill |= canJump;
+
+                if (piece.IsCrownedKing)
+                {
+                    canJump = CanMoveAtJumpBlock(row + 1, coloum - 1, row + 2, coloum - 2, pieceType);
+                    if (canJump)
+                    {
+                        piece.doubleKillerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                    }
+
+                    canKill |= canJump;
+
+                    canJump = CanMoveAtJumpBlock(row + 1, coloum + 1, row + 2, coloum + 2, pieceType);
+                    if (canJump)
+                    {
+                        piece.doubleKillerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                    }
+                    canKill |= canJump;
+                }
+            }
+            return canKill;
+        }
+        return false;
+    }
 
     #endregion
 

@@ -22,6 +22,7 @@ public class Piece : MonoBehaviour
 
     public List<BoardPosition> movableBlockPositions = new List<BoardPosition>();
     public List<BoardPosition> killerBlockPositions = new List<BoardPosition>();
+    public List<BoardPosition> doubleKillerBlockPositions = new List<BoardPosition>();
 
 
     [PunRPC]
