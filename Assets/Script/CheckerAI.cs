@@ -36,12 +36,24 @@ public class CheckerAI : MonoBehaviour
                     if(doubleKillerPieces.Count > 0)
                     {
                         Debug.Log("Double_Killer piece Count : " + doubleKillerPieces.Count);
+                        RemoveReAddedKillerPieces();
                     }
                 }
             }
         }
 
         GameManager.Instance.SwitchTurn();
+    }
+
+    private void RemoveReAddedKillerPieces()
+    {
+        for (int i = 0; i < killerPieces.Count; i++)
+        {
+            if(doubleKillerPieces.Contains(killerPieces[i]))
+            {
+                killerPieces.RemoveAt(i);
+            }
+        }
     }
 
     private void CheckForDoubleKillerPieces()
