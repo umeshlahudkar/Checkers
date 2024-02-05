@@ -489,6 +489,7 @@ public class GameplayController : Singleton<GameplayController>
         return false;
     }
 
+    //AI 
     private bool CanDoubleKill_WhitePiece(Piece piece)
     {
         if(piece.killerBlockPositions.Count > 0)
@@ -546,7 +547,7 @@ public class GameplayController : Singleton<GameplayController>
         return false;
     }
 
-
+    //AI 
     private bool CanDoubleKill_BlackPiece(Piece piece)
     {
         if (piece.killerBlockPositions.Count > 0)
@@ -601,6 +602,88 @@ public class GameplayController : Singleton<GameplayController>
             return canKill;
         }
         return false;
+    }
+
+    private bool IsSafeToMove(PieceType pieceType, int row, int col)
+    {
+        if(!IsValidPosition(row, col)) { return false; }
+
+        if(pieceType == PieceType.White)
+        {
+            return IsWhitePieceSafeToMoveAt(row, col);
+        }
+        else if (pieceType == PieceType.Black)
+        {
+            return IsBlackPieceSafeToMoveAt(row, col);
+        }
+
+        return false;
+    }
+
+    private bool IsWhitePieceSafeToMoveAt(int row, int col)
+    {
+        // diagonal down left
+        if (IsValidPosition(row + 1, col - 1) && board[row + 1, col -1].IsPiecePresent && board[row + 1, col - 1].Piece.PieceType != PieceType.White &&
+           IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal down right
+        if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.PieceType != PieceType.White &&
+          IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal up left
+        if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.PieceType != PieceType.White &&
+           board[row - 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal up right
+        if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.PieceType != PieceType.White &&
+          board[row - 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsBlackPieceSafeToMoveAt(int row, int col)
+    {
+        // diagonal up left
+        if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.PieceType != PieceType.Black &&
+          IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal up right
+        if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.PieceType != PieceType.Black &&
+          IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal down left
+        if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.PieceType != PieceType.Black &&
+           board[row + 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        // diagonal down right
+        if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.PieceType != PieceType.Black &&
+          board[row + 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     #endregion
