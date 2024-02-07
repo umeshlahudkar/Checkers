@@ -81,6 +81,7 @@ public class CheckerAI : MonoBehaviour
             }
         }
 
+
         for (int i = 0; i < movablePieces.Count; i++)
         {
             Piece piece = movablePieces[i];

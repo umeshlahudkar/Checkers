@@ -201,31 +201,31 @@ public class GameplayController : Singleton<GameplayController>
         if (piece.PieceType == PieceType.White)
         {
             // diagonally down left
-            canKill |= CanKill(piece, row + 2, coloum - 2);
+            canKill |= CanKillAdjecentPiece(piece, row + 2, coloum - 2);
             //diagonally down right
-            canKill |= CanKill(piece, row + 2, coloum + 2);
+            canKill |= CanKillAdjecentPiece(piece, row + 2, coloum + 2);
 
             if (piece.IsCrownedKing)
             {
                 // diagonally up left
-                canKill |= CanKill(piece, row - 2, coloum - 2);
+                canKill |= CanKillAdjecentPiece(piece, row - 2, coloum - 2);
                 //diagonally up right
-                canKill |= CanKill(piece, row - 2, coloum + 2);
+                canKill |= CanKillAdjecentPiece(piece, row - 2, coloum + 2);
             }
         }
         else if (piece.PieceType == PieceType.Black)
         {
             // diagonally up left
-            canKill |= CanKill(piece, row - 2, coloum - 2);
+            canKill |= CanKillAdjecentPiece(piece, row - 2, coloum - 2);
             // diagonally up right
-            canKill |= CanKill(piece, row - 2, coloum + 2);
+            canKill |= CanKillAdjecentPiece(piece, row - 2, coloum + 2);
 
             if (piece.IsCrownedKing)
             {
                 // diagonally down left
-                canKill |= CanKill(piece, row + 2, coloum - 2);
+                canKill |= CanKillAdjecentPiece(piece, row + 2, coloum - 2);
                 //diagonally down right
-                canKill |= CanKill(piece, row + 2, coloum + 2);
+                canKill |= CanKillAdjecentPiece(piece, row + 2, coloum + 2);
             }
         }
         return canKill;
@@ -429,9 +429,10 @@ public class GameplayController : Singleton<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        bool canMove;
-        bool canKill;
+        //bool canMove;
+        //bool canKill;
 
+        /*
         // diagonal down left
         canMove = CanMoveAtAdjacentBlock(row + 1, col - 1);
         if(canMove)
@@ -445,9 +446,13 @@ public class GameplayController : Singleton<GameplayController>
                 piece.movableBlockPositions.Add(new BoardPosition(row + 1, col - 1));
             }
         }
+        */
 
+        CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
+
+        /*
         // diagonal down left
-        canKill = CanKill(piece, row + 2, col - 2);
+        canKill = CanKillAdjecentPiece(piece, row + 2, col - 2);
         if (canKill)
         {
             if (IsSafeToKill(piece, row + 2, col - 2))
@@ -459,7 +464,10 @@ public class GameplayController : Singleton<GameplayController>
                 piece.killerBlockPositions.Add(new BoardPosition(row + 2, col - 2));
             }
         }
+        */
+        CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
 
+        /*
         // diagonal down right
         canMove = CanMoveAtAdjacentBlock(row + 1, col + 1);
         if (canMove)
@@ -473,9 +481,13 @@ public class GameplayController : Singleton<GameplayController>
                 piece.movableBlockPositions.Add(new BoardPosition(row + 1, col + 1));
             }
         }
+        */
 
+        CheckDiagonalAdjacentMove(piece, row + 1, col + 1);
+
+        /*
         // diagonal down right
-        canKill = CanKill(piece, row + 2, col + 2);
+        canKill = CanKillAdjecentPiece(piece, row + 2, col + 2);
         if (canKill)
         {
             if (IsSafeToKill(piece, row + 2, col + 2))
@@ -487,6 +499,8 @@ public class GameplayController : Singleton<GameplayController>
                 piece.killerBlockPositions.Add(new BoardPosition(row + 2, col + 2));
             }
         }
+        */
+        CheckDiagonalAdjacentKill(piece, row + 2, col + 2);
 
         // diagonal down left
         CheckForDoubleKill(piece, row + 2, col - 2);
@@ -496,6 +510,7 @@ public class GameplayController : Singleton<GameplayController>
 
         if (piece.IsCrownedKing)
         {
+            /*
             // diagonal up left
             canMove = CanMoveAtAdjacentBlock(row - 1, col - 1);
             if (canMove)
@@ -509,9 +524,13 @@ public class GameplayController : Singleton<GameplayController>
                     piece.movableBlockPositions.Add(new BoardPosition(row - 1, col - 1));
                 }
             }
+            */
 
+            CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
+
+            /*
             // diagonal up left
-            canKill = CanKill(piece, row - 2, col - 2);
+            canKill = CanKillAdjecentPiece(piece, row - 2, col - 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row - 2, col - 2))
@@ -523,7 +542,11 @@ public class GameplayController : Singleton<GameplayController>
                     piece.killerBlockPositions.Add(new BoardPosition(row - 2, col - 2));
                 }
             }
-           
+            */
+
+            CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
+
+            /*
             // diagonal up right
             canMove = CanMoveAtAdjacentBlock(row - 1, col + 1);
             if (canMove)
@@ -537,9 +560,13 @@ public class GameplayController : Singleton<GameplayController>
                     piece.movableBlockPositions.Add(new BoardPosition(row - 1, col + 1));
                 }
             }
+            */
 
+            CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
+
+            /*
             // diagonal up right
-            canKill = CanKill(piece, row - 2, col + 2);
+            canKill = CanKillAdjecentPiece(piece, row - 2, col + 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row - 2, col + 2))
@@ -551,6 +578,8 @@ public class GameplayController : Singleton<GameplayController>
                     piece.killerBlockPositions.Add(new BoardPosition(row - 2, col + 2));
                 }
             }
+            */
+            CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
 
             // diagonal up left
             CheckForDoubleKill(piece, row - 2, col - 2);
@@ -560,7 +589,37 @@ public class GameplayController : Singleton<GameplayController>
         }
     }
 
-    private bool CanKill(Piece killerPiece, int targetRow, int targetCol)
+    private void CheckDiagonalAdjacentMove(Piece piece, int targetRow, int targetCol)
+    {
+        if (CanMoveAtAdjacentBlock(targetRow, targetCol))
+        {
+            if (IsSafeToMove(piece, targetRow, targetCol))
+            {
+                piece.safeMovableBlockPositions.Add(new BoardPosition(targetRow, targetCol));
+            }
+            else
+            {
+                piece.movableBlockPositions.Add(new BoardPosition(targetRow, targetCol));
+            }
+        }
+    }
+
+    private void CheckDiagonalAdjacentKill(Piece piece, int targetRow, int targetCol)
+    {
+        if (CanKillAdjecentPiece(piece, targetRow, targetCol))
+        {
+            if (IsSafeToKill(piece, targetRow, targetCol))
+            {
+                piece.safeKillerBlockPositions.Add(new BoardPosition(targetRow, targetCol));
+            }
+            else
+            {
+                piece.killerBlockPositions.Add(new BoardPosition(targetRow, targetCol));
+            }
+        }
+    }
+
+    private bool CanKillAdjecentPiece(Piece killerPiece, int targetRow, int targetCol)
     {
         int middleBlockRow = (targetRow > killerPiece.Row_ID) ? targetRow - 1 : targetRow + 1;
         int middleBlockCol = (targetCol > killerPiece.Coloum_ID) ? targetCol - 1 : targetCol + 1;
@@ -572,13 +631,12 @@ public class GameplayController : Singleton<GameplayController>
         {
             return true;
         }
-
         return false;
     }
 
     private bool CanDoubleKill(Piece killerPiece, int targetRow, int targetCol)
     {
-        if(!CanKill(killerPiece, targetRow, targetCol) || !IsValidPosition(targetRow, targetCol)) { return false; }
+        if(!CanKillAdjecentPiece(killerPiece, targetRow, targetCol) || !IsValidPosition(targetRow, targetCol)) { return false; }
 
         int killerRow = killerPiece.Row_ID;
         int killerCol = killerPiece.Coloum_ID;
@@ -596,16 +654,16 @@ public class GameplayController : Singleton<GameplayController>
         bool canKill = false;
 
         // diagonal down left
-        canKill |= CanKill(killerPiece, targetRow + 2, targetCol - 2);
+        canKill |= CanKillAdjecentPiece(killerPiece, targetRow + 2, targetCol - 2);
         // diagonal down right
-        canKill |= CanKill(killerPiece, targetRow + 2, targetCol + 2);
+        canKill |= CanKillAdjecentPiece(killerPiece, targetRow + 2, targetCol + 2);
 
         if(killerPiece.IsCrownedKing)
         {
             // diagonal up left
-            canKill |= CanKill(killerPiece, targetRow - 2, targetCol - 2);
+            canKill |= CanKillAdjecentPiece(killerPiece, targetRow - 2, targetCol - 2);
             // diagonal up right
-            canKill |= CanKill(killerPiece, targetRow - 2, targetCol + 2);
+            canKill |= CanKillAdjecentPiece(killerPiece, targetRow - 2, targetCol + 2);
         }
 
         board[middleBlockRow, middleBlockCol].SetBlockPiece(true, firstKilledPiece);
@@ -673,9 +731,22 @@ public class GameplayController : Singleton<GameplayController>
 
         board[middleBlockRow, middleBlockCol].SetBlockPiece(false, null);
         board[killerRow, killerCol].SetBlockPiece(false, null);
-
         board[targetRow, targetCol].SetBlockPiece(true, killerPiece);
 
+        // diagonal down left
+        CheckDoubleKillDirection(killerPiece, targetRow + 2, targetCol - 2);
+        // diagonal down right
+        CheckDoubleKillDirection(killerPiece, targetRow + 2, targetCol + 2);
+
+        if (killerPiece.IsCrownedKing)
+        {
+            // diagonal up left
+            CheckDoubleKillDirection(killerPiece, targetRow - 2, targetCol - 2);
+            // diagonal up right
+            CheckDoubleKillDirection(killerPiece, targetRow - 2, targetCol + 2);
+        }
+
+        /*
         bool canKill ;
 
         // diagonal down left
@@ -737,9 +808,29 @@ public class GameplayController : Singleton<GameplayController>
             }
         }
 
+        */
+
         board[middleBlockRow, middleBlockCol].SetBlockPiece(true, firstKilledPiece);
         board[killerRow, killerCol].SetBlockPiece(true, killerPiece);
         board[targetRow, targetCol].SetBlockPiece(false, null);
+    }
+
+    private void CheckDoubleKillDirection(Piece killerPiece, int targetRow, int targetCol)
+    {
+        if (CanKillAdjecentPiece(killerPiece, targetRow, targetCol))
+        {
+            int rowToAdd = (targetRow > killerPiece.Row_ID) ? targetRow - 2 : targetRow + 2;
+            int colToAdd = (targetCol > killerPiece.Coloum_ID) ? targetCol - 2 : targetCol + 2;
+
+            if (IsSafeToKill(killerPiece, targetRow, targetCol))
+            {
+                killerPiece.safeDoubleKillerBlockPositions.Add(new BoardPosition(rowToAdd, colToAdd));
+            }
+            else
+            {
+                killerPiece.doubleKillerBlockPositions.Add(new BoardPosition(rowToAdd, colToAdd));
+            }
+        }
     }
 
     private bool IsSafe(Piece piece)
@@ -1134,7 +1225,7 @@ public class GameplayController : Singleton<GameplayController>
         if (piece.PieceType == PieceType.White)
         {
             // diagonally down left
-            canKill = CanKill(piece, row + 2, coloum - 2);
+            canKill = CanKillAdjecentPiece(piece, row + 2, coloum - 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row + 2, coloum - 2))
@@ -1148,7 +1239,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             //diagonally down right
-            canKill = CanKill(piece, row + 2, coloum + 2);
+            canKill = CanKillAdjecentPiece(piece, row + 2, coloum + 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row + 2, coloum + 2))
@@ -1164,7 +1255,7 @@ public class GameplayController : Singleton<GameplayController>
             if (piece.IsCrownedKing)
             {
                 // diagonally up left
-                canKill = CanKill(piece, row - 2, coloum - 2);
+                canKill = CanKillAdjecentPiece(piece, row - 2, coloum - 2);
                 if (canKill)
                 {
                     if (IsSafeToKill(piece, row - 2, coloum - 2))
@@ -1178,7 +1269,7 @@ public class GameplayController : Singleton<GameplayController>
                 }
 
                 //diagonally up right
-                canKill = CanKill(piece, row - 2, coloum + 2);
+                canKill = CanKillAdjecentPiece(piece, row - 2, coloum + 2);
                 if (canKill)
                 {
                     if (IsSafeToKill(piece, row - 2, coloum + 2))
@@ -1195,7 +1286,7 @@ public class GameplayController : Singleton<GameplayController>
         else if (piece.PieceType == PieceType.Black)
         {
             // diagonally up left
-            canKill = CanKill(piece, row - 2, coloum - 2);
+            canKill = CanKillAdjecentPiece(piece, row - 2, coloum - 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row - 2, coloum - 2))
@@ -1209,7 +1300,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonally up right
-            canKill = CanKill(piece, row - 2, coloum + 2);
+            canKill = CanKillAdjecentPiece(piece, row - 2, coloum + 2);
             if (canKill)
             {
                 if (IsSafeToKill(piece, row - 2, coloum + 2))
@@ -1225,7 +1316,7 @@ public class GameplayController : Singleton<GameplayController>
             if (piece.IsCrownedKing)
             {
                 // diagonally down left
-                canKill = CanKill(piece, row + 2, coloum - 2);
+                canKill = CanKillAdjecentPiece(piece, row + 2, coloum - 2);
                 if (canKill)
                 {
                     if (IsSafeToKill(piece, row + 2, coloum - 2))
@@ -1239,7 +1330,7 @@ public class GameplayController : Singleton<GameplayController>
                 }
 
                 //diagonally down right
-                canKill = CanKill(piece, row + 2, coloum + 2);
+                canKill = CanKillAdjecentPiece(piece, row + 2, coloum + 2);
                 if (canKill)
                 {
                     if (IsSafeToKill(piece, row + 2, coloum + 2))
