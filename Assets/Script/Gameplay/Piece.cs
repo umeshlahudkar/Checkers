@@ -57,7 +57,8 @@ public class Piece : MonoBehaviour
         GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
 
         if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || 
-            (GameManager.Instance.GameMode != GameMode.Online && this.pieceType == PieceType.Black))
+           (GameManager.Instance.GameMode == GameMode.PVC && this.pieceType == PieceType.Black) ||
+            GameManager.Instance.GameMode == GameMode.PVP)
         {
             button.interactable = true;
         }
@@ -134,8 +135,12 @@ public class Piece : MonoBehaviour
     {
         movableBlockPositions.Clear();
         safeMovableBlockPositions.Clear();
+
         killerBlockPositions.Clear();
         safeKillerBlockPositions.Clear();
+
+        doubleKillerBlockPositions.Clear();
+        safeDoubleKillerBlockPositions.Clear();
     }
 }
 

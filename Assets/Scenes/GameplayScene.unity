@@ -940,6 +940,7 @@ MonoBehaviour:
   blackPieces: []
   highlightedBlocks: []
   selectedPiece: {fileID: 0}
+  ai: {fileID: 225970680}
 --- !u!114 &264248825
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -5,21 +5,11 @@ using UnityEngine;
 public class CheckerAI : MonoBehaviour
 {
     private readonly PieceType pieceType = PieceType.White;
-    private readonly List<Piece> movablePieces = new List<Piece>();
-    private readonly List<Block> highlightBlocks = new List<Block>();
-    private readonly List<Piece> killerPieces = new List<Piece>();
-    private readonly List<Piece> doubleKillerPieces = new List<Piece>();
-
-
-    private readonly List<MovablePiece> selectedPieceToMove = new List<MovablePiece>();
+    private readonly List<Piece> movablePieces = new();
 
     public void Play()
     {
         movablePieces.Clear();
-        killerPieces.Clear();
-        doubleKillerPieces.Clear();
-        selectedPieceToMove.Clear();
-        ResetHighlightBlock();
 
         if (GameplayController.Instance.CanMove(pieceType))
         {
@@ -27,7 +17,6 @@ public class CheckerAI : MonoBehaviour
 
             if(movablePieces.Count > 0)
             {
-                //HighlightMovablePieceBlock();
                 SetMovablePosition();
                 MovePiece();
             }
@@ -68,7 +57,6 @@ public class CheckerAI : MonoBehaviour
             }
         }
 
-        /*
         for (int i = 0; i < movablePieces.Count; i++)
         {
             Piece piece = movablePieces[i];
@@ -77,7 +65,6 @@ public class CheckerAI : MonoBehaviour
                 BoardPosition position = piece.safeKillerBlockPositions[0];
                 GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
                 MovePiece(piece, position);
-                Debug.Log("killed by protecting own life");
                 return;
             }
         }
@@ -90,11 +77,9 @@ public class CheckerAI : MonoBehaviour
                 BoardPosition position = piece.killerBlockPositions[0];
                 GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
                 MovePiece(piece, position);
-                Debug.Log("killed by risking own life");
                 return;
             }
         }
-        */
 
         for (int i = 0; i < movablePieces.Count; i++)
         {
@@ -118,7 +103,7 @@ public class CheckerAI : MonoBehaviour
         }
     }
 
-    private void MovePiece(Piece piece, BoardPosition boardPosition)
+    public void MovePiece(Piece piece, BoardPosition boardPosition)
     {
         GameplayController.Instance.selectedPiece = piece;
         Block targetMovableBlock = GameplayController.Instance.board[boardPosition.row_ID, boardPosition.col_ID];
@@ -132,26 +117,6 @@ public class CheckerAI : MonoBehaviour
             Piece piece = movablePieces[i];
             piece.ResetAllList();
             GameplayController.Instance.CheckWhitePieceSafePosition(piece);
-        }
-    }
-
-    private async void ResetHighlightBlock()
-    {
-        await System.Threading.Tasks.Task.Delay(1000);
-        for (int i = 0; i < highlightBlocks.Count; i++)
-        {
-            highlightBlocks[i].ResetBlock();
-        }
-        highlightBlocks.Clear();
-    }
-
-    private void HighlightMovablePieceBlock()
-    {
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            Piece piece = movablePieces[i];
-            GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID].HighlightPieceBlock();
-            highlightBlocks.Add(GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID]);
         }
     }
 }
@@ -168,14 +133,3 @@ public struct BoardPosition
     }
 }
 
-public class MovablePiece
-{
-    public Piece piece;
-    public List<BoardPosition> positions;
-
-    public MovablePiece(Piece piece, List<BoardPosition> positions)
-    {
-        this.piece = piece;
-        this.positions = positions;
-    }
-}

@@ -14,6 +14,7 @@ public class GameplayController : Singleton<GameplayController>
     [SerializeField] private List<Block> highlightedBlocks = new List<Block>();
 
     public Piece selectedPiece;
+    public CheckerAI ai;
 
     public void OnBoardReady()
     {
@@ -43,16 +44,33 @@ public class GameplayController : Singleton<GameplayController>
     {
         if (pieceType == PieceType.Black)
         {
-            return CanBlackPieceMove();
+            //return CanBlackPieceMove();
+            for(int i = 0; i < blackPieces.Count; i++)
+            {
+                bool moveFound = CanPieceMove(blackPieces[i]);
+                if(moveFound)
+                {
+                    return moveFound;
+                }
+            }
         }
         else if (pieceType == PieceType.White)
         {
-            return CanWhitePieceMove();
+            //return CanWhitePieceMove();
+            for (int i = 0; i < whitePieces.Count; i++)
+            {
+                bool moveFound = CanPieceMove(whitePieces[i]);
+                if (moveFound)
+                {
+                    return moveFound;
+                }
+            }
         }
 
         return false;
     }
 
+    /*
     //AI
     private bool CanWhitePieceMove()
     {
@@ -115,9 +133,10 @@ public class GameplayController : Singleton<GameplayController>
         }
         return moveFound;
     }
+    */
 
     //AI
-    private bool CheckPieceCanMove(int row, int col, int jumpRow, int jumpCol, PieceType pieceType)
+    private bool CheckPieceCanMove(PieceType pieceType, int row, int col, int jumpRow, int jumpCol)
     {
         if (!IsValidPosition(row, col)) { return false; }
 
@@ -132,19 +151,123 @@ public class GameplayController : Singleton<GameplayController>
         return moveFound;
     }
 
+    private bool CanPieceMove(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+
+        bool moveFound = false;
+
+        if (piece.PieceType == PieceType.White)
+        {
+            // diagonally down left
+            moveFound |= CheckPieceCanMove(PieceType.White, row + 1, coloum - 1, row + 2, coloum - 2);
+            //diagonally down right
+            moveFound |= CheckPieceCanMove(PieceType.White, row + 1, coloum + 1, row + 2, coloum + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally up left
+                moveFound |= CheckPieceCanMove(PieceType.White, row - 1, coloum - 1, row - 2, coloum - 2);
+                //diagonally up right
+                moveFound |= CheckPieceCanMove(PieceType.White, row - 1, coloum + 1, row - 2, coloum + 2);
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonally up left
+            moveFound |= CheckPieceCanMove(PieceType.Black, row - 1, coloum - 1, row - 2, coloum - 2);
+            // diagonally up right
+            moveFound |= CheckPieceCanMove(PieceType.Black, row - 1, coloum + 1, row - 2, coloum + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                moveFound |= CheckPieceCanMove(PieceType.Black, row + 1, coloum - 1, row + 2, coloum - 2);
+                //diagonally down right
+                moveFound |= CheckPieceCanMove(PieceType.Black, row + 1, coloum + 1, row + 2, coloum + 2);
+            }
+        }
+        return moveFound;
+    }
+
+    private bool CanPieceKill(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+
+        bool canKill = false;
+
+        if (piece.PieceType == PieceType.White)
+        {
+            // diagonally down left
+            canKill |= CanKill(piece, row + 2, coloum - 2);
+            //diagonally down right
+            canKill |= CanKill(piece, row + 2, coloum + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally up left
+                canKill |= CanKill(piece, row - 2, coloum - 2);
+                //diagonally up right
+                canKill |= CanKill(piece, row - 2, coloum + 2);
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonally up left
+            canKill |= CanKill(piece, row - 2, coloum - 2);
+            // diagonally up right
+            canKill |= CanKill(piece, row - 2, coloum + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                canKill |= CanKill(piece, row + 2, coloum - 2);
+                //diagonally down right
+                canKill |= CanKill(piece, row + 2, coloum + 2);
+            }
+        }
+        return canKill;
+    }
+
     //AI 
     public void CheckMovablePieces(PieceType pieceType, List<Piece> movablePieces)
     {
+        //if (pieceType == PieceType.Black)
+        //{
+        //    CheckBlackMovablePieces(movablePieces);
+        //}
+        //else if (pieceType == PieceType.White)
+        //{
+        //    CheckWhiteMovablePieces(movablePieces);
+        //}
+
         if (pieceType == PieceType.Black)
         {
-            CheckBlackMovablePieces(movablePieces);
+            for (int i = 0; i < blackPieces.Count; i++)
+            {
+                bool moveFound = CanPieceMove(blackPieces[i]);
+                if (moveFound)
+                {
+                    movablePieces.Add(blackPieces[i]);
+                }
+            }
         }
         else if (pieceType == PieceType.White)
         {
-            CheckWhiteMovablePieces(movablePieces);
+            for (int i = 0; i < whitePieces.Count; i++)
+            {
+                bool moveFound = CanPieceMove(whitePieces[i]);
+                if (moveFound)
+                {
+                    movablePieces.Add(whitePieces[i]);
+                }
+            }
         }
     }
 
+    /*
     //AI 
     private void CheckWhiteMovablePieces(List<Piece> movablePieces)
     {
@@ -202,6 +325,7 @@ public class GameplayController : Singleton<GameplayController>
             }
         }
     }
+    */
 
     //AI 
     private bool CanMoveAtAdjacentBlock(int row, int col)
@@ -215,6 +339,7 @@ public class GameplayController : Singleton<GameplayController>
         return false;
     }
 
+    /*
     //AI 
     private bool CanMoveAtJumpBlock(int row, int col, int jumpRow, int jumpCol, PieceType pieceType)
     {
@@ -228,6 +353,7 @@ public class GameplayController : Singleton<GameplayController>
         
         return false;
     }
+   
 
     private bool IsWhitePieceSafeToMoveAt(int row, int col)
     {
@@ -294,6 +420,9 @@ public class GameplayController : Singleton<GameplayController>
 
         return true;
     }
+
+    */
+
 
     public void CheckWhitePieceSafePosition(Piece piece)
     {
@@ -849,7 +978,6 @@ public class GameplayController : Singleton<GameplayController>
             selectedPiece = pieceToMove;
             board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].HighlightPieceBlock();
             highlightedBlocks.Add(board[pieceToMove.Row_ID, pieceToMove.Coloum_ID]);
-
         }
         else
         {
@@ -888,11 +1016,7 @@ public class GameplayController : Singleton<GameplayController>
             block.IsNextToNextHighlighted = false;
         }
 
-        //UpdateGrid(selectedPiece.Row_ID, selectedPiece.Coloum_ID, null);
         UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
-
-        //selectedPiece.transform.position = block.transform.position;
-        //yield return StartCoroutine(MovePiece(selectedPiece.transform, block.transform.position));
 
         yield return new WaitForSeconds(0.5f);  //0.25
 
@@ -913,16 +1037,25 @@ public class GameplayController : Singleton<GameplayController>
 
         selectedPiece = block.Piece;
 
-        if (hasDeleted && CanMove())
+        if (hasDeleted && CanPieceKill(selectedPiece) /*CanMove()*/)
         {
-            CheckNextMove(selectedPiece);
+            if(GameManager.Instance.GameMode == GameMode.PVC && GameManager.Instance.CurrentTurn == 2)
+            {
+                BoardPosition position = GetKilledPosition(selectedPiece);
+                board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
+                ai.MovePiece(selectedPiece, position);
+                ResetBlocksNextToNextHighlightedParameter();
+            }
+            else
+            {
+                CheckNextMove(selectedPiece);
+            }
         }
         else
         {
-           GameManager.Instance.SwitchTurn();
+            GameManager.Instance.SwitchTurn();
+            ResetBlocksNextToNextHighlightedParameter();
         }
-
-        ResetBlocksNextToNextHighlightedParameter();
     }
 
     private void ResetBlocksNextToNextHighlightedParameter()
@@ -990,6 +1123,151 @@ public class GameplayController : Singleton<GameplayController>
         pieceToMove.position = targetPos;
     }
 
+    private BoardPosition GetKilledPosition(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int coloum = piece.Coloum_ID;
+        piece.ResetAllList();
+
+        bool canKill;
+
+        if (piece.PieceType == PieceType.White)
+        {
+            // diagonally down left
+            canKill = CanKill(piece, row + 2, coloum - 2);
+            if (canKill)
+            {
+                if (IsSafeToKill(piece, row + 2, coloum - 2))
+                {
+                    piece.safeKillerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                }
+                else
+                {
+                    piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                }
+            }
+
+            //diagonally down right
+            canKill = CanKill(piece, row + 2, coloum + 2);
+            if (canKill)
+            {
+                if (IsSafeToKill(piece, row + 2, coloum + 2))
+                {
+                    piece.safeKillerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                }
+                else
+                {
+                    piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                }
+            }
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally up left
+                canKill = CanKill(piece, row - 2, coloum - 2);
+                if (canKill)
+                {
+                    if (IsSafeToKill(piece, row - 2, coloum - 2))
+                    {
+                        piece.safeKillerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                    }
+                    else
+                    {
+                        piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                    }
+                }
+
+                //diagonally up right
+                canKill = CanKill(piece, row - 2, coloum + 2);
+                if (canKill)
+                {
+                    if (IsSafeToKill(piece, row - 2, coloum + 2))
+                    {
+                        piece.safeKillerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                    }
+                    else
+                    {
+                        piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                    }
+                }
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonally up left
+            canKill = CanKill(piece, row - 2, coloum - 2);
+            if (canKill)
+            {
+                if (IsSafeToKill(piece, row - 2, coloum - 2))
+                {
+                    piece.safeKillerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                }
+                else
+                {
+                    piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum - 2));
+                }
+            }
+
+            // diagonally up right
+            canKill = CanKill(piece, row - 2, coloum + 2);
+            if (canKill)
+            {
+                if (IsSafeToKill(piece, row - 2, coloum + 2))
+                {
+                    piece.safeKillerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                }
+                else
+                {
+                    piece.killerBlockPositions.Add(new BoardPosition(row - 2, coloum + 2));
+                }
+            }
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonally down left
+                canKill = CanKill(piece, row + 2, coloum - 2);
+                if (canKill)
+                {
+                    if (IsSafeToKill(piece, row + 2, coloum - 2))
+                    {
+                        piece.safeKillerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                    }
+                    else
+                    {
+                        piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum - 2));
+                    }
+                }
+
+                //diagonally down right
+                canKill = CanKill(piece, row + 2, coloum + 2);
+                if (canKill)
+                {
+                    if (IsSafeToKill(piece, row + 2, coloum + 2))
+                    {
+                        piece.safeKillerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                    }
+                    else
+                    {
+                        piece.killerBlockPositions.Add(new BoardPosition(row + 2, coloum + 2));
+                    }
+                }
+            }
+        }
+
+        if(piece.safeKillerBlockPositions.Count > 0)
+        {
+            return piece.safeKillerBlockPositions[0];
+        }
+
+        if(piece.killerBlockPositions.Count > 0)
+        {
+            return piece.killerBlockPositions[0];
+        }
+
+        return default;
+    }
+
+    /*
     private bool CanMove()
     {
         if(selectedPiece.PieceType == PieceType.White)
@@ -1028,6 +1306,7 @@ public class GameplayController : Singleton<GameplayController>
         }
         return false;
     }
+    */
 
     public void ResetGameplay()
     {
