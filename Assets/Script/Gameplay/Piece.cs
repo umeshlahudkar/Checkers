@@ -20,9 +20,16 @@ public class Piece : MonoBehaviour
 
     [SerializeField] private bool isCrownedKing;
 
-    public List<BoardPosition> movableBlockPositions = new List<BoardPosition>();
-    public List<BoardPosition> killerBlockPositions = new List<BoardPosition>();
-    public List<BoardPosition> doubleKillerBlockPositions = new List<BoardPosition>();
+
+    [Header("Piece AI")]
+    [HideInInspector] public List<BoardPosition> movableBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeMovableBlockPositions = new();
+
+    [HideInInspector] public List<BoardPosition> killerBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeKillerBlockPositions = new();
+
+    [HideInInspector] public List<BoardPosition> doubleKillerBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeDoubleKillerBlockPositions = new();
 
 
     [PunRPC]
@@ -49,7 +56,8 @@ public class Piece : MonoBehaviour
 
         GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
 
-        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || GameManager.Instance.GameMode != GameMode.Online)
+        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || 
+            (GameManager.Instance.GameMode != GameMode.Online && this.pieceType == PieceType.Black))
         {
             button.interactable = true;
         }
@@ -120,6 +128,14 @@ public class Piece : MonoBehaviour
         {
             GameplayController.Instance.CheckNextMove(this);
         }
+    }
+
+    public void ResetAllList()
+    {
+        movableBlockPositions.Clear();
+        safeMovableBlockPositions.Clear();
+        killerBlockPositions.Clear();
+        safeKillerBlockPositions.Clear();
     }
 }
 

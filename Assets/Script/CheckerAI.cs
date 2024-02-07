@@ -10,11 +10,15 @@ public class CheckerAI : MonoBehaviour
     private readonly List<Piece> killerPieces = new List<Piece>();
     private readonly List<Piece> doubleKillerPieces = new List<Piece>();
 
+
+    private readonly List<MovablePiece> selectedPieceToMove = new List<MovablePiece>();
+
     public void Play()
     {
         movablePieces.Clear();
         killerPieces.Clear();
         doubleKillerPieces.Clear();
+        selectedPieceToMove.Clear();
         ResetHighlightBlock();
 
         if (GameplayController.Instance.CanMove(pieceType))
@@ -23,83 +27,117 @@ public class CheckerAI : MonoBehaviour
 
             if(movablePieces.Count > 0)
             {
-                Debug.Log("Movable piece Count : " + movablePieces.Count);
-                HighlightMovablePieceBlock();
+                //HighlightMovablePieceBlock();
                 SetMovablePosition();
-                CheckForKillerPieces();
-
-                if(killerPieces.Count > 0)
-                {
-                    Debug.Log("Killer piece Count : " + killerPieces.Count);
-                    //PrintKillerPieces();
-                    CheckForDoubleKillerPieces();
-                    if(doubleKillerPieces.Count > 0)
-                    {
-                        Debug.Log("Double_Killer piece Count : " + doubleKillerPieces.Count);
-                        RemoveReAddedKillerPieces();
-                    }
-                }
+                MovePiece();
             }
         }
-
-        GameManager.Instance.SwitchTurn();
-    }
-
-    private void RemoveReAddedKillerPieces()
-    {
-        for (int i = 0; i < killerPieces.Count; i++)
+        else
         {
-            if(doubleKillerPieces.Contains(killerPieces[i]))
-            {
-                killerPieces.RemoveAt(i);
-            }
+            Debug.Log(".........Computer lose, can not move.........");
         }
     }
 
-    private void CheckForDoubleKillerPieces()
+    private void MovePiece()
     {
-        for (int i = 0; i < killerPieces.Count; i++)
-        {
-            if(GameplayController.Instance.CanDoubleKill(killerPieces[i]))
-            {
-                doubleKillerPieces.Add(killerPieces[i]);
-            }
-        }
-    }
+        movablePieces.Shuffle();
 
-    private void PrintKillerPieces()
-    {
-        for (int i = 0; i < killerPieces.Count; i++)
-        {
-            Debug.Log("Killer Piece : " + GameplayController.Instance.board[killerPieces[i].Row_ID, killerPieces[i].Coloum_ID].gameObject.name);
-                
-        }
-    }
-
-    private void CheckForKillerPieces()
-    {
         for (int i = 0; i < movablePieces.Count; i++)
         {
-            if(GameplayController.Instance.CanKillOpponentPiece(movablePieces[i]))
+            Piece piece = movablePieces[i];
+            if (piece.safeDoubleKillerBlockPositions.Count > 0)
             {
-                killerPieces.Add(movablePieces[i]);
+                BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
+                GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
+                MovePiece(piece, position);
+                Debug.Log("double killed by protecting own life");
+                return;
             }
         }
+
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            if (piece.doubleKillerBlockPositions.Count > 0)
+            {
+                BoardPosition position = piece.doubleKillerBlockPositions[0];
+                GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
+                MovePiece(piece, position);
+                Debug.Log("double killed by risking own life");
+                return;
+            }
+        }
+
+        /*
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            if (piece.safeKillerBlockPositions.Count > 0)
+            {
+                BoardPosition position = piece.safeKillerBlockPositions[0];
+                GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
+                MovePiece(piece, position);
+                Debug.Log("killed by protecting own life");
+                return;
+            }
+        }
+
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            if (piece.killerBlockPositions.Count > 0)
+            {
+                BoardPosition position = piece.killerBlockPositions[0];
+                GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
+                MovePiece(piece, position);
+                Debug.Log("killed by risking own life");
+                return;
+            }
+        }
+        */
+
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            if(piece.safeMovableBlockPositions.Count > 0)
+            {
+                MovePiece(piece, piece.safeMovableBlockPositions[0]);
+                return;
+            }
+        }
+
+
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            if (piece.movableBlockPositions.Count > 0)
+            {
+                MovePiece(piece, piece.movableBlockPositions[0]);
+                return;
+            }
+        }
+    }
+
+    private void MovePiece(Piece piece, BoardPosition boardPosition)
+    {
+        GameplayController.Instance.selectedPiece = piece;
+        Block targetMovableBlock = GameplayController.Instance.board[boardPosition.row_ID, boardPosition.col_ID];
+        StartCoroutine(GameplayController.Instance.HandlePieceMovement(targetMovableBlock));
     }
 
     private void SetMovablePosition()
     {
         for (int i = 0; i < movablePieces.Count; i++)
         {
-            movablePieces[i].movableBlockPositions.Clear();
-            GameplayController.Instance.SetMovablePosition(movablePieces[i]);
-            //Debug.Log(GameplayController.Instance.board[movablePieces[i].Row_ID, movablePieces[i].Coloum_ID].gameObject.name + "  " +
-            //     movablePieces[i].movableBlockPositions.Count);
+            Piece piece = movablePieces[i];
+            piece.ResetAllList();
+            GameplayController.Instance.CheckWhitePieceSafePosition(piece);
         }
     }
 
-    private void ResetHighlightBlock()
+    private async void ResetHighlightBlock()
     {
+        await System.Threading.Tasks.Task.Delay(1000);
         for (int i = 0; i < highlightBlocks.Count; i++)
         {
             highlightBlocks[i].ResetBlock();
@@ -127,5 +165,17 @@ public struct BoardPosition
     {
         row_ID = row;
         col_ID = col;
+    }
+}
+
+public class MovablePiece
+{
+    public Piece piece;
+    public List<BoardPosition> positions;
+
+    public MovablePiece(Piece piece, List<BoardPosition> positions)
+    {
+        this.piece = piece;
+        this.positions = positions;
     }
 }

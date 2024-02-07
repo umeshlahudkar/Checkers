@@ -145,6 +145,7 @@ public class Block : MonoBehaviour
     {
         button.interactable = false;
         isTargetBlockHighlighted = false;
+        
         highlightImage.gameObject.SetActive(false);
         targetImage.gameObject.SetActive(false);
     }
@@ -154,12 +155,14 @@ public class Block : MonoBehaviour
         if(isTargetBlockHighlighted)
         {
             StartCoroutine(GameplayController.Instance.HandlePieceMovement(this));
+            isNextTargetBlockHighlighted = false;
         }
     }
 
     public bool IsNextToNextHighlighted
     {
         get { return isNextTargetBlockHighlighted; }
+        set { isNextTargetBlockHighlighted = value; }
     }
 
     public int Row_ID { get { return rowID; } }
