@@ -35,7 +35,6 @@ public class CheckerAI : MonoBehaviour
         {
             Piece piece = movablePieces[i];
             piece.ResetAllList();
-            //GameplayController.Instance.CheckWhitePieceSafePosition(piece);
             GameplayController.Instance.SetPiecePosition(piece);
         }
     }
@@ -52,7 +51,6 @@ public class CheckerAI : MonoBehaviour
                 BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
                 GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
                 MovePiece(piece, position);
-                Debug.Log("double killed by protecting own life");
                 return;
             }
         }
@@ -65,7 +63,6 @@ public class CheckerAI : MonoBehaviour
                 BoardPosition position = piece.doubleKillerBlockPositions[0];
                 GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
                 MovePiece(piece, position);
-                Debug.Log("double killed by risking own life");
                 return;
             }
         }
