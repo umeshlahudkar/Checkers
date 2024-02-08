@@ -857,7 +857,7 @@ GameObject:
   - component: {fileID: 225970679}
   - component: {fileID: 225970680}
   m_Layer: 0
-  m_Name: CheckerAI
+  m_Name: AIPlayer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -940,7 +940,7 @@ MonoBehaviour:
   blackPieces: []
   highlightedBlocks: []
   selectedPiece: {fileID: 0}
-  ai: {fileID: 225970680}
+  aiPlayer: {fileID: 225970680}
 --- !u!114 &264248825
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1362,7 +1362,7 @@ MonoBehaviour:
   boardGenerator: {fileID: 1096947540}
   gameManagerPhotonView: {fileID: 347150546}
   timer: {fileID: 1355503154}
-  ai: {fileID: 225970680}
+  aiPlayer: {fileID: 225970680}
   turnMissCount: 0
 --- !u!114 &347150546
 MonoBehaviour:

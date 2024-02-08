@@ -14,7 +14,7 @@ public class GameplayController : Singleton<GameplayController>
     [SerializeField] private List<Block> highlightedBlocks = new List<Block>();
 
     public Piece selectedPiece;
-    public CheckerAI ai;
+    public AIPlayer aiPlayer;
 
     public void OnBoardReady()
     {
@@ -829,7 +829,7 @@ public class GameplayController : Singleton<GameplayController>
                 }
 
                 board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
-                ai.MovePiece(selectedPiece, position);
+                aiPlayer.MovePiece(selectedPiece, position);
                 ResetBlocksNextToNextHighlightedParameter();
             }
             else

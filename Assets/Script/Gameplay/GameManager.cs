@@ -8,7 +8,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private GameplayTimer timer;
-    [SerializeField] private CheckerAI ai;
+    [SerializeField] private AIPlayer aiPlayer;
 
     private PieceType pieceType;
     private int currentTurn;
@@ -148,7 +148,7 @@ public class GameManager : Singleton<GameManager>
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
-            if(currentTurn == 2 && !ai.CanPlay())
+            if(currentTurn == 2 && !aiPlayer.CanPlay())
             {
                 GameplayUIController.Instance.ToggleGameWinScreen(true);
             }

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CheckerAI : MonoBehaviour
+public class AIPlayer : MonoBehaviour
 {
     private readonly PieceType pieceType = PieceType.White;
     private readonly List<Piece> movablePieces = new();
