@@ -40,9 +40,9 @@ public class GameplayController : Singleton<GameplayController>
     #region AI
     //AI
 
-    public bool CanMove(PieceType pieceType)
+    public bool CanMove(int playerNumber)
     {
-        if (pieceType == PieceType.Black)
+        if (playerNumber == 1)
         {
             for(int i = 0; i < blackPieces.Count; i++)
             {
@@ -53,7 +53,7 @@ public class GameplayController : Singleton<GameplayController>
                 }
             }
         }
-        else if (pieceType == PieceType.White)
+        else if (playerNumber == 2)
         {
             for (int i = 0; i < whitePieces.Count; i++)
             {
@@ -70,14 +70,14 @@ public class GameplayController : Singleton<GameplayController>
 
 
     //AI
-    private bool CheckPieceCanMove(PieceType pieceType, int row, int col, int jumpRow, int jumpCol)
+    private bool CheckPieceCanMove(int playerID, int row, int col, int jumpRow, int jumpCol)
     {
         if (!IsValidPosition(row, col)) { return false; }
 
         bool moveFound = false;
 
         if ((!board[row, col].IsPiecePresent) ||
-            (board[row, col].IsPiecePresent && pieceType != board[row, col].Piece.PieceType &&
+            (board[row, col].IsPiecePresent && playerID != board[row, col].Piece.Player_ID &&
                 IsValidPosition(jumpRow, jumpCol) && !board[jumpRow, jumpCol].IsPiecePresent))
         {
             moveFound = true;
@@ -85,54 +85,55 @@ public class GameplayController : Singleton<GameplayController>
         return moveFound;
     }
 
-    private bool CanPieceMove(Piece piece)
+    public bool CanPieceMove(Piece piece)
     {
         int row = piece.Row_ID;
         int coloum = piece.Coloum_ID;
+        int playerID = piece.Player_ID;
 
         bool moveFound = false;
 
-        if (piece.PieceType == PieceType.White)
+        if (playerID == 2)
         {
             // diagonally down left
-            moveFound |= CheckPieceCanMove(PieceType.White, row + 1, coloum - 1, row + 2, coloum - 2);
+            moveFound |= CheckPieceCanMove(playerID, row + 1, coloum - 1, row + 2, coloum - 2);
             //diagonally down right
-            moveFound |= CheckPieceCanMove(PieceType.White, row + 1, coloum + 1, row + 2, coloum + 2);
+            moveFound |= CheckPieceCanMove(playerID, row + 1, coloum + 1, row + 2, coloum + 2);
 
             if (piece.IsCrownedKing)
             {
                 // diagonally up left
-                moveFound |= CheckPieceCanMove(PieceType.White, row - 1, coloum - 1, row - 2, coloum - 2);
+                moveFound |= CheckPieceCanMove(playerID, row - 1, coloum - 1, row - 2, coloum - 2);
                 //diagonally up right
-                moveFound |= CheckPieceCanMove(PieceType.White, row - 1, coloum + 1, row - 2, coloum + 2);
+                moveFound |= CheckPieceCanMove(playerID, row - 1, coloum + 1, row - 2, coloum + 2);
             }
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (playerID == 1)
         {
             // diagonally up left
-            moveFound |= CheckPieceCanMove(PieceType.Black, row - 1, coloum - 1, row - 2, coloum - 2);
+            moveFound |= CheckPieceCanMove(playerID, row - 1, coloum - 1, row - 2, coloum - 2);
             // diagonally up right
-            moveFound |= CheckPieceCanMove(PieceType.Black, row - 1, coloum + 1, row - 2, coloum + 2);
+            moveFound |= CheckPieceCanMove(playerID, row - 1, coloum + 1, row - 2, coloum + 2);
 
             if (piece.IsCrownedKing)
             {
                 // diagonally down left
-                moveFound |= CheckPieceCanMove(PieceType.Black, row + 1, coloum - 1, row + 2, coloum - 2);
+                moveFound |= CheckPieceCanMove(playerID, row + 1, coloum - 1, row + 2, coloum - 2);
                 //diagonally down right
-                moveFound |= CheckPieceCanMove(PieceType.Black, row + 1, coloum + 1, row + 2, coloum + 2);
+                moveFound |= CheckPieceCanMove(playerID, row + 1, coloum + 1, row + 2, coloum + 2);
             }
         }
         return moveFound;
     }
 
-    private bool CanPieceKill(Piece piece)
+    public bool CanPieceKill(Piece piece)
     {
         int row = piece.Row_ID;
         int coloum = piece.Coloum_ID;
 
         bool canKill = false;
 
-        if (piece.PieceType == PieceType.White)
+        if (piece.Player_ID == 2)
         {
             // diagonally down left
             canKill |= CanKillAdjecentPiece(piece, row + 2, coloum - 2);
@@ -147,7 +148,7 @@ public class GameplayController : Singleton<GameplayController>
                 canKill |= CanKillAdjecentPiece(piece, row - 2, coloum + 2);
             }
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (piece.Player_ID == 1)
         {
             // diagonally up left
             canKill |= CanKillAdjecentPiece(piece, row - 2, coloum - 2);
@@ -166,9 +167,9 @@ public class GameplayController : Singleton<GameplayController>
     }
 
     //AI 
-    public void CheckMovablePieces(PieceType pieceType, List<Piece> movablePieces)
+    public void CheckMovablePieces(int playerID, List<Piece> movablePieces)
     {
-        if (pieceType == PieceType.Black)
+        if (playerID == 1)
         {
             for (int i = 0; i < blackPieces.Count; i++)
             {
@@ -179,7 +180,7 @@ public class GameplayController : Singleton<GameplayController>
                 }
             }
         }
-        else if (pieceType == PieceType.White)
+        else if (playerID == 2)
         {
             for (int i = 0; i < whitePieces.Count; i++)
             {
@@ -211,12 +212,12 @@ public class GameplayController : Singleton<GameplayController>
         SetDoubleKillPosition(piece);
     }
 
-    private void SetAdjacentKillPosition(Piece piece)
+    public void SetAdjacentKillPosition(Piece piece)
     {
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if(piece.PieceType == PieceType.White)
+        if(piece.Player_ID == 2)
         {
             // diagonal down left
             CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
@@ -233,7 +234,7 @@ public class GameplayController : Singleton<GameplayController>
                 CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
             }
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (piece.Player_ID == 1)
         {
             // diagonal up left
             CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
@@ -257,7 +258,7 @@ public class GameplayController : Singleton<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if (piece.PieceType == PieceType.White)
+        if (piece.Player_ID == 2)
         {
             // diagonal down left
             CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
@@ -274,7 +275,7 @@ public class GameplayController : Singleton<GameplayController>
                 CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
             }
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (piece.Player_ID == 1)
         {
             // diagonal up left
             CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
@@ -298,7 +299,7 @@ public class GameplayController : Singleton<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if (piece.PieceType == PieceType.White)
+        if (piece.Player_ID == 2)
         {
             // diagonal down left
             CheckForDoubleKill(piece, row + 2, col - 2);
@@ -315,7 +316,7 @@ public class GameplayController : Singleton<GameplayController>
                 CheckForDoubleKill(piece, row - 2, col + 2);
             }
         }
-        else if (piece.PieceType == PieceType.Black)
+        else if (piece.Player_ID == 1)
         {
             // diagonal up left
             CheckForDoubleKill(piece, row - 2, col - 2);
@@ -332,8 +333,6 @@ public class GameplayController : Singleton<GameplayController>
                 CheckForDoubleKill(piece, row + 2, col + 2);
             }
         }
-
-
     }
 
     private void CheckDiagonalAdjacentMove(Piece piece, int targetRow, int targetCol)
@@ -373,7 +372,7 @@ public class GameplayController : Singleton<GameplayController>
        
         if (!IsValidPosition(middleBlockRow, middleBlockCol) || !IsValidPosition(targetRow, targetCol)) { return false; }
 
-        if (board[middleBlockRow, middleBlockCol].IsPiecePresent && killerPiece.PieceType != board[middleBlockRow, middleBlockCol].Piece.PieceType &&
+        if (board[middleBlockRow, middleBlockCol].IsPiecePresent && killerPiece.Player_ID != board[middleBlockRow, middleBlockCol].Piece.Player_ID &&
             !board[targetRow, targetCol].IsPiecePresent)
         {
             return true;
@@ -520,6 +519,7 @@ public class GameplayController : Singleton<GameplayController>
     {
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
+        int playerID = piece.Player_ID;
 
         if (col == 0 || col == 7 || row == 0 || row == 7) 
         {
@@ -527,10 +527,10 @@ public class GameplayController : Singleton<GameplayController>
             return true;
         }
 
-        if (piece.PieceType == PieceType.White)
+        if (playerID == 2)
         {
             // diagonal down left
-            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.PieceType != PieceType.White &&
+            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.Player_ID != playerID &&
                IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -538,7 +538,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal down right
-            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.PieceType != PieceType.White &&
+            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.Player_ID != playerID &&
               IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -546,7 +546,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal up left
-            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.PieceType != PieceType.White &&
+            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.Player_ID != playerID &&
                board[row - 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -554,17 +554,17 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal up right
-            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.PieceType != PieceType.White &&
+            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.Player_ID != playerID &&
               board[row - 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
             {
                 /* not safe position */
                 return false;
             }
         }
-        else if(piece.PieceType == PieceType.Black)
+        else if(playerID == 1)
         {
             // diagonal up left
-            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.PieceType != PieceType.Black &&
+            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.Player_ID != playerID &&
               IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -572,7 +572,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal up right
-            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.PieceType != PieceType.Black &&
+            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.Player_ID != playerID &&
               IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -580,7 +580,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal down left
-            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.PieceType != PieceType.Black &&
+            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.Player_ID != playerID &&
                board[row + 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
             {
                 /* not safe position */
@@ -588,7 +588,7 @@ public class GameplayController : Singleton<GameplayController>
             }
 
             // diagonal down right
-            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.PieceType != PieceType.Black &&
+            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.Player_ID != playerID &&
               board[row + 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
             {
                 /* not safe position */

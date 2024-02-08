@@ -116,7 +116,7 @@ public class BoardGenerator : MonoBehaviour
         }
     }
 
-    public void GeneratePieces()
+    public void GeneratePieces(PieceType player1_pieceType, PieceType player2_pieceType)
     {
         for (int i = 0; i < rows; i++)
         {
@@ -127,7 +127,7 @@ public class BoardGenerator : MonoBehaviour
                     if (i < 3)
                     {
                         Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetPiece(i, j, (int)PieceType.White);
+                        piece.SetPiece(2, i, j, (int)player2_pieceType);
                         GameplayController.Instance.whitePieces.Add(piece);
                         
                     }
@@ -135,7 +135,7 @@ public class BoardGenerator : MonoBehaviour
                     if (i > 4)
                     {
                         Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetPiece(i, j, (int)PieceType.Black);
+                        piece.SetPiece(1, i, j, (int)player1_pieceType);
                         GameplayController.Instance.blackPieces.Add(piece);
                     }
                 }

@@ -9,7 +9,7 @@ public class AIPlayer : MonoBehaviour
 
     public bool CanPlay()
     {
-        if (GameplayController.Instance.CanMove(pieceType))
+        if (GameplayController.Instance.CanMove((int)pieceType))
         {
             Invoke(nameof(PlayTurn), 0.5f);
             return true;
@@ -20,7 +20,7 @@ public class AIPlayer : MonoBehaviour
     private void PlayTurn()
     {
         movablePieces.Clear();
-        GameplayController.Instance.CheckMovablePieces(pieceType, movablePieces);
+        GameplayController.Instance.CheckMovablePieces((int)pieceType, movablePieces);
 
         if (movablePieces.Count > 0)
         {
@@ -122,15 +122,5 @@ public class AIPlayer : MonoBehaviour
     }
 }
 
-public struct BoardPosition
-{
-    public int row_ID;
-    public int col_ID;
 
-    public BoardPosition(int row, int col)
-    {
-        row_ID = row;
-        col_ID = col;
-    }
-}
 

@@ -18,6 +18,7 @@ public class Piece : MonoBehaviour
     [SerializeField] private int columID;
 
     [SerializeField] private bool isCrownedKing;
+    private int playerID;
 
 
     [Header("Piece AI")]
@@ -32,14 +33,15 @@ public class Piece : MonoBehaviour
 
 
     [PunRPC]
-    public void SetPiece(int row, int colum, int pieceType)
+    public void SetPiece(int _playerID, int _row, int _colum, int _pieceType)
     {
-        columID = colum;
-        rowID = row;
-        this.pieceType = (PieceType)pieceType;
+        playerID = _playerID;
+        columID = _colum;
+        rowID = _row;
+        pieceType = (PieceType)_pieceType;
         isCrownedKing = false;
 
-        if(this.pieceType == PieceType.White)
+        if(pieceType == PieceType.White)
         {
             whitePieceImage.gameObject.SetActive(true);
         }
@@ -49,15 +51,13 @@ public class Piece : MonoBehaviour
         }
 
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
-        thisTransform.position = GameplayController.Instance.board[row, colum].ThisTransform.position;
-        thisTransform.sizeDelta = GameplayController.Instance.board[row, colum].ThisTransform.sizeDelta;
+        thisTransform.position = GameplayController.Instance.board[rowID, columID].ThisTransform.position;
+        thisTransform.sizeDelta = GameplayController.Instance.board[rowID, columID].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
-        GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
+        GameplayController.Instance.board[rowID, columID].SetBlockPiece(true, this);
 
-        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || 
-           (GameManager.Instance.GameMode == GameMode.PVC && this.pieceType == PieceType.Black) ||
-            GameManager.Instance.GameMode == GameMode.PVP)
+        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || GameManager.Instance.GameMode != GameMode.Online)
         {
             button.interactable = true;
         }
@@ -81,7 +81,7 @@ public class Piece : MonoBehaviour
 
         AudioManager.Instance.PlayPieceKillSound();
 
-        if (pieceType == PieceType.White)
+        if (playerID == 2)
         {
             GameplayController.Instance.whitePieces.Remove(this);
         }
@@ -117,6 +117,11 @@ public class Piece : MonoBehaviour
         set { columID = value; }
     }
 
+    public int Player_ID
+    {
+        get { return playerID; }
+    }
+
     public PieceType PieceType { get { return pieceType; } }
 
     public PhotonView PhotonView { get { return photonView; } }
@@ -124,9 +129,10 @@ public class Piece : MonoBehaviour
     public void OnClick()
     {
         if(( GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType) ||
-            (GameManager.Instance.GameMode != GameMode.Online && pieceType == GameManager.Instance.PieceType))
+            (GameManager.Instance.GameMode != GameMode.Online && playerID == GameManager.Instance.CurrentTurn))
         {
-            GameplayController.Instance.CheckNextMove(this);
+            //GameplayController.Instance.CheckNextMove(this);
+            GameManager.Instance.GetPlayer(playerID).OnHighlightedPieceClick(this);
         }
     }
 

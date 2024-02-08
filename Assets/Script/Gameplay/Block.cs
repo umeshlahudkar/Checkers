@@ -127,7 +127,7 @@ public class Block : MonoBehaviour
         animFlag = false;
 
         highlightImage.gameObject.SetActive(true);
-        button.interactable = true;
+        //button.interactable = true;
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
@@ -154,8 +154,9 @@ public class Block : MonoBehaviour
     {
         if(isTargetBlockHighlighted)
         {
-            StartCoroutine(GameplayController.Instance.HandlePieceMovement(this));
-            isNextTargetBlockHighlighted = false;
+            //StartCoroutine(GameplayController.Instance.HandlePieceMovement(this));
+            //isNextTargetBlockHighlighted = false;
+            GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).OnHighlightedTargetBlockClick(this);
         }
     }
 

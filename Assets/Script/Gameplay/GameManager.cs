@@ -8,7 +8,10 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private GameplayTimer timer;
-    [SerializeField] private AIPlayer aiPlayer;
+
+    [SerializeField] private Gameplay.Player playerPrefab;
+
+    private Gameplay.Player[] players = new Gameplay.Player[2];
 
     private PieceType pieceType;
     private int currentTurn;
@@ -75,20 +78,49 @@ public class GameManager : Singleton<GameManager>
                 gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
             }
         }
+        else if (gameMode == GameMode.PVP)
+        {
+            GameplayUIController.Instance.DisablePlayerInfo();
+
+            PreparePlayers();
+
+            boardGenerator.GenerateBoard();
+            boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
+
+            currentTurn = 2;
+            SwitchTurn();
+        }
         else
         {
             GameplayUIController.Instance.DisablePlayerInfo();
-            boardGenerator.GenerateBoard();
-            boardGenerator.GeneratePieces();
 
-            currentTurn = 1;
-            pieceType = PieceType.Black;
-            GameplayController.Instance.CheckMoves();
+            for (int i = 0; i < 2; i++)
+            {
+                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
+                PieceType pieceType = (i + 1) == 1 ? PieceType.Black : PieceType.White;
+                players[i].SetPlayer(i + 1, pieceType, ((i+1) == 2));
+            }
+
+            boardGenerator.GenerateBoard();
+            boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
+
+            currentTurn = 2;
+            SwitchTurn();
         }
 
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
 
+
+    private void PreparePlayers()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
+            PieceType pieceType = (i + 1) == 1 ? PieceType.Black : PieceType.White;
+            players[i].SetPlayer(i + 1, pieceType, false);
+        }
+    }
     
 
     public void UpdateTurnMissCount()
@@ -126,35 +158,14 @@ public class GameManager : Singleton<GameManager>
             int nextTurn = currentTurn == 1 ? 2 : 1;
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
         }
-        else if (gameMode == GameMode.PVP)
-        {
-            currentTurn = (currentTurn == 1) ? 2 : 1;
-            pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
-
-            if (!GameplayController.Instance.CheckMoves())
-            {
-                if(pieceType == PieceType.White)
-                {
-                    GameplayUIController.Instance.ToggleGameWinScreen(true);
-                }
-                else
-                {
-                    GameplayUIController.Instance.ToggleGameLoseScreen(true);
-                }
-            }
-        }
         else
         {
             currentTurn = (currentTurn == 1) ? 2 : 1;
-            pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
+            pieceType = players[currentTurn - 1].PieceType;
 
-            if(currentTurn == 2 && !aiPlayer.CanPlay())
+            if (!players[currentTurn - 1].CanPlay())
             {
-                GameplayUIController.Instance.ToggleGameWinScreen(true);
-            }
-            else if (!GameplayController.Instance.CheckMoves())
-            {
-                GameplayUIController.Instance.ToggleGameLoseScreen(true);
+                Debug.Log("...Player loose..." + currentTurn);
             }
         }
     }
@@ -204,6 +215,15 @@ public class GameManager : Singleton<GameManager>
         actorNumber = -1;
         turnMissCount = 0;
         gameState = GameState.Waiting;
+    }
+
+    public Gameplay.Player GetPlayer(int playerID)
+    {
+        if(playerID > 0 && playerID <= players.Length)
+        {
+            return players[playerID - 1];
+        }
+        return null;
     }
 
     private void ResetGameplay()
