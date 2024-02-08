@@ -114,7 +114,8 @@ public class LobbyUIController : MonoBehaviour
             PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
             return;
         }
-      
+
+        SetGameMode(GameMode.Online);
         networkManager.JoinRandomRoom();
     }
 

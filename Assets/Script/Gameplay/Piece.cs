@@ -32,7 +32,7 @@ public class Piece : MonoBehaviour
 
 
     [PunRPC]
-    public void SetPiece(int row, int colum, int pieceType, float blockSize)
+    public void SetPiece(int row, int colum, int pieceType)
     {
         columID = colum;
         rowID = row;
@@ -94,7 +94,7 @@ public class Piece : MonoBehaviour
         {
             PhotonNetwork.Destroy(this.gameObject);
         }
-        else
+        else if(GameManager.Instance.GameMode != GameMode.Online)
         {
             Destroy(gameObject);
         }

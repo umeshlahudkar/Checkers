@@ -28,26 +28,23 @@ MonoBehaviour:
     AuthMode: 0
     EnableLobbyStatistics: 0
     NetworkLogging: 1
-  DevRegion: in
+  DevRegion: 
   PunLogging: 0
   EnableSupportLogger: 0
   RunInBackground: 1
   StartInOfflineMode: 0
   RpcList:
   - ClickRpc
+  - Fire
+  - Destroy
   - DestroyRpc
   - DestroySpaceship
-  - Fire
   - RespawnSpaceship
   - ChangeTurn
-  - SetBlock
-  - UpdateGrid
-  - Destroy
-  - SetKrownKing
-  - SetCrownKing
   - GameOver
-  - MovePiece
+  - SetCrownKing
   - SetPiece
+  - UpdateGrid
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1
