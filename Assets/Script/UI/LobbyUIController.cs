@@ -79,13 +79,30 @@ public class LobbyUIController : MonoBehaviour
     private void ToggleUserNameInputScreen(bool status)
     {
         faderScreen.SetActive(status);
-        userNameInputScreen.SetActive(status);
+
+        if(status)
+        {
+            userNameInputScreen.Activate();
+        }
+        else
+        {
+            userNameInputScreen.Deactivate();
+        }
+       
     }
 
     private void ToggleAvtarSelectionScreen(bool status)
     {
         faderScreen.SetActive(status);
-        avtarSelectionScreen.SetActive(status);
+
+        if(status)
+        {
+            avtarSelectionScreen.Activate();
+        }
+        else
+        {
+            avtarSelectionScreen.Deactivate();
+        }
     }
 
     public void ToggleMatchmakingScreen(bool status)
@@ -112,8 +129,23 @@ public class LobbyUIController : MonoBehaviour
             return;
         }
 
-        SetGameMode(GameMode.Online);
-        networkManager.JoinRandomRoom();
+        //SetGameMode(GameMode.Online);
+        //networkManager.JoinRandomRoom();
+
+        ToggleModeSelectionScreen(true);
+    }
+
+    public void ToggleModeSelectionScreen(bool status)
+    {
+        faderScreen.SetActive(status);
+        if(status)
+        {
+            modeSelectionScreen.Activate();
+        }
+        else
+        {
+            modeSelectionScreen.Deactivate();
+        }
     }
 
     public void OnPlay_PVP_ButtonClick()
@@ -150,6 +182,6 @@ public class LobbyUIController : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(true);
-        settingScreen.SetActive(true);
+        settingScreen.Activate();
     } 
 }
