@@ -588,6 +588,138 @@ public class GameplayController : Singleton<GameplayController>
             CheckForDoubleKill(piece, row - 2, col + 2);
         }
     }
+    
+    public void SetPiecePosition(Piece piece)
+    {
+        SetAdjacentMovePosition(piece);
+        SetAdjacentKillPosition(piece);
+        SetDoubleKillPosition(piece);
+    }
+
+    private void SetAdjacentKillPosition(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int col = piece.Coloum_ID;
+
+        if(piece.PieceType == PieceType.White)
+        {
+            // diagonal down left
+            CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
+
+            // diagonal down right
+            CheckDiagonalAdjacentKill(piece, row + 2, col + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonal up left
+                CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
+
+                // diagonal up right
+                CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonal up left
+            CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
+
+            // diagonal up right
+            CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonal down left
+                CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
+
+                // diagonal down right
+                CheckDiagonalAdjacentKill(piece, row + 2, col + 2);
+            }
+        }
+    }
+
+    private void SetAdjacentMovePosition(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int col = piece.Coloum_ID;
+
+        if (piece.PieceType == PieceType.White)
+        {
+            // diagonal down left
+            CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
+
+            // diagonal down right
+            CheckDiagonalAdjacentMove(piece, row + 1, col + 1);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonal up left
+                CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
+
+                // diagonal up right
+                CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonal up left
+            CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
+
+            // diagonal up right
+            CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonal down left
+                CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
+
+                // diagonal down right
+                CheckDiagonalAdjacentMove(piece, row + 1, col + 1);
+            }
+        }
+    }
+
+    private void SetDoubleKillPosition(Piece piece)
+    {
+        int row = piece.Row_ID;
+        int col = piece.Coloum_ID;
+
+        if (piece.PieceType == PieceType.White)
+        {
+            // diagonal down left
+            CheckForDoubleKill(piece, row + 2, col - 2);
+
+            // diagonal down right
+            CheckForDoubleKill(piece, row + 2, col + 2);
+
+            if(piece.IsCrownedKing)
+            {
+                // diagonal up left
+                CheckForDoubleKill(piece, row - 2, col - 2);
+
+                // diagonal up right
+                CheckForDoubleKill(piece, row - 2, col + 2);
+            }
+        }
+        else if (piece.PieceType == PieceType.Black)
+        {
+            // diagonal up left
+            CheckForDoubleKill(piece, row - 2, col - 2);
+
+            // diagonal up right
+            CheckForDoubleKill(piece, row - 2, col + 2);
+
+            if (piece.IsCrownedKing)
+            {
+                // diagonal down left
+                CheckForDoubleKill(piece, row + 2, col - 2);
+
+                // diagonal down right
+                CheckForDoubleKill(piece, row + 2, col + 2);
+            }
+        }
+
+
+    }
 
     private void CheckDiagonalAdjacentMove(Piece piece, int targetRow, int targetCol)
     {

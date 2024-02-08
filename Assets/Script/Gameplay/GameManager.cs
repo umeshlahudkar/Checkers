@@ -148,13 +148,13 @@ public class GameManager : Singleton<GameManager>
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = (pieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
-            if(currentTurn == 2)
+            if(currentTurn == 2 && !ai.CanPlay())
             {
-                ai.Play();
+                GameplayUIController.Instance.ToggleGameWinScreen(true);
             }
-            else
+            else if (!GameplayController.Instance.CheckMoves())
             {
-                GameplayController.Instance.CheckMoves();
+                GameplayUIController.Instance.ToggleGameLoseScreen(true);
             }
         }
     }

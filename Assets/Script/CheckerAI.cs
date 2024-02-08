@@ -7,27 +7,40 @@ public class CheckerAI : MonoBehaviour
     private readonly PieceType pieceType = PieceType.White;
     private readonly List<Piece> movablePieces = new();
 
-    public void Play()
+    public bool CanPlay()
     {
-        movablePieces.Clear();
-
         if (GameplayController.Instance.CanMove(pieceType))
         {
-            GameplayController.Instance.CheckMovablePieces(pieceType, movablePieces);
-
-            if(movablePieces.Count > 0)
-            {
-                SetMovablePosition();
-                MovePiece();
-            }
+            Invoke(nameof(PlayTurn), 0.5f);
+            return true;
         }
-        else
+        return false;
+    }
+
+    private void PlayTurn()
+    {
+        movablePieces.Clear();
+        GameplayController.Instance.CheckMovablePieces(pieceType, movablePieces);
+
+        if (movablePieces.Count > 0)
         {
-            Debug.Log(".........Computer lose, can not move.........");
+            SetMovablePosition();
+            CheckPieceMove();
         }
     }
 
-    private void MovePiece()
+    private void SetMovablePosition()
+    {
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            piece.ResetAllList();
+            //GameplayController.Instance.CheckWhitePieceSafePosition(piece);
+            GameplayController.Instance.SetPiecePosition(piece);
+        }
+    }
+
+    private void CheckPieceMove()
     {
         movablePieces.Shuffle();
 
@@ -109,16 +122,6 @@ public class CheckerAI : MonoBehaviour
         GameplayController.Instance.selectedPiece = piece;
         Block targetMovableBlock = GameplayController.Instance.board[boardPosition.row_ID, boardPosition.col_ID];
         StartCoroutine(GameplayController.Instance.HandlePieceMovement(targetMovableBlock));
-    }
-
-    private void SetMovablePosition()
-    {
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            Piece piece = movablePieces[i];
-            piece.ResetAllList();
-            GameplayController.Instance.CheckWhitePieceSafePosition(piece);
-        }
     }
 }
 
