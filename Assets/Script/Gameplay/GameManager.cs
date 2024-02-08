@@ -11,7 +11,7 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] private Gameplay.Player playerPrefab;
 
-    private Gameplay.Player[] players = new Gameplay.Player[2];
+    [SerializeField] private Gameplay.Player[] players = new Gameplay.Player[2];
 
     private PieceType pieceType;
     private int currentTurn;
@@ -54,35 +54,18 @@ public class GameManager : Singleton<GameManager>
 
         if (gameMode == GameMode.Online)
         {
-            actorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
-            if (PhotonNetwork.IsMasterClient)
-            {
-                currentTurn = actorNumber;
-                pieceType = PieceType.Black;
-            }
-            else
-            {
-                pieceType = PieceType.White;
-            }
-
-            PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
-            PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
-
-            GameplayUIController.Instance.ShowPlayerInfo(player1, player2);
-
-            boardGenerator.GenerateBoard();
-            boardGenerator.GeneratePieces(pieceType);
-
-            if (PhotonNetwork.IsMasterClient)
-            {
-                gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
-            }
+            StartCoroutine(PrepareOnlineMode());
         }
         else if (gameMode == GameMode.PVP)
         {
             GameplayUIController.Instance.DisablePlayerInfo();
 
-            PreparePlayers();
+            for (int i = 0; i < 2; i++)
+            {
+                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
+                PieceType pieceType = (i + 1) == 1 ? PieceType.Black : PieceType.White;
+                players[i].SetPlayer(i + 1, pieceType, false);
+            }
 
             boardGenerator.GenerateBoard();
             boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
@@ -111,17 +94,34 @@ public class GameManager : Singleton<GameManager>
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
 
-
-    private void PreparePlayers()
+    private IEnumerator PrepareOnlineMode()
     {
-        for (int i = 0; i < 2; i++)
+        boardGenerator.GenerateBoard();
+        PhotonNetwork.Instantiate(playerPrefab.name, transform.position, Quaternion.identity);
+
+        PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
+        PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
+
+        GameplayUIController.Instance.ShowPlayerInfo(player1, player2);
+
+        while(!HasBothPlayerReady())
         {
-            players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
-            PieceType pieceType = (i + 1) == 1 ? PieceType.Black : PieceType.White;
-            players[i].SetPlayer(i + 1, pieceType, false);
+            yield return null;
+        }
+
+        boardGenerator.GeneratePieces();
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            currentTurn = 1;
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
     }
-    
+
+    private bool HasBothPlayerReady()
+    {
+        return players[0] != null && players[1] != null;
+    }
 
     public void UpdateTurnMissCount()
     {
@@ -174,10 +174,11 @@ public class GameManager : Singleton<GameManager>
     public void ChangeTurn(int nextTurn)
     {
         currentTurn = nextTurn;
-        timer.ResetTimer();
+        //timer.ResetTimer();
         GameplayUIController.Instance.PlayHighlightAnimation(currentTurn);
 
-        if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
+        //if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
+        if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
         {
             PieceType winner = pieceType == PieceType.White ? PieceType.Black : PieceType.White;
             gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, (int)winner);
@@ -224,6 +225,11 @@ public class GameManager : Singleton<GameManager>
             return players[playerID - 1];
         }
         return null;
+    }
+
+    public void ListPlayer(Gameplay.Player player)
+    {
+        players[player.Player_ID - 1] = player;
     }
 
     private void ResetGameplay()

@@ -18,7 +18,7 @@ public class Piece : MonoBehaviour
     [SerializeField] private int columID;
 
     [SerializeField] private bool isCrownedKing;
-    private int playerID;
+    [SerializeField] private int playerID;
 
 
     [Header("Piece AI")]
@@ -128,10 +128,8 @@ public class Piece : MonoBehaviour
 
     public void OnClick()
     {
-        if(( GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType) ||
-            (GameManager.Instance.GameMode != GameMode.Online && playerID == GameManager.Instance.CurrentTurn))
+        if(playerID == GameManager.Instance.CurrentTurn)
         {
-            //GameplayController.Instance.CheckNextMove(this);
             GameManager.Instance.GetPlayer(playerID).OnHighlightedPieceClick(this);
         }
     }

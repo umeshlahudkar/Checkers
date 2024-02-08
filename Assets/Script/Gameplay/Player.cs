@@ -7,19 +7,34 @@ namespace Gameplay
 {
     public class Player : MonoBehaviour
     {
-        private int playerID;
+        [SerializeField] private PhotonView thisPhotonView;
+
+        [SerializeField] private int playerID;
         private PieceType pieceType;
 
-        [SerializeField] private bool isAI;
+        private bool isAI;
 
         private readonly List<Block> highlightedBlocks = new();
         private readonly List<Block> nextToNexthighlightedBlocks = new();
         private readonly List<Piece> movablePieces = new();
 
         private Piece selectedPiece;
-        private PhotonView thisPhotonView;
+       
 
         public PieceType PieceType { get { return pieceType; } }
+        public int Player_ID { get { return playerID; } }
+
+        public PhotonView PhotonView { get { return thisPhotonView; } }
+
+        private void Start()
+        {
+            if(GameManager.Instance.GameMode == GameMode.Online)
+            {
+                playerID = thisPhotonView.OwnerActorNr;
+                pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
+                GameManager.Instance.ListPlayer(this);
+            }
+        }
 
         public void SetPlayer(int playerNumber, PieceType pieceType, bool isAI)
         {
@@ -33,6 +48,7 @@ namespace Gameplay
             if(GameplayController.Instance.CanMove(playerID))
             {
                 Invoke(nameof(PlayTurn), 0.5f);
+
                 return true;
             }
             return false;
@@ -138,8 +154,6 @@ namespace Gameplay
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
-            //yield return new WaitForSeconds(0.5f);  //0.25
-
             GameplayUIController.Instance.StopPlayerHighlightAnim();
 
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
@@ -181,7 +195,6 @@ namespace Gameplay
                 }
                 else
                 {
-                    //CheckNextMove(selectedPiece);
                     OnHighlightedPieceClick(selectedPiece);
                 }
             }
@@ -189,7 +202,6 @@ namespace Gameplay
             {
                 GameManager.Instance.SwitchTurn();
                 ResetNextToNextHighlightedBlock();
-                //ResetBlocksNextToNextHighlightedParameter();
             }
         }
 
@@ -285,8 +297,6 @@ namespace Gameplay
         }
 
         // AI
-
-
         private void SetMovablePosition()
         {
             for (int i = 0; i < movablePieces.Count; i++)
@@ -306,10 +316,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.safeDoubleKillerBlockPositions.Count > 0)
                 {
-                    //BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
-                    //GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
-                    //MovePiece(piece, position);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -327,10 +333,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.doubleKillerBlockPositions.Count > 0)
                 {
-                    //BoardPosition position = piece.doubleKillerBlockPositions[0];
-                    //GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
-                    //MovePiece(piece, position);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.doubleKillerBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -347,10 +349,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.safeKillerBlockPositions.Count > 0)
                 {
-                    //BoardPosition position = piece.safeKillerBlockPositions[0];
-                    //GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
-                    //MovePiece(piece, position);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.safeKillerBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -367,10 +365,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.killerBlockPositions.Count > 0)
                 {
-                    //BoardPosition position = piece.killerBlockPositions[0];
-                    //GameplayController.Instance.board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
-                    //MovePiece(piece, position);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.killerBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -388,8 +382,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.safeMovableBlockPositions.Count > 0)
                 {
-                    //MovePiece(piece, piece.safeMovableBlockPositions[0]);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.safeMovableBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -405,8 +397,6 @@ namespace Gameplay
                 Piece piece = movablePieces[i];
                 if (piece.movableBlockPositions.Count > 0)
                 {
-                    //MovePiece(piece, piece.movableBlockPositions[0]);
-
                     selectedPiece = piece;
                     BoardPosition position = piece.movableBlockPositions[0];
                     Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
@@ -416,14 +406,6 @@ namespace Gameplay
                 }
             }
         }
-
-        public void MovePiece(Piece piece, BoardPosition boardPosition)
-        {
-            GameplayController.Instance.selectedPiece = piece;
-            Block targetMovableBlock = GameplayController.Instance.board[boardPosition.row_ID, boardPosition.col_ID];
-            StartCoroutine(GameplayController.Instance.HandlePieceMovement(targetMovableBlock));
-        }
-
     }
 }
 

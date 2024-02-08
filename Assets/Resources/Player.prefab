@@ -45,6 +45,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 074579b3af3494e4092963741dc9e196, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  thisPhotonView: {fileID: 1813073688528704289}
+  playerID: 0
 --- !u!114 &1813073688528704289
 MonoBehaviour:
   m_ObjectHideFlags: 0
