@@ -27,12 +27,9 @@ public class LobbyUIController : MonoBehaviour
     [Header("Setting screen")]
     [SerializeField] private GameObject settingScreen;
 
-    [SerializeField] private GameDataSO gameDataSO;
+    [SerializeField] private GameObject modeSelectionScreen;
 
-    private void Start()
-    {
-        //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
-    }
+    [SerializeField] private GameDataSO gameDataSO;
 
     public void SetPlayerData(Player opponentPlayer, int avtarIndex)
     {
