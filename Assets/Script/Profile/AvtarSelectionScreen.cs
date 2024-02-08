@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class AvtarSelectionScreen : MonoBehaviour
 {
     [SerializeField] private GameObject faderScreen;
-    [SerializeField] private Button closeButton;
 
     [SerializeField] private Color defaultColor;
     [SerializeField] private Color selectedColor;
@@ -15,7 +15,6 @@ public class AvtarSelectionScreen : MonoBehaviour
 
     private void OnEnable()
     {
-        closeButton.interactable = ProfileManager.Instance.HasAvtarSet;
         InitializeButtons();
     }
 
