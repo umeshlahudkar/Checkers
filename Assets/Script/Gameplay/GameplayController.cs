@@ -1264,7 +1264,19 @@ public class GameplayController : Singleton<GameplayController>
         {
             if(GameManager.Instance.GameMode == GameMode.PVC && GameManager.Instance.CurrentTurn == 2)
             {
-                BoardPosition position = GetKilledPosition(selectedPiece);
+                selectedPiece.ResetAllList();
+                SetAdjacentKillPosition(selectedPiece);
+                BoardPosition position = default;
+
+                if (selectedPiece.safeKillerBlockPositions.Count > 0)
+                {
+                    position = selectedPiece.safeKillerBlockPositions[0];
+                }
+                else if (selectedPiece.killerBlockPositions.Count > 0)
+                {
+                    position = selectedPiece.killerBlockPositions[0];
+                }
+
                 board[position.row_ID, position.col_ID].IsNextToNextHighlighted = true;
                 ai.MovePiece(selectedPiece, position);
                 ResetBlocksNextToNextHighlightedParameter();
