@@ -42,7 +42,7 @@ public class LobbyUIController : MonoBehaviour
         gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
     }
 
-    private void SetGameMode(GameMode gameMode)
+    public void SetGameMode(GameMode gameMode)
     {
         gameDataSO.gameMode = gameMode;
     }
@@ -129,35 +129,13 @@ public class LobbyUIController : MonoBehaviour
             return;
         }
 
-        //SetGameMode(GameMode.Online);
-        //networkManager.JoinRandomRoom();
-
-        ToggleModeSelectionScreen(true);
+        faderScreen.SetActive(true);
+        modeSelectionScreen.Activate();
     }
 
-    public void ToggleModeSelectionScreen(bool status)
+    public void JoinRoom()
     {
-        faderScreen.SetActive(status);
-        if(status)
-        {
-            modeSelectionScreen.Activate();
-        }
-        else
-        {
-            modeSelectionScreen.Deactivate();
-        }
-    }
-
-    public void OnPlay_PVP_ButtonClick()
-    {
-        SetGameMode(GameMode.PVP);
-        SceneManager.LoadScene(1);
-    }
-
-    public void OnPlay_PVC_ButtonClick()
-    {
-        SetGameMode(GameMode.PVC);
-        SceneManager.LoadScene(1);
+        networkManager.JoinRandomRoom();
     }
 
     public void OnQuitButtonClick()

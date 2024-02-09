@@ -125,6 +125,6 @@ public class SettingScreen : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
     }
 }

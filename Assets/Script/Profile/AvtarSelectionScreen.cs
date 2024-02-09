@@ -1,6 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class AvtarSelectionScreen : MonoBehaviour
 {
@@ -52,14 +50,13 @@ public class AvtarSelectionScreen : MonoBehaviour
         AudioManager.Instance.PlayButtonClickSound();
         ProfileManager.Instance.SetAvtar(selectAvtarIndex);
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
     }
 
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
     }
-
 }

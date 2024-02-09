@@ -1,7 +1,7 @@
 
 public enum GameMode 
 {
-   None,
+   None = 0,
    Online,
    PVP,
    PVC

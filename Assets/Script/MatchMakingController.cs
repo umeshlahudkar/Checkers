@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using DG.Tweening;
 
 public class MatchMakingController : MonoBehaviour
 {
@@ -42,7 +43,6 @@ public class MatchMakingController : MonoBehaviour
     {
         SetInitialImgsPos();
     }
-
     private void OnEnable()
     {
         currentIndex = 1;
@@ -56,9 +56,17 @@ public class MatchMakingController : MonoBehaviour
         SetScrollImages();
         ResetScrollImages();
 
-        canScroll = true;
-
         backButton.interactable = true;
+
+        if(gameObject.GetComponent<MatchmakingScreenAnimation>() == null)
+        {
+            StartScrolling();
+        }
+    }
+
+    public void StartScrolling()
+    {
+        canScroll = true;
         AudioManager.Instance.PlayMatchmakingScrollSound();
     }
 
