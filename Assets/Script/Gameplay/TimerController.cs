@@ -8,7 +8,7 @@ public class TimerController : MonoBehaviour
     [SerializeField] private Color timeUpColor;
 
     private Image sliderImg;
-    private readonly float turnTime = 20f;
+    private readonly float turnTime = 15f;
     private float currentTime = 0f;
     private bool hasTimeEndColorSet = false;
 
