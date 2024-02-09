@@ -8,6 +8,8 @@ public class ModeSelectionScreen : MonoBehaviour
     [SerializeField] private LobbyUIController lobbyUIController;
     [SerializeField] private GameObject faderScreen;
     [SerializeField] private Image[] buttons;
+    [SerializeField] private Transform playBtnCoinImg;
+
     private GameMode selectedGamemode;
     private Color originalColor = new(1, 1, 1, 0.5f);
     private Color selectedColor = new(1, 1, 1, 1);
@@ -42,16 +44,20 @@ public class ModeSelectionScreen : MonoBehaviour
             {
                 case GameMode.Online:
                     lobbyUIController.JoinRoom();
+                    faderScreen.SetActive(false);
+                    gameObject.SetActive(false);
                     break;
 
                 case GameMode.PVP:
                 case GameMode.PVC:
-                    SceneManager.LoadScene(1);
+                    CoinManager.Instance.DeductCoin(250, playBtnCoinImg, () =>
+                    {
+                        faderScreen.SetActive(false);
+                        gameObject.SetActive(false);
+                        SceneManager.LoadScene(1);
+                    });
                     break;
-            }
-
-            faderScreen.SetActive(false);
-            gameObject.SetActive(false);
+            }           
         }
     }
 

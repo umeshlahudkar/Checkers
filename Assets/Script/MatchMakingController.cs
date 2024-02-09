@@ -194,10 +194,10 @@ public class MatchMakingController : MonoBehaviour
         CoinManager.Instance.DeductCoin(250);
 
         CoinAnimator anim1 = Instantiate<CoinAnimator>(coinAnimatorPrefab, ownPlayer_feestext.transform.position, Quaternion.identity, transform);
-        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform));
+        StartCoroutine(anim1.PlayCoinAnimation(rewardCoinImg.transform));
 
         CoinAnimator anim2 = Instantiate<CoinAnimator>(coinAnimatorPrefab, opponentPlayer_feestext.transform.position, Quaternion.identity, transform);
-        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform));
+        yield return StartCoroutine(anim2.PlayCoinAnimation(rewardCoinImg.transform));
     }
 
     private void ResetScrollImages()

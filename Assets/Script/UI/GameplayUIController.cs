@@ -9,12 +9,12 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [Header("Player1 profile")]
     [SerializeField] private TextMeshProUGUI player1_nameText;
     [SerializeField] private Image player1_avtarImag;
-    [SerializeField] private Image player1_avtarBg;
+    [SerializeField] private Image player1_timerImg;
 
     [Header("Player2 profile")]
     [SerializeField] private TextMeshProUGUI player2_nameText;
     [SerializeField] private Image player2_avtarImag;
-    [SerializeField] private Image player2_avtarBg;
+    [SerializeField] private Image player2_timerImg;
 
     [Header("Game Over screens")]
     [SerializeField] private GameObject winScreen;
@@ -48,6 +48,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
     private int playerTurn = -1;
     private bool canPlayAnim = false;
 
+    public Image GetTimerImg(int playerNumber)
+    {
+        return (playerNumber == 1) ? player1_timerImg : player2_timerImg;
+    }
+
     public void ShowPlayerInfo(PlayerInfo player1_info, PlayerInfo player2_info)
     {
         player1_nameText.text = player1_info.userName;
@@ -75,8 +80,8 @@ public class GameplayUIController : Singleton<GameplayUIController>
         startTime = 0;
         animFlag = false;
         playerTurn = -1;
-        player1_avtarBg.color = defaultColor;
-        player2_avtarBg.color = defaultColor;
+        player1_timerImg.color = defaultColor;
+        player2_timerImg.color = defaultColor;
     }
 
     private void Update()
@@ -85,11 +90,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
         {
             if (playerTurn == 1)
             {
-                PlayPlayerTurnHighlightAnimation(player1_avtarBg);
+                PlayPlayerTurnHighlightAnimation(player1_timerImg);
             }
             else if (playerTurn == 2)
             {
-                PlayPlayerTurnHighlightAnimation(player2_avtarBg);
+                PlayPlayerTurnHighlightAnimation(player2_timerImg);
             }
         }
     }

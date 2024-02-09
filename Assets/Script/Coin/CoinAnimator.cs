@@ -7,7 +7,7 @@ public class CoinAnimator : MonoBehaviour
     private float radius = 150f;   //50
     private int reachedToTargetCount = 0;
 
-    public IEnumerator PlayAnimation(Transform target)
+    public IEnumerator PlayCoinAnimation(Transform target, CoinAnimationCompleteEvent OnCoinAnimationComplete = null)
     {
         SpreadCoin();
 
@@ -18,7 +18,9 @@ public class CoinAnimator : MonoBehaviour
             coinMovers[i].SetTarget(target.position, true, this, 0.5f);
         }
 
-        yield return StartCoroutine(HasAllReachedToTarget());
+        yield return StartCoroutine(HasAllCoinReachedToTarget());
+
+        OnCoinAnimationComplete?.Invoke();
     }
 
     private void SpreadCoin()
@@ -34,15 +36,15 @@ public class CoinAnimator : MonoBehaviour
         }
     }
 
-    private IEnumerator HasAllReachedToTarget()
+    private IEnumerator HasAllCoinReachedToTarget()
     {
-        while(reachedToTargetCount >= coinMovers.Length)
+        while(reachedToTargetCount < coinMovers.Length)
         {
             yield return null;
         }
     }
 
-    public void IncrementReachedToTarget()
+    public void IncrementCoinReachedToTarget()
     {
         reachedToTargetCount++;
     }

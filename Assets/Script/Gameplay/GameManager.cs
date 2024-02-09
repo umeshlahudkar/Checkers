@@ -7,7 +7,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private GameDataSO gameDataSO;
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
-    [SerializeField] private GameplayTimer timer;
+    [SerializeField] private TimerController timer;
 
     [SerializeField] private Gameplay.Player playerPrefab;
 
@@ -58,8 +58,6 @@ public class GameManager : Singleton<GameManager>
         }
         else if (gameMode == GameMode.PVP)
         {
-            GameplayUIController.Instance.DisablePlayerInfo();
-
             for (int i = 0; i < 2; i++)
             {
                 players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
@@ -75,8 +73,6 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
-            GameplayUIController.Instance.DisablePlayerInfo();
-
             for (int i = 0; i < 2; i++)
             {
                 players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
@@ -160,13 +156,19 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
+            players[currentTurn - 1].ResetPlayer();
+            timer.ResetTimer();
+
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = players[currentTurn - 1].PieceType;
 
             if (!players[currentTurn - 1].CanPlay())
             {
                 Debug.Log("...Player loose..." + currentTurn);
+                return;
             }
+
+            timer.StartTimer();
         }
     }
 

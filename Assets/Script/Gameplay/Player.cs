@@ -43,6 +43,12 @@ namespace Gameplay
             this.isAI = isAI;
         }
 
+        public void ResetPlayer()
+        {
+            ResetHighlightedBlocks();
+            ResetNextToNextHighlightedBlock();
+        }
+
         public bool CanPlay()
         {
             if(GameplayController.Instance.CanMove(playerID))

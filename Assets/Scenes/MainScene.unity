@@ -4595,6 +4595,7 @@ MonoBehaviour:
   - {fileID: 677561999}
   - {fileID: 804148164}
   - {fileID: 586967516}
+  playBtnCoinImg: {fileID: 572451342}
 --- !u!1 &453104126
 GameObject:
   m_ObjectHideFlags: 0
