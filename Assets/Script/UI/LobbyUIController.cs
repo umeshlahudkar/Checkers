@@ -125,7 +125,7 @@ public class LobbyUIController : MonoBehaviour
 
         if(CoinManager.Instance.GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            PersistentUI.Instance.shopScreen.gameObject.Activate();
             return;
         }
 

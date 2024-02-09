@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class ShopScreen : MonoBehaviour
 {
@@ -21,13 +22,24 @@ public class ShopScreen : MonoBehaviour
         AudioManager.Instance.PlayButtonClickSound();
         getCoinButton.interactable = false;
         CoinManager.Instance.AddCoin(coinAmount, coinImg);
+
+        StartCoroutine(DisableScreenAfterDelay());
+    }
+
+    private IEnumerator  DisableScreenAfterDelay()
+    {
+        yield return new WaitForSeconds(1f);
+
+        faderScreen.SetActive(false);
+        gameObject.Deactivate();
+        getCoinButton.interactable = true;
     }
 
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
         getCoinButton.interactable = true;
     }
 }

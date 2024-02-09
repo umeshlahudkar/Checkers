@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class ModeSelectionScreen : MonoBehaviour
 {
@@ -14,7 +15,11 @@ public class ModeSelectionScreen : MonoBehaviour
     private void OnEnable()
     {
         selectedGamemode = GameMode.None;
-        ResetButton();
+        //ResetButton();
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            buttons[i].color = originalColor;
+        }
     }
 
     public void OnModeButtonClick(int buttonNumber)
@@ -22,6 +27,7 @@ public class ModeSelectionScreen : MonoBehaviour
         AudioManager.Instance.PlayButtonClickSound();
         ResetButton();
         buttons[buttonNumber - 1].color = selectedColor;
+        buttons[buttonNumber - 1].transform.DOScale(Vector3.one * 0.9f, 0.1f);
         selectedGamemode = (GameMode)buttonNumber;
     }
 
@@ -61,6 +67,7 @@ public class ModeSelectionScreen : MonoBehaviour
         for (int i = 0; i < buttons.Length; i++)
         {
             buttons[i].color = originalColor;
+            buttons[i].transform.DOScale(Vector3.one, 0.1f);
         }
     }
 }
