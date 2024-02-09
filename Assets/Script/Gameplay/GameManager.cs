@@ -176,8 +176,6 @@ public class GameManager : Singleton<GameManager>
     public void ChangeTurn(int nextTurn)
     {
         currentTurn = nextTurn;
-        //timer.ResetTimer();
-        GameplayUIController.Instance.PlayHighlightAnimation(currentTurn);
 
         //if (!GameplayController.Instance.CheckMoves((actorNumber == CurrentTurn)))
         if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
@@ -208,7 +206,6 @@ public class GameManager : Singleton<GameManager>
     {
         gameState = GameState.Ending;
         AudioManager.Instance.StopTimeTickingSound();
-        GameplayUIController.Instance.StopPlayerHighlightAnim();
     }
 
     private void ResetGameManager()

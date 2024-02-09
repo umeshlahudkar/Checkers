@@ -35,19 +35,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private EventManager eventManager;
     [SerializeField] private GameObject upperStrip;
 
-    [Header("Color")]
-    [SerializeField] private Color defaultColor;
-    [SerializeField] private Color highlightColor;
-
-    private float animationDuration = 1f;
-    private float startTime = 0;
-    private bool animFlag = false;
-    private float maxAlpha = 1f;
-    private float minAlpha = 0.5f;
-
-    private int playerTurn = -1;
-    private bool canPlayAnim = false;
-
     public Image GetTimerImg(int playerNumber)
     {
         return (playerNumber == 1) ? player1_timerImg : player2_timerImg;
@@ -60,73 +47,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         player2_nameText.text = player2_info.userName;
         player2_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player2_info.avtarIndex);
-    }
-
-    public void DisablePlayerInfo()
-    {
-        upperStrip.SetActive(false);
-    }
-
-    public void PlayHighlightAnimation(int turn)
-    {
-        StopPlayerHighlightAnim();
-        playerTurn = turn;
-        canPlayAnim = true;
-    }
-
-    public void StopPlayerHighlightAnim()
-    {
-        canPlayAnim = false;
-        startTime = 0;
-        animFlag = false;
-        playerTurn = -1;
-        player1_timerImg.color = defaultColor;
-        player2_timerImg.color = defaultColor;
-    }
-
-    private void Update()
-    {
-        if(canPlayAnim)
-        {
-            if (playerTurn == 1)
-            {
-                PlayPlayerTurnHighlightAnimation(player1_timerImg);
-            }
-            else if (playerTurn == 2)
-            {
-                PlayPlayerTurnHighlightAnimation(player2_timerImg);
-            }
-        }
-    }
-
-    private void PlayPlayerTurnHighlightAnimation(Image highlightImg)
-    {
-        float t = (Time.time - startTime) / animationDuration;
-        float newAlpha;
-
-        if (animFlag)
-        {
-            newAlpha = Mathf.Lerp(maxAlpha, minAlpha, t);
-        }
-        else
-        {
-            newAlpha = Mathf.Lerp(minAlpha, maxAlpha, t);
-        }
-
-        SetHighlightImageAlpha(highlightImg, newAlpha);
-
-        if (t >= animationDuration)
-        {
-            animFlag = !animFlag;
-            startTime = Time.time;
-        }
-    }
-
-    private void SetHighlightImageAlpha(Image highlightImg, float newAlpha)
-    {
-        Color currentColor = highlightColor;
-        Color newColor = new(currentColor.r, currentColor.g, currentColor.b, newAlpha);
-        highlightImg.color = newColor;
     }
 
     public void DisableAllScreen()

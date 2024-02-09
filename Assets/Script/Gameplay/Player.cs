@@ -160,7 +160,6 @@ namespace Gameplay
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
-            GameplayUIController.Instance.StopPlayerHighlightAnim();
 
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
