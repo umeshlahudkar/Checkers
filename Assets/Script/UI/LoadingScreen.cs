@@ -20,8 +20,16 @@ public class LoadingScreen : MonoBehaviour
 
     private void ToggleLoadingScreen(bool status)
     {
-        gameObject.SetActive(status);
         faderScreen.SetActive(status);
         Bg.SetActive(status);
+
+        if(status)
+        {
+            gameObject.Activate();
+        }
+        else
+        {
+            gameObject.Deactivate();
+        }
     }
 }

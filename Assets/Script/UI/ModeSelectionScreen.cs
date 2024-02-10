@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using DG.Tweening;
+using System.Collections;
 
 public class ModeSelectionScreen : MonoBehaviour
 {
@@ -9,6 +10,9 @@ public class ModeSelectionScreen : MonoBehaviour
     [SerializeField] private GameObject faderScreen;
     [SerializeField] private Image[] buttons;
     [SerializeField] private Transform playBtnCoinImg;
+
+    [SerializeField] private GameObject playButtonWithCoin;
+    [SerializeField] private GameObject playButtonWithoutCoin;
 
     private GameMode selectedGamemode;
     private Color originalColor = new(1, 1, 1, 0.5f);
@@ -31,6 +35,17 @@ public class ModeSelectionScreen : MonoBehaviour
         buttons[buttonNumber - 1].color = selectedColor;
         buttons[buttonNumber - 1].transform.DOScale(Vector3.one * 0.9f, 0.1f);
         selectedGamemode = (GameMode)buttonNumber;
+
+        if(selectedGamemode == GameMode.Online || selectedGamemode == GameMode.PVC)
+        {
+            playButtonWithoutCoin.SetActive(false);
+            playButtonWithCoin.SetActive(true);
+        }
+        else
+        {
+            playButtonWithoutCoin.SetActive(true);
+            playButtonWithCoin.SetActive(false);
+        }
     }
 
     public void OnPlayButtonClick()
@@ -44,21 +59,31 @@ public class ModeSelectionScreen : MonoBehaviour
             {
                 case GameMode.Online:
                     lobbyUIController.JoinRoom();
-                    faderScreen.SetActive(false);
-                    gameObject.SetActive(false);
+                    //faderScreen.SetActive(false);
+                    //gameObject.SetActive(false);
                     break;
 
                 case GameMode.PVP:
+                    StartCoroutine(LoadGame());
+                    break;
+
                 case GameMode.PVC:
                     CoinManager.Instance.DeductCoin(250, playBtnCoinImg, () =>
                     {
-                        faderScreen.SetActive(false);
-                        gameObject.SetActive(false);
-                        SceneManager.LoadScene(1);
+                        StartCoroutine(LoadGame());
                     });
                     break;
             }           
         }
+    }
+
+    private IEnumerator LoadGame()
+    {
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting Match");
+
+        yield return new WaitForSeconds(0.5f);
+
+        SceneManager.LoadScene(1);
     }
 
     public void OnCloseButtonClick()

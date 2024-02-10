@@ -76,8 +76,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
-        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-        lobbyUIController.ToggleMatchmakingScreen(true);
+        //PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        //lobbyUIController.ToggleMatchmakingScreen(true);
 
         if(!PhotonNetwork.IsMasterClient)
         {
@@ -130,14 +130,16 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     }
 
    
-    public void JoinRandomRoom()
+    public bool JoinRandomRoom()
     {
-        if(PhotonNetwork.IsConnectedAndReady)
+        if(PhotonNetwork.IsConnectedAndReady && PhotonNetwork.JoinRandomRoom())
         {
             elapcedTime = roomJoinWaitTime;
-            PhotonNetwork.JoinRandomRoom();
-            PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
+             //if(PhotonNetwork.JoinRandomRoom() ) { }
+            //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
+            return true;
         }
+        return false;
     }
 
 }

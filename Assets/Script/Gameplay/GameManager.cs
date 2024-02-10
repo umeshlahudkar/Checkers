@@ -72,6 +72,8 @@ public class GameManager : Singleton<GameManager>
 
             currentTurn = 2;
             SwitchTurn();
+
+            PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         }
         else
         {
@@ -92,9 +94,9 @@ public class GameManager : Singleton<GameManager>
 
             currentTurn = 2;
             SwitchTurn();
-        }
 
-        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+            PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        }
     }
 
     private IEnumerator PrepareOnlineMode()
@@ -120,6 +122,9 @@ public class GameManager : Singleton<GameManager>
             currentTurn = 1;
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
+
+        yield return new WaitForSeconds(1f);
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
 
     private bool HasBothPlayerReady()

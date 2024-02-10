@@ -70,11 +70,16 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        winScreen.SetActive(status);
+        //winScreen.SetActive(status);
 
         if (status)
         {
+            winScreen.Activate();
             CoinManager.Instance.AddCoin(500, winScreenCoinImg);
+        }
+        else
+        {
+            winScreen.Deactivate();
         }
     }
 
@@ -82,31 +87,62 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        loseScreen.SetActive(status);
+        //loseScreen.SetActive(status);
+
+        if (status)
+        {
+            loseScreen.Activate();
+        }
+        else
+        {
+            loseScreen.Deactivate();
+        }
     }
 
     public void ToggleGameOverScreen(bool status, string winnerName = "", string loserName = "")
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        gameOverScreen.SetActive(status);
+        //gameOverScreen.SetActive(status);
 
         if (status)
         {
+            gameOverScreen.Activate();
             gameOverMsgText.text = "The " + winnerName + " piece wins the game.Better luck next time, "+ loserName + " piece!";
+        }
+        else
+        {
+            gameOverScreen.Deactivate();
         }
     }
 
     public void ToggleExitScreen(bool status)
     {
         faderScreen.SetActive(status);
-        exitScreen.SetActive(status);
+
+        if(status)
+        {
+            exitScreen.Activate();
+        }
+        else
+        {
+            exitScreen.Deactivate();
+        }
     }
 
     public void ToggleRematchScreen(bool status)
     {
         faderScreen.SetActive(status);
-        rematchScreen.SetActive(status);
+
+        if (status)
+        {
+            rematchScreen.Activate();
+        }
+        else
+        {
+            rematchScreen.Deactivate();
+        }
+        //rematchScreen.SetActive(status);
     }
 
     public void ToggleMsgScreen(bool status, string msg = "", bool homeButtonStatus = false)

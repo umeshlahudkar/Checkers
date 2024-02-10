@@ -105,15 +105,6 @@ public class LobbyUIController : MonoBehaviour
         }
     }
 
-    public void ToggleMatchmakingScreen(bool status)
-    {
-        if (status == true)
-        {
-            //mainMenuScreen.SetActive(false);
-        }
-        matchmakingScreen.SetActive(status);
-    }
-
     public void OnPlayButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
@@ -135,7 +126,14 @@ public class LobbyUIController : MonoBehaviour
 
     public void JoinRoom()
     {
-        networkManager.JoinRandomRoom();
+        if(networkManager.JoinRandomRoom())
+        {
+            matchmakingScreen.SetActive(true);
+        }
+        else
+        {
+            Debug.Log("Cannot join room");
+        }
     }
 
     public void OnQuitButtonClick()

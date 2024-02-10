@@ -177,7 +177,7 @@ public class MatchMakingController : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting match");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting Match");
 
         if (PhotonNetwork.IsMasterClient)
         {
