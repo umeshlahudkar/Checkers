@@ -15,8 +15,7 @@ public class MatchmakingScreenAnimation : MonoBehaviour
     private Vector3 player2_InitialPosition;
     private WaitForSeconds waitForSeconds = new WaitForSeconds(0.5f);
 
-
-    private void OnEnable()
+    public void StartAnimation()
     {
         SetUpScreenForAnimation();
         StartCoroutine(ScreenOpenAnimation());

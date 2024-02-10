@@ -8,10 +8,9 @@ public class TimerController : MonoBehaviour
     [SerializeField] private Color timeUpColor;
 
     private Image sliderImg;
-    private readonly float turnTime = 15f;
+    private readonly float turnTime = 5f;
     private float currentTime = 0f;
-    private bool hasTimeEndColorSet = false;
-
+    private bool hasTimeUpColorSet = false;
     private bool isRunning;
 
     public void StartTimer()
@@ -21,7 +20,7 @@ public class TimerController : MonoBehaviour
         currentTime = turnTime;
         sliderImg.color = timerRunningColor;
         sliderImg.fillAmount = 1;
-        hasTimeEndColorSet = false;
+        hasTimeUpColorSet = false;
         isRunning = true;
     }
 
@@ -29,7 +28,7 @@ public class TimerController : MonoBehaviour
     {
         isRunning = false;
         currentTime = 0;
-        hasTimeEndColorSet = false;
+        hasTimeUpColorSet = false;
         AudioManager.Instance.StopTimeTickingSound();
 
         if(sliderImg != null)
@@ -48,16 +47,14 @@ public class TimerController : MonoBehaviour
             {
                 currentTime = 0;
                 ResetTimer();
-                AudioManager.Instance.StopTimeTickingSound();
-                //GameManager.Instance.UpdateTurnMissCount();
-                GameManager.Instance.SwitchTurn();
+                GameManager.Instance.HandleTurnMissCount();
             }
 
             sliderImg.fillAmount = currentTime / turnTime;
 
-            if( !hasTimeEndColorSet && currentTime <= ( turnTime - (turnTime * 0.75f)))
+            if(isRunning && !hasTimeUpColorSet && currentTime <= ( turnTime - (turnTime * 0.75f)))
             {
-                hasTimeEndColorSet = true;
+                hasTimeUpColorSet = true;
                 sliderImg.color = timeUpColor;
                 AudioManager.Instance.PlayTimeTickingSound();
             }

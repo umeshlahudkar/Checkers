@@ -19495,6 +19495,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db59ee1566357b64b9461f2038dbc69e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  computerAvtar: {fileID: 21300000, guid: b48ca84c3ceec0541a9ef3c03ae083b1, type: 3}
+  pieceAvtar:
+  - {fileID: 21300000, guid: 5bb4ce1c55c913d43b80467f20c06fdd, type: 3}
+  - {fileID: 21300000, guid: 787ec47ed8c456244892f43fdf9e6a83, type: 3}
   avtars:
   - {fileID: 21300000, guid: 1ddfe5673ee5d4fcd90a7f06e4a81569, type: 3}
   - {fileID: 21300000, guid: c64b98248e0df4b32bb6e4e1f7277758, type: 3}

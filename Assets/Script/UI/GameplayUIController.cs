@@ -21,6 +21,9 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private GameObject loseScreen;
     [SerializeField] private Transform winScreenCoinImg;
 
+    [SerializeField] private GameObject gameOverScreen;
+    [SerializeField] private TextMeshProUGUI gameOverMsgText;
+
     [Header("Msg screens")]
     [SerializeField] private GameObject msgScreen;
     [SerializeField] private TextMeshProUGUI msgText;
@@ -40,13 +43,13 @@ public class GameplayUIController : Singleton<GameplayUIController>
         return (playerNumber == 1) ? player1_timerImg : player2_timerImg;
     }
 
-    public void ShowPlayerInfo(PlayerInfo player1_info, PlayerInfo player2_info)
+    public void ShowPlayerInfo(string player1_name, Sprite player1_Avtar, string player2_name, Sprite player2_Avtar)
     {
-        player1_nameText.text = player1_info.userName;
-        player1_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player1_info.avtarIndex);
+        player1_nameText.text = player1_name;
+        player1_avtarImag.sprite = player1_Avtar;
 
-        player2_nameText.text = player2_info.userName;
-        player2_avtarImag.sprite = ProfileManager.Instance.GetAvtar(player2_info.avtarIndex);
+        player2_nameText.text = player2_name;
+        player2_avtarImag.sprite = player2_Avtar;
     }
 
     public void DisableAllScreen()
@@ -56,6 +59,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         winScreen.SetActive(false);
         loseScreen.SetActive(false);
+        gameOverScreen.SetActive(false);
 
         exitScreen.SetActive(false);
         rematchScreen.SetActive(false);
@@ -79,6 +83,18 @@ public class GameplayUIController : Singleton<GameplayUIController>
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
         loseScreen.SetActive(status);
+    }
+
+    public void ToggleGameOverScreen(bool status, string winnerName = "", string loserName = "")
+    {
+        coinDisplay.SetActive(status);
+        faderScreen.SetActive(status);
+        gameOverScreen.SetActive(status);
+
+        if (status)
+        {
+            gameOverMsgText.text = "The " + winnerName + " piece wins the game.Better luck next time, "+ loserName + " piece!";
+        }
     }
 
     public void ToggleExitScreen(bool status)
@@ -156,7 +172,8 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void OnExitScreenYesButtonClick()
     {
-        if(GameManager.Instance.GameMode == GameMode.Online)
+        AudioManager.Instance.StopTimeTickingSound();
+        if (GameManager.Instance.GameMode == GameMode.Online)
         {
             if (PhotonNetwork.IsConnected)
             {
@@ -173,6 +190,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
         }
         else
         {
+            AudioManager.Instance.PlayButtonClickSound();
             SceneManager.LoadScene(0);
         }
     }

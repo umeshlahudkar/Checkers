@@ -8,21 +8,21 @@ namespace Gameplay
     public class Player : MonoBehaviour
     {
         [SerializeField] private PhotonView thisPhotonView;
-
         [SerializeField] private int playerID;
-        private PieceType pieceType;
 
+        private PieceType pieceType;
         private bool isAI;
+        [SerializeField] private int turnMissCount;
 
         private readonly List<Block> highlightedBlocks = new();
         private readonly List<Block> nextToNexthighlightedBlocks = new();
         private readonly List<Piece> movablePieces = new();
-
         private Piece selectedPiece;
        
 
         public PieceType PieceType { get { return pieceType; } }
         public int Player_ID { get { return playerID; } }
+        public int TurnMissCount { get { return turnMissCount; } }
 
         public PhotonView PhotonView { get { return thisPhotonView; } }
 
@@ -33,6 +33,7 @@ namespace Gameplay
                 playerID = thisPhotonView.OwnerActorNr;
                 pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
                 GameManager.Instance.ListPlayer(this);
+                turnMissCount = 0;
             }
         }
 
@@ -41,6 +42,7 @@ namespace Gameplay
             this.playerID = playerNumber;
             this.pieceType = pieceType;
             this.isAI = isAI;
+            turnMissCount = 0;
         }
 
         public void ResetPlayer()
@@ -77,6 +79,11 @@ namespace Gameplay
                     HighlightMovablePieceBlock();
                 }
             }
+        }
+
+        public void UpdateTurnMissCount()
+        {
+            turnMissCount++;
         }
 
         private void HighlightMovablePieceBlock()
@@ -132,7 +139,7 @@ namespace Gameplay
 
         public void OnHighlightedTargetBlockClick(Block block)
         {
-            //GameManager.Instance.ResetTurnMissCount();
+            turnMissCount = 0;
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;

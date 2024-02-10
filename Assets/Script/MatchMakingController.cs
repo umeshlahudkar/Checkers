@@ -43,6 +43,7 @@ public class MatchMakingController : MonoBehaviour
     {
         SetInitialImgsPos();
     }
+
     private void OnEnable()
     {
         currentIndex = 1;
@@ -58,10 +59,7 @@ public class MatchMakingController : MonoBehaviour
 
         backButton.interactable = true;
 
-        if(gameObject.GetComponent<MatchmakingScreenAnimation>() == null)
-        {
-            StartScrolling();
-        }
+        gameObject.GetComponent<MatchmakingScreenAnimation>()?.StartAnimation();
     }
 
     public void StartScrolling()
