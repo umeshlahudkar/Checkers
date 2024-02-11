@@ -18,6 +18,7 @@ namespace Gameplay
         private readonly List<Block> nextToNexthighlightedBlocks = new();
         private readonly List<Piece> movablePieces = new();
         private Piece selectedPiece;
+        private WaitForSeconds waitForSeconds;
        
 
         public PieceType PieceType { get { return pieceType; } }
@@ -43,6 +44,11 @@ namespace Gameplay
             this.pieceType = pieceType;
             this.isAI = isAI;
             turnMissCount = 0;
+
+            if(isAI)
+            {
+                waitForSeconds = new WaitForSeconds(1f);
+            }
         }
 
         public void ResetPlayer()
@@ -55,8 +61,7 @@ namespace Gameplay
         {
             if(GameplayController.Instance.CanMove(playerID))
             {
-                Invoke(nameof(PlayTurn), 0.5f);
-
+                PlayTurn();
                 return true;
             }
             return false;
@@ -71,14 +76,20 @@ namespace Gameplay
             {
                 if(playerID == 2 && isAI)
                 {
-                    SetMovablePosition();
-                    CheckPieceMove();
+                    StartCoroutine(PlayAITurn());
                 }
                 else
                 {
                     HighlightMovablePieceBlock();
                 }
             }
+        }
+
+        private IEnumerator PlayAITurn()
+        {
+            SetMovablePosition();
+            yield return waitForSeconds;
+            CheckPieceMove();
         }
 
         public void UpdateTurnMissCount()
@@ -139,6 +150,11 @@ namespace Gameplay
 
         public void OnHighlightedTargetBlockClick(Block block)
         {
+            StartCoroutine(HandlePieceMovementAndPieceDelete(block));
+        }
+
+        private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
+        {
             turnMissCount = 0;
             ResetHighlightedBlocks();
 
@@ -167,6 +183,7 @@ namespace Gameplay
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
+            yield return new WaitForSeconds(0.4f);
 
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
@@ -180,6 +197,8 @@ namespace Gameplay
                     selectedPiece.SetCrownKing();
                 }
             }
+
+            yield return new WaitForSeconds(0.3f);
 
             selectedPiece = block.Piece;
 

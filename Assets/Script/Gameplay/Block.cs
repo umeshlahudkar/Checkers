@@ -29,7 +29,7 @@ public class Block : MonoBehaviour
     private float minAlpha = 0.5f;
 
     [Header("Target Image Anim Data")]
-    private float maxScale = 1f;
+    private float maxScale = 0.8f;
     private float minScale = 0.5f;
 
     public void SetBlock(int row, int colum, Sprite sprite)
@@ -37,8 +37,6 @@ public class Block : MonoBehaviour
         columID = colum;
         rowID = row;
         blockImage.sprite = sprite;
-        //isPiecePresent = isPiece;
-        //this.piece = piece;
         isTargetBlockHighlighted = false;
         button.interactable = false;
     }
@@ -126,8 +124,8 @@ public class Block : MonoBehaviour
         startTime = Time.time;
         animFlag = false;
 
+        SetHighlightImageAlpha(minAlpha);
         highlightImage.gameObject.SetActive(true);
-        //button.interactable = true;
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
@@ -154,8 +152,6 @@ public class Block : MonoBehaviour
     {
         if(isTargetBlockHighlighted)
         {
-            //StartCoroutine(GameplayController.Instance.HandlePieceMovement(this));
-            //isNextTargetBlockHighlighted = false;
             GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).OnHighlightedTargetBlockClick(this);
         }
     }
