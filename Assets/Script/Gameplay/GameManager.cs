@@ -15,10 +15,10 @@ public class GameManager : Singleton<GameManager>
 
     private PieceType pieceType;
     private int currentTurn;
-    private int actorNumber;
 
     private GameState gameState = GameState.Waiting;
     private GameMode gameMode;
+    private bool isReadyToLeaveGameplay = false;
 
     private readonly int maxTurnMissCount = 3;
 
@@ -32,11 +32,15 @@ public class GameManager : Singleton<GameManager>
         get { return gameMode; }
     }
 
-    public int ActorNumber { get { return actorNumber; } }
-
     public int CurrentTurn { get { return currentTurn; } }
 
     public PieceType PieceType { get { return pieceType; } }
+
+    public bool IsReadyToLeaveGameplay 
+    { 
+        get { return isReadyToLeaveGameplay; }
+        set { isReadyToLeaveGameplay = value; }
+    }
 
 
     private void Start()
@@ -119,9 +123,9 @@ public class GameManager : Singleton<GameManager>
 
         boardGenerator.GeneratePieces();
 
+        currentTurn = 1;
         if (PhotonNetwork.IsMasterClient)
         {
-            currentTurn = 1;
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
@@ -196,6 +200,7 @@ public class GameManager : Singleton<GameManager>
     [PunRPC]
     public void ChangeTurn(int nextTurn)
     {
+        players[currentTurn - 1].ResetPlayer();
         currentTurn = nextTurn;
         timer.ResetTimer();
 
@@ -255,8 +260,8 @@ public class GameManager : Singleton<GameManager>
     {
         pieceType = PieceType.None;
         currentTurn = -1;
-        actorNumber = -1;
         gameState = GameState.Waiting;
+        IsReadyToLeaveGameplay = false;
     }
 
     public Gameplay.Player GetPlayer(int playerID)

@@ -31,6 +31,11 @@ public class LobbyUIController : MonoBehaviour
 
     [SerializeField] private GameDataSO gameDataSO;
 
+    private void Start()
+    {
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+    }
+
     public void SetPlayerData(Player opponentPlayer, int avtarIndex)
     {
         gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
@@ -132,7 +137,7 @@ public class LobbyUIController : MonoBehaviour
         }
         else
         {
-            Debug.Log("Cannot join room");
+            PersistentUI.Instance.massageDisplay.ShowMassage("No internet connection!");
         }
     }
 

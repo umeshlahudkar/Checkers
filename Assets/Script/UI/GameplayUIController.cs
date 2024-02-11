@@ -3,6 +3,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using System.Collections;
 
 public class GameplayUIController : Singleton<GameplayUIController>
 {
@@ -305,27 +306,38 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void OnExitScreenYesButtonClick()
     {
-        AudioManager.Instance.StopTimeTickingSound();
-        if (GameManager.Instance.GameMode == GameMode.Online)
+        if (GameManager.Instance.GameMode == GameMode.Online && PhotonNetwork.IsConnected)
         {
-            if (PhotonNetwork.IsConnected)
+            GameManager.Instance.IsReadyToLeaveGameplay = true;
+            if (PhotonNetwork.IsMasterClient)
             {
-                if (PhotonNetwork.IsMasterClient)
-                {
-                    PhotonNetwork.DestroyAll();
-                }
-
-                PhotonNetwork.AutomaticallySyncScene = false;
-                PhotonNetwork.LeaveRoom();
-                ToggleExitScreen(false);
-                AudioManager.Instance.PlayButtonClickSound();
+                PhotonNetwork.DestroyAll();
             }
+
+            PhotonNetwork.AutomaticallySyncScene = false;
+            PhotonNetwork.LeaveRoom();
+            ToggleExitScreen(false);
+            AudioManager.Instance.PlayButtonClickSound();
+            AudioManager.Instance.StopTimeTickingSound();
+
+            StartCoroutine(LoadMainMenu());
         }
         else
         {
             AudioManager.Instance.PlayButtonClickSound();
-            SceneManager.LoadScene(0);
+            StartCoroutine(LoadMainMenu());
         }
+    }
+
+    public IEnumerator LoadMainMenu()
+    {
+        AudioManager.Instance.StopTimeTickingSound();
+        DisableAllScreen();
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
+
+        yield return new WaitForSeconds(1f);
+
+        SceneManager.LoadScene(0);
     }
 
     public void OnPauseButtonClick()

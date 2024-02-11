@@ -130,7 +130,11 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        SceneManager.LoadScene(0);
+        if (GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.IsReadyToLeaveGameplay)
+        {
+            //StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+        }
+       
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
@@ -144,7 +148,11 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        SceneManager.LoadScene(0);
+        if(GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.GameState != GameState.Ending)
+        {
+            PersistentUI.Instance.massageDisplay.ShowMassage("Connection lost!");
+            StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+        }
     }
 
     public override void OnDisable()

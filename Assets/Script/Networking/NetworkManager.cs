@@ -107,8 +107,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
-        lobbyUIController.ToggleMainMenuScreen(true);
+        //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
+        //lobbyUIController.ToggleMainMenuScreen(true);
     }
 
     private IEnumerator CheckForPropertiesSet(Player newPlayer)
@@ -135,8 +135,6 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         if(PhotonNetwork.IsConnectedAndReady && PhotonNetwork.JoinRandomRoom())
         {
             elapcedTime = roomJoinWaitTime;
-             //if(PhotonNetwork.JoinRandomRoom() ) { }
-            //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
             return true;
         }
         return false;
