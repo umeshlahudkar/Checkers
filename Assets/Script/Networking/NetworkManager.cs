@@ -76,8 +76,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
-        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-        lobbyUIController.ToggleMatchmakingScreen(true);
+        //PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        //lobbyUIController.ToggleMatchmakingScreen(true);
 
         if(!PhotonNetwork.IsMasterClient)
         {
@@ -107,8 +107,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
-        lobbyUIController.ToggleMainMenuScreen(true);
+        //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
+        //lobbyUIController.ToggleMainMenuScreen(true);
     }
 
     private IEnumerator CheckForPropertiesSet(Player newPlayer)
@@ -124,29 +124,20 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             }
             yield return null;
         }
+
         matchMakingManager.SetPlayerFound(newPlayer.NickName, index);
-        SaveGameData(newPlayer, index);
+        lobbyUIController.SetPlayerData(newPlayer, index);
     }
 
-    private void SaveGameData(Player opponentPlayer, int avtarIndex)
+   
+    public bool JoinRandomRoom()
     {
-        gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
-        gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
-        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
-
-        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
-        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
-        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
-    }
-
-    public void JoinRandomRoom()
-    {
-        if(PhotonNetwork.IsConnectedAndReady)
+        if(PhotonNetwork.IsConnectedAndReady && PhotonNetwork.JoinRandomRoom())
         {
             elapcedTime = roomJoinWaitTime;
-            PhotonNetwork.JoinRandomRoom();
-            PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
+            return true;
         }
+        return false;
     }
 
 }

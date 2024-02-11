@@ -180,6 +180,7 @@ MonoBehaviour:
   rowID: 0
   columID: 0
   isCrownedKing: 0
+  playerID: 0
 --- !u!114 &2684559871079811949
 MonoBehaviour:
   m_ObjectHideFlags: 0

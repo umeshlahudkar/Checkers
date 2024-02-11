@@ -1,24 +1,28 @@
 using System.Collections;
 using UnityEngine;
+using DG.Tweening;
 
 public class CoinMover : MonoBehaviour
 {
     [SerializeField] private Transform thisTransform;
-    //private Vector2 target;
-    //private readonly float speed = 2000f;  // 500
-    //private bool canMove = false;
     private bool canDisableAtTarget;
-    //private Vector2 dir;
     private CoinAnimator coinAnimation;
 
     public void SetTarget(Vector2 targetPos, bool canDisableAtTarget, CoinAnimator coinAnimation, float timeToMove)
     {
-        //target = targetPos;
-        //canMove = true;
         this.canDisableAtTarget = canDisableAtTarget;
         this.coinAnimation = coinAnimation;
-        //dir = (target - (Vector2)thisTransform.position).normalized;
-        StartCoroutine(Move(thisTransform.position, targetPos, timeToMove));
+        //StartCoroutine(Move(thisTransform.position, targetPos, timeToMove));
+
+        thisTransform.DOMove(targetPos, timeToMove).OnComplete( ()=> 
+        {
+            if(canDisableAtTarget)
+            {
+                this.transform.localPosition = Vector2.zero;
+                gameObject.SetActive(false);
+                coinAnimation.IncrementCoinReachedToTarget();
+            }
+        });
     }
 
     private IEnumerator Move(Vector2 initialPos, Vector2 targetPos, float timeToMove)
@@ -37,7 +41,7 @@ public class CoinMover : MonoBehaviour
         {
             this.transform.localPosition = Vector2.zero;
             gameObject.SetActive(false);
-            coinAnimation.IncrementReachedToTarget();
+            coinAnimation.IncrementCoinReachedToTarget();
         }
     }
 

@@ -50,16 +50,16 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         switch(type)
         {
             case EventType.RematchConfirmation:
-                UIController.Instance.DisableAllScreen();
-                UIController.Instance.ToggleRematchScreen(true);
+                GameplayUIController.Instance.DisableAllScreen();
+                GameplayUIController.Instance.ToggleRematchScreen(true);
                 break;
 
             case EventType.RematchAccept:
                 if(isReadyToRematch)
                 {
                     confirmationElapcedTime = 0;
-                    UIController.Instance.DisableAllScreen();
-                    UIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
+                    GameplayUIController.Instance.DisableAllScreen();
+                    GameplayUIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
                     SendRematchEvent();
                 }
                 else
@@ -74,7 +74,8 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             case EventType.Rematch:
                 confirmationAcknoElapcedTime = 0;
-                StartCoroutine(GameManager.Instance.Rematch());
+                //StartCoroutine(GameManager.Instance.Rematch());
+                GameplayUIController.Instance.RematchForOnlineMode();
                 break;
         }
     }
@@ -122,28 +123,36 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void OnRematchDenied()
     {
-        UIController.Instance.DisableAllScreen();
-        UIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
+        GameplayUIController.Instance.DisableAllScreen();
+        GameplayUIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
     }
 
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        SceneManager.LoadScene(0);
+        if (GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.IsReadyToLeaveGameplay)
+        {
+            //StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+        }
+       
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        if(UIController.Instance.CanOpenGameOverScreen())
+        if(GameplayUIController.Instance.CanOpenGameOverScreen())
         {
             GameManager.Instance.SetGameOver();
-            UIController.Instance.ToggleGameWinScreen(true);
+            GameplayUIController.Instance.ToggleGameWinScreen(true);
         }
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        SceneManager.LoadScene(0);
+        if(GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.GameState != GameState.Ending)
+        {
+            PersistentUI.Instance.massageDisplay.ShowMassage("Connection lost!");
+            StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+        }
     }
 
     public override void OnDisable()

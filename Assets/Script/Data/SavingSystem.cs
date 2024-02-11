@@ -11,7 +11,7 @@ public class SavingSystem : Singleton<SavingSystem>
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
 
         filePath = Path.Combine(Application.persistentDataPath, fileName);
-
+        //DeleteFile();
         if (!File.Exists(filePath))
         {
             SaveData data = new();

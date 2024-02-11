@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
+using System.Collections.Generic;
 
 public class Piece : MonoBehaviour
 {
@@ -17,17 +18,30 @@ public class Piece : MonoBehaviour
     [SerializeField] private int columID;
 
     [SerializeField] private bool isCrownedKing;
-    
+    [SerializeField] private int playerID;
+
+
+    [Header("Piece AI")]
+    [HideInInspector] public List<BoardPosition> movableBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeMovableBlockPositions = new();
+
+    [HideInInspector] public List<BoardPosition> killerBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeKillerBlockPositions = new();
+
+    [HideInInspector] public List<BoardPosition> doubleKillerBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> safeDoubleKillerBlockPositions = new();
+
 
     [PunRPC]
-    public void SetBlock(int row, int colum, int pieceType, float blockSize)
+    public void SetPiece(int _playerID, int _row, int _colum, int _pieceType)
     {
-        columID = colum;
-        rowID = row;
-        this.pieceType = (PieceType)pieceType;
+        playerID = _playerID;
+        columID = _colum;
+        rowID = _row;
+        pieceType = (PieceType)_pieceType;
         isCrownedKing = false;
 
-        if(this.pieceType == PieceType.White)
+        if(pieceType == PieceType.White)
         {
             whitePieceImage.gameObject.SetActive(true);
         }
@@ -37,14 +51,13 @@ public class Piece : MonoBehaviour
         }
 
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
-        //thisTransform.sizeDelta = new Vector2(blockSize, blockSize);
-        thisTransform.position = GameplayController.Instance.board[row, colum].ThisTransform.position;
-        thisTransform.sizeDelta = GameplayController.Instance.board[row, colum].ThisTransform.sizeDelta;
+        thisTransform.position = GameplayController.Instance.board[rowID, columID].ThisTransform.position;
+        thisTransform.sizeDelta = GameplayController.Instance.board[rowID, columID].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
-        GameplayController.Instance.board[row, colum].SetBlockPiece(true, this);
+        GameplayController.Instance.board[rowID, columID].SetBlockPiece(true, this);
 
-        if(photonView.IsMine)
+        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || GameManager.Instance.GameMode != GameMode.Online)
         {
             button.interactable = true;
         }
@@ -68,7 +81,7 @@ public class Piece : MonoBehaviour
 
         AudioManager.Instance.PlayPieceKillSound();
 
-        if (pieceType == PieceType.White)
+        if (playerID == 2)
         {
             GameplayController.Instance.whitePieces.Remove(this);
         }
@@ -77,9 +90,13 @@ public class Piece : MonoBehaviour
             GameplayController.Instance.blackPieces.Remove(this);
         }
 
-        if (photonView.IsMine)
+        if (GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine)
         {
             PhotonNetwork.Destroy(this.gameObject);
+        }
+        else if(GameManager.Instance.GameMode != GameMode.Online)
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -100,18 +117,34 @@ public class Piece : MonoBehaviour
         set { columID = value; }
     }
 
+    public int Player_ID
+    {
+        get { return playerID; }
+    }
+
     public PieceType PieceType { get { return pieceType; } }
 
     public PhotonView PhotonView { get { return photonView; } }
 
     public void OnClick()
     {
-        if(GameManager.Instance.ActorNumber == GameManager.Instance.CurrentTurn && pieceType == GameManager.Instance.PieceType)
+        if(playerID == GameManager.Instance.CurrentTurn)
         {
-            GameplayController.Instance.CheckNextMove(this);
+            GameManager.Instance.GetPlayer(playerID).OnHighlightedPieceClick(this);
         }
     }
 
+    public void ResetAllList()
+    {
+        movableBlockPositions.Clear();
+        safeMovableBlockPositions.Clear();
+
+        killerBlockPositions.Clear();
+        safeKillerBlockPositions.Clear();
+
+        doubleKillerBlockPositions.Clear();
+        safeDoubleKillerBlockPositions.Clear();
+    }
 }
 
 public enum PieceType

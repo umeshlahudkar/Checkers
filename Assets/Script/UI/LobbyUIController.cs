@@ -1,4 +1,7 @@
 using UnityEngine;
+using Photon.Pun;
+using Photon.Realtime;
+using UnityEngine.SceneManagement;
 
 public class LobbyUIController : MonoBehaviour
 {
@@ -24,10 +27,31 @@ public class LobbyUIController : MonoBehaviour
     [Header("Setting screen")]
     [SerializeField] private GameObject settingScreen;
 
+    [SerializeField] private GameObject modeSelectionScreen;
+
+    [SerializeField] private GameDataSO gameDataSO;
+
     private void Start()
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network...");
+        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
+
+    public void SetPlayerData(Player opponentPlayer, int avtarIndex)
+    {
+        gameDataSO.ownPlayer.isMasterClient = PhotonNetwork.IsMasterClient;
+        gameDataSO.ownPlayer.userName = ProfileManager.Instance.GetUserName();
+        gameDataSO.ownPlayer.avtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
+
+        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
+        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
+        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
+    }
+
+    public void SetGameMode(GameMode gameMode)
+    {
+        gameDataSO.gameMode = gameMode;
+    }
+
 
     private void DisableAllScreen()
     {
@@ -60,22 +84,30 @@ public class LobbyUIController : MonoBehaviour
     private void ToggleUserNameInputScreen(bool status)
     {
         faderScreen.SetActive(status);
-        userNameInputScreen.SetActive(status);
+
+        if(status)
+        {
+            userNameInputScreen.Activate();
+        }
+        else
+        {
+            userNameInputScreen.Deactivate();
+        }
+       
     }
 
     private void ToggleAvtarSelectionScreen(bool status)
     {
         faderScreen.SetActive(status);
-        avtarSelectionScreen.SetActive(status);
-    }
 
-    public void ToggleMatchmakingScreen(bool status)
-    {
-        if (status == true)
+        if(status)
         {
-            //mainMenuScreen.SetActive(false);
+            avtarSelectionScreen.Activate();
         }
-        matchmakingScreen.SetActive(status);
+        else
+        {
+            avtarSelectionScreen.Deactivate();
+        }
     }
 
     public void OnPlayButtonClick()
@@ -89,11 +121,24 @@ public class LobbyUIController : MonoBehaviour
 
         if(CoinManager.Instance.GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            PersistentUI.Instance.shopScreen.gameObject.Activate();
             return;
         }
-      
-        networkManager.JoinRandomRoom();
+
+        faderScreen.SetActive(true);
+        modeSelectionScreen.Activate();
+    }
+
+    public void JoinRoom()
+    {
+        if(networkManager.JoinRandomRoom())
+        {
+            matchmakingScreen.SetActive(true);
+        }
+        else
+        {
+            PersistentUI.Instance.massageDisplay.ShowMassage("No internet connection!");
+        }
     }
 
     public void OnQuitButtonClick()
@@ -118,6 +163,6 @@ public class LobbyUIController : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(true);
-        settingScreen.SetActive(true);
+        settingScreen.Activate();
     } 
 }

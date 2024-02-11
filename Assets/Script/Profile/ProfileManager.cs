@@ -9,6 +9,8 @@ public class ProfileManager : Singleton<ProfileManager>
     private Sprite profileAvtar;
     private int avtarIndex;
 
+    [SerializeField] private Sprite computerAvtar;
+    [SerializeField] private Sprite[] pieceAvtar;
     [SerializeField] private Sprite[] avtars;
 
     public delegate void ProfileChange(Sprite avtar, string name);
@@ -91,6 +93,21 @@ public class ProfileManager : Singleton<ProfileManager>
         }
 
         return null;
+    }
+
+    public Sprite GetPieceAvtar(PieceType pieceType)
+    {
+        if(pieceType != PieceType.None)
+        {
+            return pieceAvtar[(int)pieceType - 1];
+        }
+
+        return null;
+    }
+
+    public Sprite GetComputerAvtar()
+    {
+        return computerAvtar;
     }
 
     public int GetProfileAvtarIndex() 

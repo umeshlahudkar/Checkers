@@ -6,14 +6,8 @@ public class UserNameInputScreen : MonoBehaviour
 {
     [SerializeField] private GameObject faderScreen;
     [SerializeField] private TMP_InputField usernameInputField;
-    [SerializeField] private Button closeButton;
 
     [SerializeField] private LobbyUIController lobbyUIController;
-
-    private void OnEnable()
-    {
-        closeButton.interactable = ProfileManager.Instance.HasUserNameSet;
-    }
 
     public void OnSaveButtonClick()
     {

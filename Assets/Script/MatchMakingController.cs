@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using DG.Tweening;
 
 public class MatchMakingController : MonoBehaviour
 {
@@ -56,9 +57,14 @@ public class MatchMakingController : MonoBehaviour
         SetScrollImages();
         ResetScrollImages();
 
-        canScroll = true;
-
         backButton.interactable = true;
+
+        gameObject.GetComponent<MatchmakingScreenAnimation>()?.StartAnimation();
+    }
+
+    public void StartScrolling()
+    {
+        canScroll = true;
         AudioManager.Instance.PlayMatchmakingScrollSound();
     }
 
@@ -171,7 +177,7 @@ public class MatchMakingController : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting match");
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting Match");
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -186,10 +192,10 @@ public class MatchMakingController : MonoBehaviour
         CoinManager.Instance.DeductCoin(250);
 
         CoinAnimator anim1 = Instantiate<CoinAnimator>(coinAnimatorPrefab, ownPlayer_feestext.transform.position, Quaternion.identity, transform);
-        StartCoroutine(anim1.PlayAnimation(rewardCoinImg.transform));
+        StartCoroutine(anim1.PlayCoinAnimation(rewardCoinImg.transform));
 
         CoinAnimator anim2 = Instantiate<CoinAnimator>(coinAnimatorPrefab, opponentPlayer_feestext.transform.position, Quaternion.identity, transform);
-        yield return StartCoroutine(anim2.PlayAnimation(rewardCoinImg.transform));
+        yield return StartCoroutine(anim2.PlayCoinAnimation(rewardCoinImg.transform));
     }
 
     private void ResetScrollImages()

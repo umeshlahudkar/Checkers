@@ -8,7 +8,7 @@ public class InternetChecker : Singleton<InternetChecker>
 
     private void Start()
     {
-        waitforSeconds = new WaitForSeconds(10f);
+        waitforSeconds = new WaitForSeconds(1f);
         StartCoroutine(CheckForInternetConnection());
     }
 

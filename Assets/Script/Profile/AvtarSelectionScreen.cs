@@ -1,10 +1,8 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class AvtarSelectionScreen : MonoBehaviour
 {
     [SerializeField] private GameObject faderScreen;
-    [SerializeField] private Button closeButton;
 
     [SerializeField] private Color defaultColor;
     [SerializeField] private Color selectedColor;
@@ -15,7 +13,6 @@ public class AvtarSelectionScreen : MonoBehaviour
 
     private void OnEnable()
     {
-        closeButton.interactable = ProfileManager.Instance.HasAvtarSet;
         InitializeButtons();
     }
 
@@ -53,14 +50,13 @@ public class AvtarSelectionScreen : MonoBehaviour
         AudioManager.Instance.PlayButtonClickSound();
         ProfileManager.Instance.SetAvtar(selectAvtarIndex);
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
     }
 
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
         faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        gameObject.Deactivate();
     }
-
 }
