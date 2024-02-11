@@ -142,7 +142,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
         {
             rematchScreen.Deactivate();
         }
-        //rematchScreen.SetActive(status);
     }
 
     public void ToggleMsgScreen(bool status, string msg = "", bool homeButtonStatus = false)
