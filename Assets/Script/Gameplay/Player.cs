@@ -183,7 +183,8 @@ namespace Gameplay
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
-            yield return new WaitForSeconds(0.4f);
+            yield return new WaitForSeconds(0.5f);
+           
 
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
@@ -198,7 +199,7 @@ namespace Gameplay
                 }
             }
 
-            yield return new WaitForSeconds(0.3f);
+            //yield return new WaitForSeconds(0.25f);
 
             selectedPiece = block.Piece;
 
@@ -251,7 +252,7 @@ namespace Gameplay
             {
                 GameplayController.Instance.board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].SetBlockPiece(false, null);
 
-                StartCoroutine(MovePiece(pieceToMove.transform, GameplayController.Instance.board[targetRow, targetCol].transform.position));
+                StartCoroutine(MovePiece(pieceToMove, GameplayController.Instance.board[targetRow, targetCol]));
                 AudioManager.Instance.PlayPieceMoveSound();
                 GameplayController.Instance.board[targetRow, targetCol].SetBlockPiece(true, pieceToMove);
             }
@@ -267,27 +268,34 @@ namespace Gameplay
                 piece = PhotonView.Find(viewId).GetComponent<Piece>();
                 GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID].SetBlockPiece(false, null);
 
-                StartCoroutine(MovePiece(piece.transform, GameplayController.Instance.board[targetRow, targetCol].transform.position));
+                StartCoroutine(MovePiece(piece, GameplayController.Instance.board[targetRow, targetCol]));
                 AudioManager.Instance.PlayPieceMoveSound();
             }
             GameplayController.Instance.board[targetRow, targetCol].SetBlockPiece((viewId != -1), piece);
         }
 
-        private IEnumerator MovePiece(Transform pieceToMove, Vector3 targetPos)
+        private bool AreAdjecent(Block b1, Block b2)
         {
-            float time = 0.25f;
+            return (Mathf.Abs(b1.Row_ID - b2.Row_ID) == 1 && Mathf.Abs(b1.Coloum_ID - b2.Coloum_ID) == 1);
+        }
+
+        private IEnumerator MovePiece(Piece pieceToMove, Block targetBlock)
+        {
+            Block pieceBlock = GameplayController.Instance.board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
+            float time = AreAdjecent(pieceBlock, targetBlock) ? 0.15f : 0.25f;
             float elapcedTime = 0;
 
-            Vector3 initialPos = pieceToMove.position;
+            Vector3 initialPos = pieceToMove.transform.position;
+            Vector3 targetPos = targetBlock.transform.position;
 
             while (elapcedTime < time)
             {
                 elapcedTime += Time.deltaTime;
                 Vector3 pos = Vector3.Lerp(initialPos, targetPos, elapcedTime / time);
-                pieceToMove.position = pos;
+                pieceToMove.transform.position = pos;
                 yield return null;
             }
-            pieceToMove.position = targetPos;
+            pieceToMove.transform.position = targetPos;
         }
 
         private void HighlightMovementBlocks(Piece clickedPiece)
