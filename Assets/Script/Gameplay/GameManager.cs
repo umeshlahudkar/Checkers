@@ -73,6 +73,7 @@ public class GameManager : Singleton<GameManager>
             currentTurn = 2;
             SwitchTurn();
 
+            GameplayUIController.Instance.SetUpScreens();
             PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         }
         else
@@ -95,6 +96,7 @@ public class GameManager : Singleton<GameManager>
             currentTurn = 2;
             SwitchTurn();
 
+            GameplayUIController.Instance.SetUpScreens();
             PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         }
     }
@@ -123,7 +125,10 @@ public class GameManager : Singleton<GameManager>
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
+        GameplayUIController.Instance.SetUpScreens();
+
         yield return new WaitForSeconds(1f);
+
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
     }
 

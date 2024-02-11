@@ -74,7 +74,8 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             case EventType.Rematch:
                 confirmationAcknoElapcedTime = 0;
-                StartCoroutine(GameManager.Instance.Rematch());
+                //StartCoroutine(GameManager.Instance.Rematch());
+                GameplayUIController.Instance.RematchForOnlineMode();
                 break;
         }
     }

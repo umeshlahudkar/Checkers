@@ -16,19 +16,30 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private Image player2_avtarImag;
     [SerializeField] private Image player2_timerImg;
 
-    [Header("Game Over screens")]
+    [Header("Game Win screens")]
     [SerializeField] private GameObject winScreen;
-    [SerializeField] private GameObject loseScreen;
     [SerializeField] private Transform winScreenCoinImg;
+    [SerializeField] private GameObject winScreenReamatchWithCoin;
+    [SerializeField] private GameObject winScreenReamatchWithoutCoin;
 
+    [Header("Game Lose screens")]
+    [SerializeField] private GameObject loseScreen;
+    [SerializeField] private GameObject loseScreenReamatchWithCoin;
+    [SerializeField] private GameObject loseScreenReamatchWithoutCoin;
+
+
+    [Header("Game Over screens")]
     [SerializeField] private GameObject gameOverScreen;
     [SerializeField] private TextMeshProUGUI gameOverMsgText;
+    [SerializeField] private GameObject gameOverScreenReamatchWithCoin;
+    [SerializeField] private GameObject gameOverScreenReamatchWithoutCoin;
 
     [Header("Msg screens")]
     [SerializeField] private GameObject msgScreen;
     [SerializeField] private TextMeshProUGUI msgText;
     [SerializeField] private GameObject msgHomeButton;
     [SerializeField] private GameObject loadingBar;
+    [SerializeField] public GameObject msgScreenfeeImg;
 
     [Space(15)]
     [SerializeField] private GameObject faderScreen;
@@ -37,6 +48,46 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private GameObject rematchScreen;
     [SerializeField] private EventManager eventManager;
     [SerializeField] private GameObject upperStrip;
+    [SerializeField] private GameObject retryButton;
+
+
+    public void SetUpScreens()
+    {
+        if(GameManager.Instance.GameMode == GameMode.Online || GameManager.Instance.GameMode == GameMode.PVC)
+        {
+            winScreenReamatchWithCoin.SetActive(true);
+            winScreenReamatchWithoutCoin.SetActive(false);
+
+            loseScreenReamatchWithCoin.SetActive(true);
+            loseScreenReamatchWithoutCoin.SetActive(false);
+
+            gameOverScreenReamatchWithCoin.SetActive(true);
+            gameOverScreenReamatchWithoutCoin.SetActive(false);
+
+
+            if(GameManager.Instance.GameMode == GameMode.Online)
+            {
+                retryButton.SetActive(false);
+            }
+            else
+            {
+                retryButton.SetActive(true);
+            }
+        }
+        else if (GameManager.Instance.GameMode == GameMode.PVP)
+        {
+            winScreenReamatchWithCoin.SetActive(false);
+            winScreenReamatchWithoutCoin.SetActive(true);
+
+            loseScreenReamatchWithCoin.SetActive(false);
+            loseScreenReamatchWithoutCoin.SetActive(true);
+
+            gameOverScreenReamatchWithCoin.SetActive(false);
+            gameOverScreenReamatchWithoutCoin.SetActive(true);
+           
+            retryButton.SetActive(true);
+        }
+    }
 
     public Image GetTimerImg(int playerNumber)
     {
@@ -70,7 +121,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        //winScreen.SetActive(status);
 
         if (status)
         {
@@ -87,7 +137,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        //loseScreen.SetActive(status);
 
         if (status)
         {
@@ -103,7 +152,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         coinDisplay.SetActive(status);
         faderScreen.SetActive(status);
-        //gameOverScreen.SetActive(status);
 
         if (status)
         {
@@ -133,6 +181,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
     public void ToggleRematchScreen(bool status)
     {
         faderScreen.SetActive(status);
+        coinDisplay.SetActive(status);
 
         if (status)
         {
@@ -148,46 +197,95 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         faderScreen.SetActive(status);
         msgScreen.SetActive(status);
+        coinDisplay.SetActive(status);
         msgText.text = msg;
         msgHomeButton.SetActive(homeButtonStatus);
         loadingBar.SetActive(!homeButtonStatus);
+        msgScreenfeeImg.SetActive(false);
     }
 
-    public void OnRematchButtonClick()
+    public void RematchForOnlineMode()
+    {
+        if(msgScreen.activeSelf)
+        {
+            msgHomeButton.SetActive(false);
+            msgScreenfeeImg.SetActive(true);
+
+            CoinManager.Instance.DeductCoin(250, msgScreenfeeImg.transform, () => 
+            {
+                DisableAllScreen();
+                AudioManager.Instance.StopTimeTickingSound();
+                StartCoroutine(GameManager.Instance.Rematch());
+            });
+        }
+    }
+
+    public void OnGameLoseRematchButtonClick()
+    {
+        HandleRematch(loseScreenReamatchWithCoin.transform);
+    }
+
+    public void OnGameWinRematchButtonClick()
+    {
+        HandleRematch(winScreenReamatchWithCoin.transform);
+    }
+
+    public void OnGameOverRematchButtonClick()
+    {
+        HandleRematch(gameOverScreenReamatchWithCoin.transform);
+    }
+
+    private void HandleRematch(Transform coinImgTran)
     {
         AudioManager.Instance.PlayButtonClickSound();
-        if(CoinManager.Instance.GetCoinAmount() >= 250)
+
+        if (GameManager.Instance.GameMode != GameMode.PVP && CoinManager.Instance.GetCoinAmount() < 250)
         {
-            if (GameManager.Instance.GameMode == GameMode.Online)
-            {
-                DisableAllScreen();
-                ToggleMsgScreen(true, "waiting for opponent confirmation");
-                eventManager.SendRematchConfirmationEvent();
-            }
-            else
-            {
-                DisableAllScreen();
-                StartCoroutine(GameManager.Instance.Rematch());
-            }
+            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            return;
+        }
+
+        if (GameManager.Instance.GameMode == GameMode.Online)
+        {
+            DisableAllScreen();
+            ToggleMsgScreen(true, "waiting for opponent confirmation");
+            eventManager.SendRematchConfirmationEvent();
+        }
+        else if (GameManager.Instance.GameMode == GameMode.PVP)
+        {
+            DisableAllScreen();
+            StartCoroutine(GameManager.Instance.Rematch());
         }
         else
         {
-            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            CoinManager.Instance.DeductCoin(250, coinImgTran, () =>
+            {
+                DisableAllScreen();
+                StartCoroutine(GameManager.Instance.Rematch());
+            });
         }
+    }
+
+    public void OnRetryButtonClick()
+    {
+        DisableAllScreen();
+        AudioManager.Instance.StopTimeTickingSound();
+        StartCoroutine(GameManager.Instance.Rematch());
     }
 
     public void OnRematchYesButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
 
-        if (CoinManager.Instance.GetCoinAmount() >= 250)
+        if (CoinManager.Instance.GetCoinAmount() < 250)
         {
-            DisableAllScreen();
-
-            eventManager.SendRematchAcceptEvent();
-
-            ToggleMsgScreen(true, "waiting for match restart");
+            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            return;
         }
+
+        DisableAllScreen();
+        eventManager.SendRematchAcceptEvent();
+        ToggleMsgScreen(true, "waiting for match restart");
     }
 
     public void OnRematchNoButtonClick()
