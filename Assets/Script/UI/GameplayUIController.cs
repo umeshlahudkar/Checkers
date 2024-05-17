@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using System.Collections;
+using Gameplay;
 
 public class GameplayUIController : Singleton<GameplayUIController>
 {
@@ -350,6 +351,12 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         AudioManager.Instance.PlayButtonClickSound();
         ToggleExitScreen(false);
+    }
+
+    public void OnHintButtonClick()
+    {
+        Player player = GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn);
+        player.ShowMoveHint();
     }
 }
 

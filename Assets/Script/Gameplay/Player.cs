@@ -74,7 +74,7 @@ namespace Gameplay
 
             if (movablePieces.Count > 0)
             {
-                if(playerID == 2 && isAI)
+                if(/*playerID == 2 &&*/ isAI)
                 {
                     StartCoroutine(PlayAITurn());
                 }
@@ -91,6 +91,148 @@ namespace Gameplay
             yield return waitForSeconds;
             CheckPieceMove();
         }
+
+        public void ShowMoveHint()
+        {
+            if(movablePieces.Count > 0)
+            {
+                ResetPlayer();
+                SetMovablePosition();
+                movablePieces.Shuffle();
+
+                //for (int i = 0; i < movablePieces.Count; i++)
+                //{
+                //    Piece piece = movablePieces[i];
+                //    if (piece.safeDoubleKillerBlockPositions.Count > 0)
+                //    {
+                //        selectedPiece = piece;
+                //        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                //        pieceBlock.HighlightPieceBlock();
+
+                //        Debug.Log("Safe double killer");
+
+                //        //BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
+                //        //Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                //        //block.HighlightPieceBlock();
+                //        //block.IsNextToNextHighlighted = true;
+                //        //nextToNexthighlightedBlocks.Add(block);
+
+                //        return;
+                //    }
+                //}
+
+                //for (int i = 0; i < movablePieces.Count; i++)
+                //{
+                //    Piece piece = movablePieces[i];
+                //    if (piece.doubleKillerBlockPositions.Count > 0)
+                //    {
+                //        selectedPiece = piece;
+                //        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                //        pieceBlock.HighlightPieceBlock();
+
+                //        Debug.Log("Unsafe double killer");
+
+
+                //        //BoardPosition position = piece.doubleKillerBlockPositions[0];
+                //        //Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                //        //block.IsNextToNextHighlighted = true;
+                //        //nextToNexthighlightedBlocks.Add(block);
+
+                //        //block.HighlightPieceBlock();
+                //        return;
+                //    }
+                //}
+
+                for (int i = 0; i < movablePieces.Count; i++)
+                {
+                    Piece piece = movablePieces[i];
+                    if (piece.safeKillerBlockPositions.Count > 0)
+                    {
+                        Debug.Log("Safe killer");
+
+                        selectedPiece = piece;
+                        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                        pieceBlock.HighlightPieceBlock();
+                        highlightedBlocks.Add(pieceBlock);
+
+                        BoardPosition position = piece.safeKillerBlockPositions[0];
+                        Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                        block.IsNextToNextHighlighted = true;
+                        nextToNexthighlightedBlocks.Add(block);
+                        highlightedBlocks.Add(block);
+
+                        block.HighlightNextMoveBlock(true);
+                        return;
+                    }
+                }
+
+                for (int i = 0; i < movablePieces.Count; i++)
+                {
+                    Piece piece = movablePieces[i];
+                    if (piece.safeMovableBlockPositions.Count > 0)
+                    {
+                        Debug.Log("Safe movable");
+
+                        selectedPiece = piece;
+                        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                        pieceBlock.HighlightPieceBlock();
+                        highlightedBlocks.Add(pieceBlock);
+
+                        BoardPosition position = piece.safeMovableBlockPositions[0];
+                        Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                        block.HighlightNextMoveBlock();
+                        highlightedBlocks.Add(block);
+                        return;
+                    }
+                }
+
+                for (int i = 0; i < movablePieces.Count; i++)
+                {
+                    Piece piece = movablePieces[i];
+                    if (piece.killerBlockPositions.Count > 0)
+                    {
+                        Debug.Log("Unsafe killer");
+
+                        selectedPiece = piece;
+                        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                        pieceBlock.HighlightPieceBlock();
+                        highlightedBlocks.Add(pieceBlock);
+
+                        BoardPosition position = piece.killerBlockPositions[0];
+                        Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                        block.IsNextToNextHighlighted = true;
+                        nextToNexthighlightedBlocks.Add(block);
+                        highlightedBlocks.Add(block);
+
+                        block.HighlightNextMoveBlock(true);
+                        return;
+                    }
+                }
+
+                for (int i = 0; i < movablePieces.Count; i++)
+                {
+                    Piece piece = movablePieces[i];
+                    if (piece.movableBlockPositions.Count > 0)
+                    {
+                        Debug.Log("Unsafe movable");
+
+                        selectedPiece = piece;
+                        Block pieceBlock = GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID];
+                        pieceBlock.HighlightPieceBlock();
+                        highlightedBlocks.Add(pieceBlock);
+
+                        BoardPosition position = piece.movableBlockPositions[0];
+                        Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                        block.HighlightNextMoveBlock();
+                        highlightedBlocks.Add(block);
+
+                        return;
+                    }
+                }
+            }
+        }
+
+        
 
         public void UpdateTurnMissCount()
         {
