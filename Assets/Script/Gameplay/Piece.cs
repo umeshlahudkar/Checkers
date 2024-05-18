@@ -71,6 +71,12 @@ public class Piece : MonoBehaviour
         AudioManager.Instance.PlayCrownKingSound();
     }
 
+    public void ResetCrownKing()
+    {
+        isCrownedKing = false;
+        crownImage.gameObject.SetActive(false);
+    }
+
     [PunRPC]
     public void Destroy()
     {

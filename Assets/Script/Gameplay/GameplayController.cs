@@ -1,13 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
+using Gameplay;
 using UnityEngine;
-using Photon.Pun;
 
 public class GameplayController : Singleton<GameplayController>
 {
     public Block[,] board = new Block[8, 8];
     public List<Piece> whitePieces = new();
     public List<Piece> blackPieces = new();
+
+    public Stack<MoveInfo> undoStack = new();
+
+    [SerializeField] private Piece piecePrefab;
+    [SerializeField] private Transform pieceHolderParent;
 
     public bool CanMove(int playerNumber)
     {
@@ -571,6 +576,48 @@ public class GameplayController : Singleton<GameplayController>
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
+    public void AddLastMoveInfo(MoveInfo info)
+    {
+        undoStack?.Push(info);
+    }
+
+    public void UndoLastMove()
+    {
+        if (undoStack != null && undoStack.Count > 0) 
+        {
+            MoveInfo info = undoStack.Pop();
+
+            Piece piece = board[info.currentBlock.Row_ID, info.currentBlock.Coloum_ID].Piece;
+            board[info.currentBlock.Row_ID, info.currentBlock.Coloum_ID].SetBlockPiece(false, null);
+            piece.transform.position = info.previousBlock.transform.position;
+            board[info.previousBlock.Row_ID, info.previousBlock.Coloum_ID].SetBlockPiece(true, piece);
+
+            if(info.hasCrownSet)
+            {
+                piece.ResetCrownKing();
+            }
+
+            if(info.deletedPieceBlock != null)
+            {
+                Piece newPiece = Instantiate(piecePrefab, info.deletedPieceBlock.transform.position, Quaternion.identity, pieceHolderParent);
+                newPiece.SetPiece(info.deletedPiecePlayerId, info.deletedPieceBlock.Row_ID, info.deletedPieceBlock.Coloum_ID, (int)info.deletedPieceType);
+                if (info.deletedPiecePlayerId == 2)
+                {    
+                    whitePieces.Add(newPiece);
+                }
+                else
+                {
+                    blackPieces.Add(newPiece);
+                }
+
+                if(info.wasDeletedPieceKrown)
+                {
+                    newPiece.SetCrownKing();
+                }
+            }
+        }
+    }
+
     public void ResetGameplay()
     {
         for(int i = 0; i < 8; i++)
@@ -586,5 +633,7 @@ public class GameplayController : Singleton<GameplayController>
         }
         whitePieces.Clear();
         blackPieces.Clear();
+
+        undoStack.Clear();
     }
 }

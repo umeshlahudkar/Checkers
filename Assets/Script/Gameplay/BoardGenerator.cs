@@ -15,8 +15,6 @@ public class BoardGenerator : MonoBehaviour
 
     [Header("Piece")]
     [SerializeField] private Piece piecePrefab;
-    [SerializeField] private Sprite whitePieceSprite;
-    [SerializeField] private Sprite blackPieceSprite;
 
     [Header("Piece Holder")]
     [SerializeField] private Transform pieceHolderParent;

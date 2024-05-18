@@ -27,6 +27,8 @@ namespace Gameplay
 
         public PhotonView PhotonView { get { return thisPhotonView; } }
 
+        private MoveInfo moveInfo;
+
         private void Start()
         {
             if(GameManager.Instance.GameMode == GameMode.Online)
@@ -290,27 +292,43 @@ namespace Gameplay
             }
         }
 
-        public void OnHighlightedTargetBlockClick(Block block)
+        public void OnHighlightedTargetBlockClick(Block targetBlock)
         {
-            StartCoroutine(HandlePieceMovementAndPieceDelete(block));
+            StartCoroutine(HandlePieceMovementAndPieceDelete(targetBlock));
         }
 
-        private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
+        private IEnumerator HandlePieceMovementAndPieceDelete(Block targetBlock)
         {
             turnMissCount = 0;
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;
 
-            if (block.IsNextToNextHighlighted)
+            //
+            moveInfo = new MoveInfo();
+            //moveInfo.piece = selectedPiece;
+            moveInfo.currentBlock = targetBlock;
+            moveInfo.previousBlock = GameplayController.Instance.board[selectedPiece.Row_ID, selectedPiece.Coloum_ID];
+
+            GameplayController.Instance.AddLastMoveInfo(moveInfo);
+            //
+
+            if (targetBlock.IsNextToNextHighlighted)
             {
-                int row = block.Row_ID;
-                int coloum = block.Coloum_ID;
+                int row = targetBlock.Row_ID;
+                int coloum = targetBlock.Coloum_ID;
 
                 int targetRow = row + (row > selectedPiece.Row_ID ? -1 : 1);
                 int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
                 Piece piece = GameplayController.Instance.board[targetRow, targetCol].Piece;
+
+                //
+                moveInfo.deletedPieceBlock = GameplayController.Instance.board[targetRow, targetCol];
+                moveInfo.deletedPieceType = piece.PieceType;
+                moveInfo.deletedPiecePlayerId = piece.Player_ID;
+                moveInfo.wasDeletedPieceKrown = piece.IsCrownedKing;
+                //
                 if (GameManager.Instance.GameMode == GameMode.Online)
                 {
                     piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
@@ -320,10 +338,10 @@ namespace Gameplay
                     piece.Destroy();
                 }
                 hasDeleted = true;
-                block.IsNextToNextHighlighted = false;
+                targetBlock.IsNextToNextHighlighted = false;
             }
 
-            UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+            UpdateGrid(targetBlock.Row_ID, targetBlock.Coloum_ID, selectedPiece);
 
             yield return new WaitForSeconds(0.5f);
            
@@ -339,11 +357,13 @@ namespace Gameplay
                 {
                     selectedPiece.SetCrownKing();
                 }
+
+                moveInfo.hasCrownSet = true;
             }
 
             //yield return new WaitForSeconds(0.25f);
 
-            selectedPiece = block.Piece;
+            selectedPiece = targetBlock.Piece;
 
             if (hasDeleted && GameplayController.Instance.CanPieceKill(selectedPiece) /*CanMove()*/)
             {

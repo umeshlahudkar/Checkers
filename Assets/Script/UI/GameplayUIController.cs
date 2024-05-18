@@ -358,6 +358,16 @@ public class GameplayUIController : Singleton<GameplayUIController>
         Player player = GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn);
         player.ShowMoveHint();
     }
+
+    public void OnUndoButtonClick()
+    {
+        for(int i = 0; i < 2; i++)
+        {
+            GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).ResetPlayer();
+        }
+
+        GameplayController.Instance.UndoLastMove();
+
+        GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).CanPlay();
+    }
 }
-
-
