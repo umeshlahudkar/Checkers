@@ -2882,6 +2882,8 @@ MonoBehaviour:
   eventManager: {fileID: 1725770431}
   upperStrip: {fileID: 1201889705}
   retryButton: {fileID: 362104716}
+  hintButton: {fileID: 357025345}
+  undoButton: {fileID: 1348846558}
 --- !u!1 &563798877
 GameObject:
   m_ObjectHideFlags: 0

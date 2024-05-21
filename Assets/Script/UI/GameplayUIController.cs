@@ -51,6 +51,8 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private EventManager eventManager;
     [SerializeField] private GameObject upperStrip;
     [SerializeField] private GameObject retryButton;
+    [SerializeField] private GameObject hintButton;
+    [SerializeField] private GameObject undoButton;
 
 
     public void SetUpScreens()
@@ -70,10 +72,14 @@ public class GameplayUIController : Singleton<GameplayUIController>
             if(GameManager.Instance.GameMode == GameMode.Online)
             {
                 retryButton.SetActive(false);
+                hintButton.SetActive(false);
+                undoButton.SetActive(false);
             }
             else
             {
                 retryButton.SetActive(true);
+                hintButton.SetActive(true);
+                undoButton.SetActive(true);
             }
         }
         else if (GameManager.Instance.GameMode == GameMode.PVP)
@@ -88,6 +94,8 @@ public class GameplayUIController : Singleton<GameplayUIController>
             gameOverScreenReamatchWithoutCoin.SetActive(true);
            
             retryButton.SetActive(true);
+            hintButton.SetActive(true);
+            undoButton.SetActive(true);
         }
     }
 
