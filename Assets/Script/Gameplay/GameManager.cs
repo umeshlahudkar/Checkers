@@ -59,6 +59,7 @@ public class GameManager : Singleton<GameManager>
         }
         else if (gameMode == GameMode.PVP)
         {
+            timer.enabled = false;
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
             PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
@@ -82,6 +83,8 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
+            timer.enabled = false;
+
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
             PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
@@ -107,6 +110,7 @@ public class GameManager : Singleton<GameManager>
 
     private IEnumerator PrepareOnlineMode()
     {
+        timer.enabled = true;
         boardGenerator.GenerateBoard();
         PhotonNetwork.Instantiate(playerPrefab.name, transform.position, Quaternion.identity);
 
@@ -181,7 +185,11 @@ public class GameManager : Singleton<GameManager>
         else
         {
             players[currentTurn - 1].ResetPlayer();
-            timer.ResetTimer();
+
+            if(timer.enabled)
+            {
+                timer.ResetTimer();
+            }
 
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = players[currentTurn - 1].PieceType;
@@ -193,7 +201,10 @@ public class GameManager : Singleton<GameManager>
                 return;
             }
 
-            timer.StartTimer();
+            if (timer.enabled)
+            {
+                timer.StartTimer();
+            }
         }
     }
 
@@ -202,7 +213,11 @@ public class GameManager : Singleton<GameManager>
     {
         players[currentTurn - 1].ResetPlayer();
         currentTurn = nextTurn;
-        timer.ResetTimer();
+
+        if (timer.enabled)
+        {
+            timer.ResetTimer();
+        }
 
         if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
         {
@@ -211,7 +226,10 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
-        timer.StartTimer();
+        if (timer.enabled)
+        {
+            timer.StartTimer();
+        }
     }
 
     [PunRPC]
