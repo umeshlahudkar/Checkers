@@ -88,6 +88,9 @@ public class GameManager : Singleton<GameManager>
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
             PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
+            boardGenerator.GenerateBoard();
+            boardGenerator.GeneratePieces(player1_PieceType, player2_PieceType);
+
             for (int i = 0; i < 2; i++)
             {
                 players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
@@ -97,8 +100,8 @@ public class GameManager : Singleton<GameManager>
             GameplayUIController.Instance.ShowPlayerInfo(ProfileManager.Instance.GetUserName(), ProfileManager.Instance.GetProfileAvtar(),
                       "Computer", ProfileManager.Instance.GetComputerAvtar());
 
-            boardGenerator.GenerateBoard();
-            boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
+            //boardGenerator.GenerateBoard();
+            //boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
 
             currentTurn = 2;
             SwitchTurn();

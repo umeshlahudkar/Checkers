@@ -50,6 +50,7 @@ namespace Gameplay
             if(isAI)
             {
                 waitForSeconds = new WaitForSeconds(1f);
+                GameplayController.Instance.DisablePieceInteractble(playerID);
             }
         }
 

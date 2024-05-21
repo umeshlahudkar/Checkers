@@ -41,6 +41,23 @@ public class GameplayController : Singleton<GameplayController>
         return false;
     }
 
+    public void DisablePieceInteractble(int playerNumber)
+    {
+        if (playerNumber == 1)
+        {
+            for (int i = 0; i < blackPieces.Count; i++)
+            {
+                blackPieces[i].ToggleInteractable(false);
+            }
+        }
+        else if (playerNumber == 2)
+        {
+            for (int i = 0; i < whitePieces.Count; i++)
+            {
+                whitePieces[i].ToggleInteractable(false);
+            }
+        }
+    }
 
     //AI
     private bool CheckPieceCanMove(int playerID, int row, int col, int jumpRow, int jumpCol)

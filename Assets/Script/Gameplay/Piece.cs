@@ -132,6 +132,11 @@ public class Piece : MonoBehaviour
 
     public PhotonView PhotonView { get { return photonView; } }
 
+    public void ToggleInteractable(bool toggle)
+    {
+        button.interactable = toggle;
+    }
+
     public void OnClick()
     {
         if(playerID == GameManager.Instance.CurrentTurn)
