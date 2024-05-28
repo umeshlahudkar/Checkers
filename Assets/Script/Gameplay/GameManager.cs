@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using Photon.Pun;
+using Gameplay;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -9,7 +10,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private TimerController timer;
 
-    [SerializeField] private Gameplay.Player playerPrefab;
+    [SerializeField] private GameObject playerPrefab;
 
     [SerializeField] private Gameplay.Player[] players = new Gameplay.Player[2];
 
@@ -65,8 +66,9 @@ public class GameManager : Singleton<GameManager>
 
             for (int i = 0; i < 2; i++)
             {
-                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
-                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType, false);
+                GameObject newPlayer = Instantiate(playerPrefab, transform.position, Quaternion.identity);
+                players[i] = newPlayer.AddComponent<UserPlayer>();
+                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType);
             }
 
             GameplayUIController.Instance.ShowPlayerInfo(player1_PieceType.ToString(), ProfileManager.Instance.GetPieceAvtar(player1_PieceType),
@@ -93,16 +95,23 @@ public class GameManager : Singleton<GameManager>
 
             for (int i = 0; i < 2; i++)
             {
-                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
-                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType : player2_PieceType, ((i+1) == 2));
+                GameObject newPlayer = Instantiate(playerPrefab, transform.position, Quaternion.identity);
+
+                if(i == 0)
+                {
+                    players[i] = newPlayer.AddComponent<UserPlayer>();
+                }
+                else
+                {
+                    players[i] = newPlayer.AddComponent<AIPlayer>();
+                }
+                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType : player2_PieceType);
             }
 
             GameplayUIController.Instance.ShowPlayerInfo(ProfileManager.Instance.GetUserName(), ProfileManager.Instance.GetProfileAvtar(),
                       "Computer", ProfileManager.Instance.GetComputerAvtar());
 
-            //boardGenerator.GenerateBoard();
-            //boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
-
+            
             currentTurn = 2;
             SwitchTurn();
 
@@ -115,7 +124,12 @@ public class GameManager : Singleton<GameManager>
     {
         timer.enabled = true;
         boardGenerator.GenerateBoard();
-        PhotonNetwork.Instantiate(playerPrefab.name, transform.position, Quaternion.identity);
+
+        playerPrefab.AddComponent<OnlinePlayer>();
+        GameObject player = PhotonNetwork.Instantiate(playerPrefab.name, transform.position, Quaternion.identity);
+
+        //Destroy(playerPrefab.GetComponent<OnlinePlayer>());
+        //player.AddComponent<OnlinePlayer>();
 
         PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
         PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
@@ -150,7 +164,7 @@ public class GameManager : Singleton<GameManager>
 
     public void HandleTurnMissCount()
     {
-        if(gameMode == GameMode.Online && players[currentTurn - 1].PhotonView.IsMine)
+        if(gameMode == GameMode.Online && players[currentTurn - 1].GetComponent<PhotonView>().IsMine)
         {
             players[currentTurn - 1].UpdateTurnMissCount();
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
@@ -163,7 +177,7 @@ public class GameManager : Singleton<GameManager>
                 SwitchTurn();
             }
         }
-        else if(gameMode != GameMode.Online)
+        else
         {
             players[currentTurn - 1].UpdateTurnMissCount();
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
@@ -203,6 +217,10 @@ public class GameManager : Singleton<GameManager>
                 GameOver(winner);
                 return;
             }
+            else
+            {
+                players[currentTurn - 1].PlayTurn();
+            }
 
             if (timer.enabled)
             {
@@ -222,11 +240,15 @@ public class GameManager : Singleton<GameManager>
             timer.ResetTimer();
         }
 
-        if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
+        if (players[currentTurn - 1].GetComponent<PhotonView>().IsMine && !players[currentTurn - 1].CanPlay())
         {
             int winner = (currentTurn == 1) ? 2 : 1;
             gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner);
             return;
+        }
+        else
+        {
+            players[currentTurn - 1].PlayTurn();
         }
 
         if (timer.enabled)
@@ -242,7 +264,7 @@ public class GameManager : Singleton<GameManager>
 
         if (gameMode == GameMode.Online)
         {
-            if(players[winnerPlayerNumber-1].PhotonView.IsMine)
+            if (players[winnerPlayerNumber - 1].GetComponent<PhotonView>().IsMine)
             {
                 GameplayUIController.Instance.ToggleGameWinScreen(true);
             }

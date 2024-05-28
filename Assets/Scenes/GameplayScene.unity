@@ -1603,7 +1603,7 @@ MonoBehaviour:
   boardGenerator: {fileID: 1096947540}
   gameManagerPhotonView: {fileID: 347150546}
   timer: {fileID: 668355909}
-  playerPrefab: {fileID: 2063280525203949069, guid: 5db70a04c1f557042a64f38bf24218f0, type: 3}
+  playerPrefab: {fileID: 2063280525203949067, guid: 5db70a04c1f557042a64f38bf24218f0, type: 3}
   players:
   - {fileID: 0}
   - {fileID: 0}

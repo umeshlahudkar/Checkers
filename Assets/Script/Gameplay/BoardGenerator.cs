@@ -85,7 +85,7 @@ public class BoardGenerator : MonoBehaviour
             {
                 if((i + j) % 2 != 0)
                 {
-                    if (i < 3 && GameManager.Instance.GetPlayer(2).PhotonView.IsMine)
+                    if (i < 3 && GameManager.Instance.GetPlayer(2).GetComponent<PhotonView>().IsMine)
                     {
                         GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();
@@ -95,7 +95,7 @@ public class BoardGenerator : MonoBehaviour
                         GameplayController.Instance.whitePieces.Add(piece);
                     }
 
-                    if (i > 4 && GameManager.Instance.GetPlayer(1).PhotonView.IsMine)
+                    if (i > 4 && GameManager.Instance.GetPlayer(1).GetComponent<PhotonView>().IsMine)
                     {
                         GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();

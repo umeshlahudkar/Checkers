@@ -376,6 +376,6 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         GameplayController.Instance.UndoLastMove();
 
-        GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).CanPlay();
+        GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).PlayTurn();
     }
 }
