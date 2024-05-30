@@ -14,7 +14,6 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] private Gameplay.Player[] players = new Gameplay.Player[2];
 
-    private PieceType pieceType;
     private int currentTurn;
 
     private GameState gameState = GameState.Waiting;
@@ -34,8 +33,6 @@ public class GameManager : Singleton<GameManager>
     }
 
     public int CurrentTurn { get { return currentTurn; } }
-
-    public PieceType PieceType { get { return pieceType; } }
 
     public bool IsReadyToLeaveGameplay 
     { 
@@ -58,7 +55,7 @@ public class GameManager : Singleton<GameManager>
         {
             StartCoroutine(PrepareOnlineMode());
         }
-        else if (gameMode == GameMode.PVP)
+        else if (gameMode == GameMode.PVP || gameMode == GameMode.Offline_PassAndPlay)
         {
             timer.enabled = false;
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
@@ -83,7 +80,7 @@ public class GameManager : Singleton<GameManager>
             GameplayUIController.Instance.SetUpScreens();
             PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         }
-        else
+        else if(gameMode == GameMode.PVC || gameMode == GameMode.Offline_VsComputer)
         {
             timer.enabled = false;
 
@@ -209,7 +206,6 @@ public class GameManager : Singleton<GameManager>
             }
 
             currentTurn = (currentTurn == 1) ? 2 : 1;
-            pieceType = players[currentTurn - 1].PieceType;
 
             if (!players[currentTurn - 1].CanPlay())
             {
@@ -301,7 +297,6 @@ public class GameManager : Singleton<GameManager>
 
     private void ResetGameManager()
     {
-        pieceType = PieceType.None;
         currentTurn = -1;
         gameState = GameState.Waiting;
         IsReadyToLeaveGameplay = false;

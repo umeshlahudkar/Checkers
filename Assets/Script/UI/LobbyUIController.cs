@@ -31,6 +31,9 @@ public class LobbyUIController : MonoBehaviour
 
     [SerializeField] private GameDataSO gameDataSO;
 
+    [SerializeField] private GameObject offlineModeScreen;
+    [SerializeField] private GameObject playWithFriendScreen;
+
     private void Start()
     {
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
@@ -165,4 +168,43 @@ public class LobbyUIController : MonoBehaviour
         faderScreen.SetActive(true);
         settingScreen.Activate();
     } 
+
+    public void OnOfflineModeButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        offlineModeScreen.SetActive(true);
+    }
+
+    public void OnOfflineVsComputerButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        SetGameMode(GameMode.Offline_VsComputer);
+        SceneManager.LoadScene(1);
+    }
+
+    public void OnOfflinePassAndPlayButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        SetGameMode(GameMode.Offline_PassAndPlay);
+        SceneManager.LoadScene(1);
+    }
+
+    public void OnPlayOnlineButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound(); 
+        SetGameMode(GameMode.Online);
+        JoinRoom();
+    }
+
+    public void OnPlayWithFriendsButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        playWithFriendScreen.SetActive(true);
+    }
+
+    public void OnShopButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+    }
 }
