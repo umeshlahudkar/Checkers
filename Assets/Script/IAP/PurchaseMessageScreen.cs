@@ -13,7 +13,6 @@ public class PurchaseMessageScreen : MonoBehaviour
     {
         screenLabelText.text = screenLabel;
         msgText.text = msg;
-        gameObject.Activate();
     }
 
     public void OnCloseButtonClick()

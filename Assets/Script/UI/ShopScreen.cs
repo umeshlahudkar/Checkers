@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ShopScreen : MonoBehaviour
 {
@@ -14,12 +13,21 @@ public class ShopScreen : MonoBehaviour
     private void OnPurchaseSuccesful(IAPProduct product)
     {
         purchaseMessageScreen.InitScreen("Purchase Succesful", "Congratulation! You received " + product.reward + " Coins");
-        CoinManager.Instance.AddCoin(product.reward, purchaseMessageScreen.coinImg);
+        purchaseMessageScreen.gameObject.Activate(0.20f, () =>
+        {
+            CoinManager.Instance.AddCoin(product.reward, purchaseMessageScreen.coinImg);
+        });
     }
 
-    private void OnPurchaseFailed(IAPProduct product, string massage) 
+    private void OnPurchaseFailed(IAPProduct product, string massage)
     {
         purchaseMessageScreen.InitScreen("Purchase Failed", massage);
+        purchaseMessageScreen.gameObject.Activate();
+    }
+
+    public void OnBackButtonClick()
+    {
+        gameObject.SetActive(false);
     }
 
     private void OnDisable()

@@ -26,10 +26,6 @@ public class CustomIAPButton : MonoBehaviour
                 isInitialized = true;
             }
         }
-        else
-        {
-            button.interactable = false;
-        }
     }
 
     private void OnButtonClick()
