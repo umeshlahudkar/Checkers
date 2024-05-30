@@ -1,9 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Services.Core;
 using UnityEngine;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
+using static UnityEditor.ObjectChangeEventStream;
 
 public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
 {
@@ -11,6 +13,9 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
     private IExtensionProvider extensions;
 
     [SerializeField] private IAPProductSO iapProductSO;
+
+    public event Action<IAPProduct> OnIAPPurchaseSuccesful;
+    public event Action<IAPProduct, string> OnIAPPurchaseFailed;
 
     private async void Start()
     {
@@ -66,6 +71,10 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
     /// </summary>
     public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs e)
     {
+        if(IsIAPInitialized())
+        {
+            HandlePurchaseSuccesful(e.purchasedProduct);
+        }
         return PurchaseProcessingResult.Complete;
     }
 
@@ -83,7 +92,10 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
     /// </summary>
     public void OnPurchaseFailed(Product i, PurchaseFailureDescription p)
     {
-
+        if (IsIAPInitialized())
+        {
+            HandlePurchaseFailed(i, p.message);
+        }
     }
 
     public bool IsIAPInitialized()
@@ -91,7 +103,29 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
         return (controller != null && extensions != null);
     }
 
-    public Product GetProductByID(string productID)
+    private void HandlePurchaseSuccesful(Product purchasedProduct)
+    {
+        if(OnIAPPurchaseSuccesful != null)
+        {
+            IAPProductID id = GetIAPProductID(purchasedProduct.definition.id);
+            IAPProduct iapPurchasedProduct = GetIAPProductByID(id);
+
+            OnIAPPurchaseSuccesful.Invoke(iapPurchasedProduct);
+        }
+    }
+
+    private void HandlePurchaseFailed(Product purchasedProduct, string message)
+    {
+        if (OnIAPPurchaseFailed != null)
+        {
+            IAPProductID id = GetIAPProductID(purchasedProduct.definition.id);
+            IAPProduct iapPurchasedProduct = GetIAPProductByID(id);
+
+            OnIAPPurchaseFailed.Invoke(iapPurchasedProduct, message);
+        }
+    }
+
+    public Product GetStoreProductByID(string productID)
     {
         if(IsIAPInitialized())
         {
@@ -99,6 +133,19 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
             if(product != null && product.availableToPurchase) 
             {
                 return product;
+            }
+        }
+        return null;
+    }
+
+    public IAPProduct GetIAPProductByID(IAPProductID productID)
+    {
+        IAPProduct[] products = iapProductSO.iAPProducts;
+        for (int i = 0; i < products.Length; i++)
+        {
+            if (products[i].productID == productID) 
+            { 
+                return products[i];
             }
         }
 
@@ -111,6 +158,39 @@ public class IAPManager : Singleton<IAPManager>, IDetailedStoreListener
         {
             controller.InitiatePurchase(product);
         }
+    }
+
+    private IAPProductID GetIAPProductID(string productID)
+    {
+        IAPProductID id = IAPProductID.None;
+        switch(productID)
+        {
+            case "coins1000":
+                id = IAPProductID.coins1000;
+                break;
+
+            case "coins25000":
+                id = IAPProductID.coins25000;
+                break;
+
+            case "coins75000":
+                id = IAPProductID.coins75000;
+                break;
+
+            case "coins150000":
+                id = IAPProductID.coins150000;
+                break;
+
+            case "coins500000":
+                id = IAPProductID.coins500000;
+                break;
+
+            case "coins200000":
+                id = IAPProductID.coins200000;
+                break;
+        }
+
+        return id;
     }
    
 }

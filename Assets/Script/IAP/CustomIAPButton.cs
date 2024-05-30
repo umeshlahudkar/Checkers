@@ -17,7 +17,7 @@ public class CustomIAPButton : MonoBehaviour
     {
         if(!isInitialized)
         {
-            thisProduct = IAPManager.Instance.GetProductByID(productID.ToString());
+            thisProduct = IAPManager.Instance.GetStoreProductByID(productID.ToString());
             if(thisProduct != null )
             {
                 priceText.text = thisProduct.metadata.localizedPrice.ToString();

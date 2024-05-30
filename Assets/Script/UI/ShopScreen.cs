@@ -3,36 +3,28 @@ using UnityEngine.UI;
 
 public class ShopScreen : MonoBehaviour
 {
-    [Header("Shop screen")]
-    [SerializeField] private Button getCoinButton;
-    [SerializeField] private Transform coinImg;
-
-    [Header("Shop screen")]
-    [SerializeField] private GameObject faderScreen;
-
+    [SerializeField] private PurchaseMessageScreen purchaseMessageScreen;
 
     private void OnEnable()
     {
-        faderScreen.SetActive(true);
+        IAPManager.Instance.OnIAPPurchaseSuccesful += OnPurchaseSuccesful;
+        IAPManager.Instance.OnIAPPurchaseFailed += OnPurchaseFailed;
     }
 
-    public void OnGetCoinButtonClick(int coinAmount)
+    private void OnPurchaseSuccesful(IAPProduct product)
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        getCoinButton.interactable = false;
-        CoinManager.Instance.AddCoin(coinAmount, coinImg, ()=> 
-        {
-            faderScreen.SetActive(false);
-            gameObject.Deactivate();
-            getCoinButton.interactable = true;
-        });
+        purchaseMessageScreen.InitScreen("Purchase Succesful", "Congratulation! You received " + product.reward + " Coins");
+        CoinManager.Instance.AddCoin(product.reward, purchaseMessageScreen.coinImg);
     }
 
-    public void OnCloseButtonClick()
+    private void OnPurchaseFailed(IAPProduct product, string massage) 
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(false);
-        gameObject.Deactivate();
-        getCoinButton.interactable = true;
+        purchaseMessageScreen.InitScreen("Purchase Failed", massage);
+    }
+
+    private void OnDisable()
+    {
+        IAPManager.Instance.OnIAPPurchaseSuccesful -= OnPurchaseSuccesful;
+        IAPManager.Instance.OnIAPPurchaseFailed -= OnPurchaseFailed;
     }
 }

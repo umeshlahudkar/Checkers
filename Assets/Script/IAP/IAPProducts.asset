@@ -13,27 +13,27 @@ MonoBehaviour:
   m_Name: IAPProducts
   m_EditorClassIdentifier: 
   iAPProducts:
-  - productID: 0
+  - productID: 1
     productName: Coin 1000
     productType: 0
     reward: 1000
-  - productID: 1
+  - productID: 2
     productName: Coin 25000
     productType: 0
     reward: 25000
-  - productID: 2
+  - productID: 3
     productName: Coin 75000
     productType: 0
     reward: 75000
-  - productID: 3
+  - productID: 4
     productName: Coin 150000
     productType: 0
     reward: 150000
-  - productID: 4
+  - productID: 5
     productName: Coin 500000
     productType: 0
     reward: 5000000
-  - productID: 5
+  - productID: 6
     productName: Coin 200000
     productType: 0
     reward: 200000
