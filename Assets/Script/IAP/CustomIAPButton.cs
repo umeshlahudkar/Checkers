@@ -10,21 +10,21 @@ public class CustomIAPButton : MonoBehaviour
     [SerializeField] private Button button;
     [SerializeField] private Text priceText;
 
-    private bool isInitialized = false;
     private Product thisProduct = null;
 
     private void OnEnable()
     {
-        if(!isInitialized)
+        InitIAPButton();
+    }
+
+    private void InitIAPButton()
+    {
+        if (thisProduct == null)
         {
             thisProduct = IAPManager.Instance.GetStoreProductByID(productID.ToString());
-            if(thisProduct != null )
-            {
-                priceText.text = thisProduct.metadata.localizedPrice.ToString();
-                button.interactable = true;
-                button.onClick.AddListener(OnButtonClick);
-                isInitialized = true;
-            }
+            priceText.text = thisProduct.metadata.localizedPrice.ToString();
+            button.interactable = true;
+            button.onClick.AddListener(OnButtonClick);
         }
     }
 
