@@ -2,6 +2,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine.SceneManagement;
+using System;
 
 public class LobbyUIController : MonoBehaviour
 {
@@ -33,6 +34,7 @@ public class LobbyUIController : MonoBehaviour
 
     [SerializeField] private GameObject offlineModeScreen;
     [SerializeField] private GameObject playWithFriendScreen;
+    [SerializeField] private GameObject rewardScreen;
 
     private void Start()
     {
@@ -206,5 +208,11 @@ public class LobbyUIController : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+    }
+
+    public void OnRewardButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        rewardScreen.SetActive(true);
     }
 }

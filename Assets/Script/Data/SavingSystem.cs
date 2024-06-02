@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.IO;
+using System;
 
 public class SavingSystem : Singleton<SavingSystem>
 {
@@ -9,7 +10,6 @@ public class SavingSystem : Singleton<SavingSystem>
     private void Awake()
     {
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-
         filePath = Path.Combine(Application.persistentDataPath, fileName);
         //DeleteFile();
         if (!File.Exists(filePath))
@@ -24,7 +24,15 @@ public class SavingSystem : Singleton<SavingSystem>
             data.audioData.musicVolume = 0.5f;
             data.audioData.soundVolume = 0.5f;
 
+            data.sessionInfo = new SessionInfo();
+            data.sessionInfo.firstOpenDate = DateTime.Now.ToBinary();
+            data.sessionInfo.lastOpenDate = DateTime.Now.ToBinary();
+            data.sessionInfo.currentSessionOfDay = 0;
+            data.sessionInfo.currentSessionCount = 0;
+
             Save(data);
+
+            Debug.Log("Data Saved");
         }
 
 #endif
@@ -64,6 +72,7 @@ public struct SaveData
     public int coins;
 
     public AudioData audioData;
+    public SessionInfo sessionInfo;
 }
 
 [System.Serializable]
