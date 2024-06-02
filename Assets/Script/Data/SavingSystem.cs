@@ -30,6 +30,12 @@ public class SavingSystem : Singleton<SavingSystem>
             data.sessionInfo.currentSessionOfDay = 0;
             data.sessionInfo.currentSessionCount = 0;
 
+            data.collectedReward = new bool[7];
+            for(int i = 0; i < 7; i++)
+            {
+                data.collectedReward[i] = false;
+            }
+
             Save(data);
 
             Debug.Log("Data Saved");
@@ -73,6 +79,8 @@ public struct SaveData
 
     public AudioData audioData;
     public SessionInfo sessionInfo;
+
+    public bool[] collectedReward;
 }
 
 [System.Serializable]

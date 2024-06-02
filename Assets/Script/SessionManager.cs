@@ -5,7 +5,7 @@ using UnityEngine;
 using System;
 using System.Threading.Tasks;
 
-public class RewardManager : MonoBehaviour
+public class SessionManager : Singleton<SessionManager>
 {
     private TimeSpan backgroundThreshHoldTimeSpan = new TimeSpan(0, 0, 120);
     private DateTime pausedDateTime;
@@ -13,7 +13,6 @@ public class RewardManager : MonoBehaviour
 
     private void Start()
     {
-        //await Task.Delay(2000);
         CheckForSessionStatus();
     }
 
