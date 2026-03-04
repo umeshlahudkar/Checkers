@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Net;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.PlayerLoop;
 
 public class APIManager : Singleton<APIManager>
 {
@@ -11,11 +13,21 @@ public class APIManager : Singleton<APIManager>
 
     public LoginResponse loginResponse;
 
+    public long expiry;
 
+    public AuthService authService = new AuthService();
+
+    
+
+    private void Update()
+    {
+        authService.Update();
+    }
 
     public void SetToken(LoginResponse loginResponse)
     {
         this.loginResponse = loginResponse;
+        expiry = loginResponse.LoginExpireAt - (new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds());
     }
 
     public void Get(string endpointURL, Action<string> onSuccess, Action<string> onFailed)
