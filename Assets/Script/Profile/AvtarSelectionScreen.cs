@@ -1,9 +1,7 @@
 using UnityEngine;
 
-public class AvtarSelectionScreen : MonoBehaviour
+public class AvtarSelectionScreen : Page
 {
-    [SerializeField] private GameObject faderScreen;
-
     [SerializeField] private Color defaultColor;
     [SerializeField] private Color selectedColor;
 
@@ -11,9 +9,14 @@ public class AvtarSelectionScreen : MonoBehaviour
 
     private int selectAvtarIndex = -1;
 
-    private void OnEnable()
+    protected override void OnOpened()
     {
         InitializeButtons();
+    }
+
+    protected override void OnClosed()
+    {
+        selectAvtarIndex = -1;
     }
 
     private void InitializeButtons()
@@ -49,14 +52,12 @@ public class AvtarSelectionScreen : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         ProfileManager.Instance.SetAvtar(selectAvtarIndex);
-        faderScreen.SetActive(false);
-        gameObject.Deactivate();
+        MenuPageManager.Instance.CloseCurrentPage();
     }
 
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(false);
-        gameObject.Deactivate();
+        MenuPageManager.Instance.CloseCurrentPage();
     }
 }

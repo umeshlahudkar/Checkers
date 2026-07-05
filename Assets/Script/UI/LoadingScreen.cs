@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class LoadingScreen : MonoBehaviour
+public class LoadingScreen : Page
 {
     [SerializeField] private GameObject faderScreen;
     [SerializeField] private GameObject Bg;
@@ -9,27 +9,24 @@ public class LoadingScreen : MonoBehaviour
 
     public void ActivateLoadingScreen(string msgToShow = "Loading...")
     {
-        ToggleLoadingScreen(true);
         msgText.text = msgToShow;
+        Open();
     }
 
     public void DeactivateLoadingScreen()
     {
-        ToggleLoadingScreen(false);
+        Close();
     }
 
-    private void ToggleLoadingScreen(bool status)
+    protected override void OnOpened()
     {
-        faderScreen.SetActive(status);
-        Bg.SetActive(status);
+        faderScreen.SetActive(true);
+        Bg.SetActive(true);
+    }
 
-        if(status)
-        {
-            gameObject.Activate();
-        }
-        else
-        {
-            gameObject.Deactivate();
-        }
+    protected override void OnClosed()
+    {
+        faderScreen.SetActive(false);
+        Bg.SetActive(false);
     }
 }

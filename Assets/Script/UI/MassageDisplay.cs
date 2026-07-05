@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class MassageDisplay : MonoBehaviour
+public class MassageDisplay : Page
 {
     [SerializeField] private TextMeshProUGUI msgText;
     [SerializeField] private GameObject faderScreen;
@@ -11,12 +11,19 @@ public class MassageDisplay : MonoBehaviour
 
     public void ShowMassage(string msg, float deactivalteDelay = 0)
     {
-        if(!gameObject.activeSelf)
+        if(!IsOpen)
         {
-            currentTime = deactivalteDelay == 0 ? deactivateTime : deactivalteDelay ;
-            gameObject.Activate();
+            currentTime = deactivalteDelay == 0 ? deactivateTime : deactivalteDelay;
             msgText.text = msg;
+            Open();
         }
+    }
+
+    protected override void OnClosed()
+    {
+        faderScreen.SetActive(false);
+        currentTime = 0;
+        msgText.text = string.Empty;
     }
 
     private void Update()
@@ -26,9 +33,7 @@ public class MassageDisplay : MonoBehaviour
             currentTime -= Time.deltaTime;
             if(currentTime <= 0)
             {
-                currentTime = 0;
-                faderScreen.SetActive(false);
-                gameObject.Deactivate();
+                Close();
             }
         }
     }

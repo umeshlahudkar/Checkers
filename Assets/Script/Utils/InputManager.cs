@@ -15,7 +15,7 @@ public class InputManager : Singleton<InputManager>
 
 	private void SetEventSystem()
 	{
-		eventSystem = FindObjectOfType<EventSystem>();
+		eventSystem = FindFirstObjectByType<EventSystem>();
 	}
 
 	public bool CanInput(float delay = 0.25f, bool disableOnAvailable = true)

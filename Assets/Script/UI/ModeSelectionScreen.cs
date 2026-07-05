@@ -4,10 +4,9 @@ using UnityEngine.SceneManagement;
 using DG.Tweening;
 using System.Collections;
 
-public class ModeSelectionScreen : MonoBehaviour
+public class ModeSelectionScreen : Page
 {
     [SerializeField] private LobbyUIController lobbyUIController;
-    [SerializeField] private GameObject faderScreen;
     [SerializeField] private Image[] buttons;
     [SerializeField] private Transform playBtnCoinImg;
 
@@ -18,14 +17,10 @@ public class ModeSelectionScreen : MonoBehaviour
     private Color originalColor = new(1, 1, 1, 0.5f);
     private Color selectedColor = new(1, 1, 1, 1);
 
-    private void OnEnable()
+    protected override void OnOpened()
     {
         selectedGamemode = GameMode.None;
-        //ResetButton();
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            buttons[i].color = originalColor;
-        }
+        ResetButton();
     }
 
     public void OnModeButtonClick(int buttonNumber)
@@ -59,8 +54,6 @@ public class ModeSelectionScreen : MonoBehaviour
             {
                 case GameMode.Online:
                     lobbyUIController.JoinRoom();
-                    //faderScreen.SetActive(false);
-                    //gameObject.SetActive(false);
                     break;
 
                 case GameMode.PVP:
@@ -73,7 +66,7 @@ public class ModeSelectionScreen : MonoBehaviour
                         StartCoroutine(LoadGame());
                     });
                     break;
-            }           
+            }
         }
     }
 
@@ -89,8 +82,7 @@ public class ModeSelectionScreen : MonoBehaviour
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(false);
-        gameObject.Deactivate();
+        MenuPageManager.Instance.CloseCurrentPage();
     }
 
     private void ResetButton()

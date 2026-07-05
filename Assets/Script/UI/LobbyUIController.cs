@@ -8,26 +8,8 @@ public class LobbyUIController : MonoBehaviour
     [Header("Main Menu screen")]
     [SerializeField] private GameObject mainMenuScreen;
 
-    [Header("Profile screen")]
-    [SerializeField] private GameObject userNameInputScreen;
-    [SerializeField] private GameObject avtarSelectionScreen;
-
-    [Header("Fader screen")]
-    [SerializeField] private GameObject faderScreen;
-
-    [Header("MatchMaking screen")]
-    [SerializeField] private GameObject matchmakingScreen;
-
     [Header("Network Manager")]
     [SerializeField] private NetworkManager networkManager;
-
-    [Header("Avtar Controller")]
-    [SerializeField] private AvtarSelectionScreen avtarController;
-
-    [Header("Setting screen")]
-    [SerializeField] private GameObject settingScreen;
-
-    [SerializeField] private GameObject modeSelectionScreen;
 
     [SerializeField] private GameDataSO gameDataSO;
 
@@ -52,19 +34,9 @@ public class LobbyUIController : MonoBehaviour
         gameDataSO.gameMode = gameMode;
     }
 
-
-    private void DisableAllScreen()
-    {
-        userNameInputScreen.SetActive(false);
-        avtarSelectionScreen.SetActive(false);
-        faderScreen.SetActive(false);
-        settingScreen.SetActive(false);
-        matchmakingScreen.SetActive(false);
-    }
-
     public void ToggleMainMenuScreen(bool status)
     {
-        DisableAllScreen();
+        MenuPageManager.Instance.CloseCurrentPage();
         mainMenuScreen.SetActive(status);
     }
 
@@ -73,40 +45,11 @@ public class LobbyUIController : MonoBehaviour
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
         if (!ProfileManager.Instance.HasUserNameSet)
         {
-            ToggleUserNameInputScreen(true);
+            MenuPageManager.Instance.OpenPage(MenuPageType.UserNameInput);
         }
         else if(!ProfileManager.Instance.HasAvtarSet)
         {
-            ToggleAvtarSelectionScreen(true);
-        }
-    }
-
-    private void ToggleUserNameInputScreen(bool status)
-    {
-        faderScreen.SetActive(status);
-
-        if(status)
-        {
-            userNameInputScreen.Activate();
-        }
-        else
-        {
-            userNameInputScreen.Deactivate();
-        }
-       
-    }
-
-    private void ToggleAvtarSelectionScreen(bool status)
-    {
-        faderScreen.SetActive(status);
-
-        if(status)
-        {
-            avtarSelectionScreen.Activate();
-        }
-        else
-        {
-            avtarSelectionScreen.Deactivate();
+            MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
         }
     }
 
@@ -121,19 +64,18 @@ public class LobbyUIController : MonoBehaviour
 
         if(CoinManager.Instance.GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.gameObject.Activate();
+            PersistentUI.Instance.shopScreen.Open();
             return;
         }
 
-        faderScreen.SetActive(true);
-        modeSelectionScreen.Activate();
+        MenuPageManager.Instance.OpenPage(MenuPageType.ModeSelection);
     }
 
     public void JoinRoom()
     {
         if(networkManager.JoinRandomRoom())
         {
-            matchmakingScreen.SetActive(true);
+            MenuPageManager.Instance.OpenPage(MenuPageType.Matchmaking);
         }
         else
         {
@@ -150,19 +92,18 @@ public class LobbyUIController : MonoBehaviour
     public void OnAvtarButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        ToggleAvtarSelectionScreen(true);
+        MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
     }
 
     public void OnUsernameClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        ToggleUserNameInputScreen(true);
+        MenuPageManager.Instance.OpenPage(MenuPageType.UserNameInput);
     }
 
     public void OnSettingButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(true);
-        settingScreen.Activate();
-    } 
+        MenuPageManager.Instance.OpenPage(MenuPageType.Setting);
+    }
 }

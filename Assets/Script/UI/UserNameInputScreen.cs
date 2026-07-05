@@ -2,9 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class UserNameInputScreen : MonoBehaviour
+public class UserNameInputScreen : Page
 {
-    [SerializeField] private GameObject faderScreen;
     [SerializeField] private TMP_InputField usernameInputField;
 
     [SerializeField] private LobbyUIController lobbyUIController;
@@ -16,8 +15,7 @@ public class UserNameInputScreen : MonoBehaviour
         {
             ProfileManager.Instance.SetUserName(username);
             AudioManager.Instance.PlayButtonClickSound();
-            gameObject.SetActive(false);
-            faderScreen.SetActive(false);
+            MenuPageManager.Instance.CloseCurrentPage();
 
             lobbyUIController.SetProfile();
         }
@@ -26,7 +24,11 @@ public class UserNameInputScreen : MonoBehaviour
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(false);
-        gameObject.SetActive(false);
+        MenuPageManager.Instance.CloseCurrentPage();
+    }
+
+    protected override void OnClosed()
+    {
+        usernameInputField.text = string.Empty;
     }
 }

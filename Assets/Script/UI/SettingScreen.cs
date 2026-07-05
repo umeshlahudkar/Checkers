@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SettingScreen : MonoBehaviour
+public class SettingScreen : Page
 {
     [Header("Music")]
     [SerializeField] private Sprite musicOnSprite;
@@ -23,10 +23,7 @@ public class SettingScreen : MonoBehaviour
     private float soundVolume;
     private bool isSoundMute;
 
-    [Header("Fader")]
-    [SerializeField] private GameObject faderScreen;
-
-    private void OnEnable()
+    protected override void OnOpened()
     {
         InitializeMusicUI();
         InitializeSoundUI();
@@ -124,7 +121,6 @@ public class SettingScreen : MonoBehaviour
     public void OnCloseButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        faderScreen.SetActive(false);
-        gameObject.Deactivate();
+        MenuPageManager.Instance.CloseCurrentPage();
     }
 }

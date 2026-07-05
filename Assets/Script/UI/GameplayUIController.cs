@@ -18,35 +18,27 @@ public class GameplayUIController : Singleton<GameplayUIController>
     [SerializeField] private Image player2_timerImg;
 
     [Header("Game Win screens")]
-    [SerializeField] private GameObject winScreen;
     [SerializeField] private Transform winScreenCoinImg;
     [SerializeField] private GameObject winScreenReamatchWithCoin;
     [SerializeField] private GameObject winScreenReamatchWithoutCoin;
 
     [Header("Game Lose screens")]
-    [SerializeField] private GameObject loseScreen;
     [SerializeField] private GameObject loseScreenReamatchWithCoin;
     [SerializeField] private GameObject loseScreenReamatchWithoutCoin;
 
 
     [Header("Game Over screens")]
-    [SerializeField] private GameObject gameOverScreen;
     [SerializeField] private TextMeshProUGUI gameOverMsgText;
     [SerializeField] private GameObject gameOverScreenReamatchWithCoin;
     [SerializeField] private GameObject gameOverScreenReamatchWithoutCoin;
 
     [Header("Msg screens")]
-    [SerializeField] private GameObject msgScreen;
     [SerializeField] private TextMeshProUGUI msgText;
     [SerializeField] private GameObject msgHomeButton;
     [SerializeField] private GameObject loadingBar;
     [SerializeField] public GameObject msgScreenfeeImg;
 
     [Space(15)]
-    [SerializeField] private GameObject faderScreen;
-    [SerializeField] private GameObject coinDisplay;
-    [SerializeField] private GameObject exitScreen;
-    [SerializeField] private GameObject rematchScreen;
     [SerializeField] private EventManager eventManager;
     [SerializeField] private GameObject upperStrip;
     [SerializeField] private GameObject retryButton;
@@ -85,7 +77,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
             gameOverScreenReamatchWithCoin.SetActive(false);
             gameOverScreenReamatchWithoutCoin.SetActive(true);
-           
+
             retryButton.SetActive(true);
         }
     }
@@ -106,113 +98,96 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void DisableAllScreen()
     {
-        coinDisplay.SetActive(false);
-        faderScreen.SetActive(false);
-
-        winScreen.SetActive(false);
-        loseScreen.SetActive(false);
-        gameOverScreen.SetActive(false);
-
-        exitScreen.SetActive(false);
-        rematchScreen.SetActive(false);
-        msgScreen.SetActive(false);
+        GameplayPageManager.Instance.CloseCurrentPage();
     }
 
     public void ToggleGameWinScreen(bool status)
     {
-        coinDisplay.SetActive(status);
-        faderScreen.SetActive(status);
-
         if (status)
         {
-            winScreen.Activate();
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.Win);
             CoinManager.Instance.AddCoin(500, winScreenCoinImg);
         }
         else
         {
-            winScreen.Deactivate();
+            GameplayPageManager.Instance.CloseCurrentPage();
         }
     }
 
     public void ToggleGameLoseScreen(bool status)
     {
-        coinDisplay.SetActive(status);
-        faderScreen.SetActive(status);
-
         if (status)
         {
-            loseScreen.Activate();
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.Lose);
         }
         else
         {
-            loseScreen.Deactivate();
+            GameplayPageManager.Instance.CloseCurrentPage();
         }
     }
 
     public void ToggleGameOverScreen(bool status, string winnerName = "", string loserName = "")
     {
-        coinDisplay.SetActive(status);
-        faderScreen.SetActive(status);
-
         if (status)
         {
-            gameOverScreen.Activate();
             gameOverMsgText.text = "The " + winnerName + " piece wins the game.Better luck next time, "+ loserName + " piece!";
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.GameOver);
         }
         else
         {
-            gameOverScreen.Deactivate();
+            GameplayPageManager.Instance.CloseCurrentPage();
         }
     }
 
     public void ToggleExitScreen(bool status)
     {
-        faderScreen.SetActive(status);
-
         if(status)
         {
-            exitScreen.Activate();
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.Exit);
         }
         else
         {
-            exitScreen.Deactivate();
+            GameplayPageManager.Instance.CloseCurrentPage();
         }
     }
 
     public void ToggleRematchScreen(bool status)
     {
-        faderScreen.SetActive(status);
-        coinDisplay.SetActive(status);
-
         if (status)
         {
-            rematchScreen.Activate();
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.Rematch);
         }
         else
         {
-            rematchScreen.Deactivate();
+            GameplayPageManager.Instance.CloseCurrentPage();
         }
     }
 
     public void ToggleMsgScreen(bool status, string msg = "", bool homeButtonStatus = false)
     {
-        faderScreen.SetActive(status);
-        msgScreen.SetActive(status);
-        coinDisplay.SetActive(status);
         msgText.text = msg;
         msgHomeButton.SetActive(homeButtonStatus);
         loadingBar.SetActive(!homeButtonStatus);
         msgScreenfeeImg.SetActive(false);
+
+        if (status)
+        {
+            GameplayPageManager.Instance.OpenPage(GameplayPageType.Message);
+        }
+        else
+        {
+            GameplayPageManager.Instance.CloseCurrentPage();
+        }
     }
 
     public void RematchForOnlineMode()
     {
-        if(msgScreen.activeSelf)
+        if(GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Message))
         {
             msgHomeButton.SetActive(false);
             msgScreenfeeImg.SetActive(true);
 
-            CoinManager.Instance.DeductCoin(250, msgScreenfeeImg.transform, () => 
+            CoinManager.Instance.DeductCoin(250, msgScreenfeeImg.transform, () =>
             {
                 DisableAllScreen();
                 AudioManager.Instance.StopTimeTickingSound();
@@ -242,7 +217,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         if (GameManager.Instance.GameMode != GameMode.PVP && CoinManager.Instance.GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            PersistentUI.Instance.shopScreen.Open();
             return;
         }
 
@@ -280,7 +255,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         if (CoinManager.Instance.GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.gameObject.SetActive(true);
+            PersistentUI.Instance.shopScreen.Open();
             return;
         }
 
@@ -301,7 +276,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public bool CanOpenGameOverScreen()
     {
-        return !(winScreen.activeSelf || loseScreen.activeSelf || msgScreen.activeSelf);
+        return !(GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Win) || GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Lose) || GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Message));
     }
 
     public void OnExitScreenYesButtonClick()
@@ -352,5 +327,4 @@ public class GameplayUIController : Singleton<GameplayUIController>
         ToggleExitScreen(false);
     }
 }
-
 
