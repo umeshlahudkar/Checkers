@@ -16,8 +16,8 @@ public class CoinManager : Singleton<CoinManager>
     {
         totalCoin = 0;
 
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        SaveData data = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
         totalCoin = data.coins;
 #endif
 
@@ -51,10 +51,10 @@ public class CoinManager : Singleton<CoinManager>
 
     private void SaveCoin()
     {
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        SaveData data = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
         data.coins = totalCoin;
-        SavingSystem.Instance.Save(data);
+        SavingSystem.Save(ProfileData.FileName, data);
 #endif
     }
 

@@ -13,7 +13,6 @@ public abstract class PageManager<TSelf, TEnum> : Singleton<TSelf>
         public Page page;
     }
 
-    [SerializeField] private GameObject faderScreen;
     [SerializeField] private List<PageEntry> pageEntries;
 
     private readonly Dictionary<TEnum, Page> pages = new();
@@ -56,7 +55,6 @@ public abstract class PageManager<TSelf, TEnum> : Singleton<TSelf>
         currentPage?.Close();
         currentPage = null;
         pageStack.Clear();
-        faderScreen.SetActive(false);
         OnPageClosed();
     }
 
@@ -75,7 +73,6 @@ public abstract class PageManager<TSelf, TEnum> : Singleton<TSelf>
     private void SwitchTo(TEnum key)
     {
         currentPage?.Close();
-        faderScreen.SetActive(true);
         currentKey = key;
         currentPage = pages[key];
         currentPage.Open();

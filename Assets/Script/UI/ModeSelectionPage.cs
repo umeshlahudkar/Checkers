@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using DG.Tweening;
 using System.Collections;
 
-public class ModeSelectionScreen : Page
+public class ModeSelectionPage : Page
 {
     [SerializeField] private LobbyUIController lobbyUIController;
     [SerializeField] private Image[] buttons;

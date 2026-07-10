@@ -28,13 +28,16 @@ public class AudioManager : Singleton<AudioManager>
 
     private void Start()
     {
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        AudioData data = SavingSystem.Instance.Load().audioData;
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        if (SavingSystem.Exists(AudioData.FileName))
+        {
+            AudioData data = SavingSystem.Load<AudioData>(AudioData.FileName);
 
-        isBgMute = data.isMusicMute;
-        isSfxMute = data.isSoundMute;
-        bgVolume = data.musicVolume;
-        sfxVolume = data.soundVolume;
+            isBgMute = data.isMusicMute;
+            isSfxMute = data.isSoundMute;
+            bgVolume = data.musicVolume;
+            sfxVolume = data.soundVolume;
+        }
 #endif
 
         bgAudioSource.mute = isBgMute;
@@ -169,15 +172,16 @@ public class AudioManager : Singleton<AudioManager>
 
     private void SaveAudioData()
     {
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        SaveData saveData = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        AudioData data = new()
+        {
+            isMusicMute = isBgMute,
+            isSoundMute = isSfxMute,
+            musicVolume = bgVolume,
+            soundVolume = sfxVolume
+        };
 
-        saveData.audioData.isMusicMute = isBgMute;
-        saveData.audioData.isSoundMute = isSfxMute;
-        saveData.audioData.musicVolume = bgVolume;
-        saveData.audioData.soundVolume = sfxVolume;
-
-        SavingSystem.Instance.Save(saveData);
+        SavingSystem.Save(AudioData.FileName, data);
 #endif
     }
 }

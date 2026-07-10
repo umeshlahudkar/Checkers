@@ -1,76 +1,41 @@
 using UnityEngine;
 using System.IO;
 
-public class SavingSystem : Singleton<SavingSystem>
+public static class SavingSystem
 {
-    private readonly string fileName = "SaveData.json";
-    private string filePath = string.Empty;
-
-    private void Awake()
+    public static void Save<T>(string fileName, T data)
     {
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-
-        filePath = Path.Combine(Application.persistentDataPath, fileName);
-        //DeleteFile();
-        if (!File.Exists(filePath))
-        {
-            SaveData data = new();
-            data.username = string.Empty;
-            data.avtarIndex = 0;
-            data.coins = 0;
-
-            data.audioData.isMusicMute = false;
-            data.audioData.isSoundMute = false;
-            data.audioData.musicVolume = 0.5f;
-            data.audioData.soundVolume = 0.5f;
-
-            Save(data);
-        }
-
-#endif
+        string json = JsonUtility.ToJson(data);
+        File.WriteAllText(GetPath(fileName), json);
     }
 
-    public void Save(SaveData data)
+    public static T Load<T>(string fileName)
     {
-        string jsonData = JsonUtility.ToJson(data);
-        File.WriteAllText(filePath, jsonData);
-    }
-
-    public SaveData Load()
-    {
-        if(File.Exists(filePath))
+        string path = GetPath(fileName);
+        if (File.Exists(path))
         {
-            string jsonData = File.ReadAllText(filePath);
-            return JsonUtility.FromJson<SaveData>(jsonData);
+            string json = File.ReadAllText(path);
+            return JsonUtility.FromJson<T>(json);
         }
         return default;
     }
 
-    public void DeleteFile()
+    public static bool Exists(string fileName)
     {
-        if(File.Exists(filePath))
+        return File.Exists(GetPath(fileName));
+    }
+
+    public static void Delete(string fileName)
+    {
+        string path = GetPath(fileName);
+        if (File.Exists(path))
         {
-            File.Delete(filePath);
-            Debug.Log("File delete");
+            File.Delete(path);
         }
     }
-}
 
-[System.Serializable]
-public struct SaveData
-{
-    public string username;
-    public int avtarIndex;
-    public int coins;
-
-    public AudioData audioData;
-}
-
-[System.Serializable]
-public struct AudioData
-{
-    public bool isMusicMute;
-    public bool isSoundMute;
-    public float musicVolume;
-    public float soundVolume;
+    private static string GetPath(string fileName)
+    {
+        return Path.Combine(Application.persistentDataPath, fileName);
+    }
 }

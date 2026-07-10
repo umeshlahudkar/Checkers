@@ -4879,7 +4879,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d5bd9a208ff06b4694edc353ac883f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuPageManager
-  faderScreen: {fileID: 0}
   pageEntries:
   - key: 1
     page: {fileID: 6802439579785141574}

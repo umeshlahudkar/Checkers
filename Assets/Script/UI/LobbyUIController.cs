@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 public class LobbyUIController : MonoBehaviour
 {
     [Header("Main Menu screen")]
-    [SerializeField] private GameObject mainMenuScreen;
+    [SerializeField] private MainMenuPage mainMenuPage;
 
     [Header("Network Manager")]
     [SerializeField] private NetworkManager networkManager;
@@ -37,7 +37,15 @@ public class LobbyUIController : MonoBehaviour
     public void ToggleMainMenuScreen(bool status)
     {
         MenuPageManager.Instance.CloseCurrentPage();
-        mainMenuScreen.SetActive(status);
+
+        if (status)
+        {
+            mainMenuPage.Open();
+        }
+        else
+        {
+            mainMenuPage.Close();
+        }
     }
 
     public void SetProfile()
@@ -51,24 +59,6 @@ public class LobbyUIController : MonoBehaviour
         {
             MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
         }
-    }
-
-    public void OnPlayButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        if (!ProfileManager.Instance.HasUserNameSet || !ProfileManager.Instance.HasAvtarSet)
-        {
-            SetProfile();
-            return;
-        }
-
-        if(CoinManager.Instance.GetCoinAmount() < 250)
-        {
-            PersistentUI.Instance.shopScreen.Open();
-            return;
-        }
-
-        MenuPageManager.Instance.OpenPage(MenuPageType.ModeSelection);
     }
 
     public void JoinRoom()
@@ -93,17 +83,5 @@ public class LobbyUIController : MonoBehaviour
     {
         AudioManager.Instance.PlayButtonClickSound();
         MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
-    }
-
-    public void OnUsernameClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.UserNameInput);
-    }
-
-    public void OnSettingButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.Setting);
     }
 }

@@ -142,13 +142,13 @@ TextureImporter:
       name: pill_flat_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 5
-        width: 390
-        height: 100
+        x: 6
+        y: 6
+        width: 388
+        height: 98
       alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 40, y: 0, z: 40, w: 0}
       customData: 
       outline: []
       physicsShape: []
@@ -164,7 +164,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: d371fdf59c2dd0640949bc2ba1f645d2
     internalID: 0
     vertices: []
     indices: 

@@ -23,10 +23,10 @@ public class ProfileManager : Singleton<ProfileManager>
         userName = string.Empty;
         avtarIndex = -1;
 
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        SaveData data = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
 
-        if(data.username != string.Empty)
+        if(!string.IsNullOrEmpty(data.username))
         {
             hasUsernameSet = true;
             userName = data.username;
@@ -39,6 +39,17 @@ public class ProfileManager : Singleton<ProfileManager>
             profileAvtar = avtars[avtarIndex - 1];
         }
 #endif
+
+        if (!hasUsernameSet)
+        {
+            SetUserName("Random_" + Random.Range(1000, 10000));
+        }
+
+        if (!hasAvtarSelect)
+        {
+            SetAvtar(Random.Range(1, avtars.Length + 1));
+        }
+
         OnProfileChange?.Invoke(profileAvtar, userName);
     }
 
@@ -49,11 +60,10 @@ public class ProfileManager : Singleton<ProfileManager>
 
         OnProfileChange?.Invoke(profileAvtar, userName);
 
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-        SaveData data = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+        ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
         data.username = userName;
-        SavingSystem.Instance.Save(data);
-
+        SavingSystem.Save(ProfileData.FileName, data);
 #endif
     }
 
@@ -67,10 +77,10 @@ public class ProfileManager : Singleton<ProfileManager>
 
             OnProfileChange?.Invoke(profileAvtar, userName);
 
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN //|| UNITY_EDITOR 
-            SaveData data = SavingSystem.Instance.Load();
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+            ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
             data.avtarIndex = avtarIndex;
-            SavingSystem.Instance.Save(data);
+            SavingSystem.Save(ProfileData.FileName, data);
 #endif
         }
     }
