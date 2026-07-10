@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 
 public class ModeSelectionPage : Page
 {
+    [SerializeField] private LobbyUIController lobbyUIController;
+
     [SerializeField] private ModeListSO modeList;
     [SerializeField] private ModeTile tileTemplate;
     [SerializeField] private Transform tileContainer;
@@ -38,6 +40,7 @@ public class ModeSelectionPage : Page
     {
         AudioManager.Instance.PlayButtonClickSound();
         selectedGamemode = info.mode;
+        StartCoroutine(LoadGame());
     }
 
     /*
