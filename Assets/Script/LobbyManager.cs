@@ -1,9 +1,10 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Photon.Pun;
 using Photon.Realtime;
-using UnityEngine.SceneManagement;
 
-public class LobbyUIController : MonoBehaviour
+public class LobbyManager : Singleton<LobbyManager>
 {
     [Header("Network Manager")]
     [SerializeField] private NetworkManager networkManager;
@@ -25,11 +26,6 @@ public class LobbyUIController : MonoBehaviour
         gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
         gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
         gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
-    }
-
-    public void SetGameMode(GameMode gameMode)
-    {
-        gameDataSO.gameMode = gameMode;
     }
 
     public void ToggleMainMenuScreen(bool status)
@@ -57,7 +53,42 @@ public class LobbyUIController : MonoBehaviour
         }
     }
 
-    public void JoinRoom()
+    public void OnQuitButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        Application.Quit();
+    }
+
+    public void OnAvtarButtonClick()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
+    }
+
+    public void StartMatch(GameMode mode)
+    {
+        gameDataSO.gameMode = mode;
+
+        switch (mode)
+        {
+            case GameMode.Online:
+                JoinRoom();
+                break;
+
+            case GameMode.PVP:
+                StartCoroutine(LoadGame());
+                break;
+
+            case GameMode.PVC:
+                CoinManager.Instance.DeductCoin(250, null, () =>
+                {
+                    StartCoroutine(LoadGame());
+                });
+                break;
+        }
+    }
+
+    private void JoinRoom()
     {
         if(networkManager.JoinRandomRoom())
         {
@@ -69,15 +100,12 @@ public class LobbyUIController : MonoBehaviour
         }
     }
 
-    public void OnQuitButtonClick()
+    private IEnumerator LoadGame()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        Application.Quit();
-    }
+        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting Match");
 
-    public void OnAvtarButtonClick()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.AvtarSelection);
+        yield return new WaitForSeconds(0.5f);
+
+        SceneManager.LoadScene(1);
     }
 }

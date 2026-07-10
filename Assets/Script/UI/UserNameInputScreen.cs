@@ -6,8 +6,6 @@ public class UserNameInputScreen : Page
 {
     [SerializeField] private TMP_InputField usernameInputField;
 
-    [SerializeField] private LobbyUIController lobbyUIController;
-
     public void OnSaveButtonClick()
     {
         string username = usernameInputField.text;
@@ -17,7 +15,7 @@ public class UserNameInputScreen : Page
             AudioManager.Instance.PlayButtonClickSound();
             MenuPageManager.Instance.CloseCurrentPage();
 
-            lobbyUIController.SetProfile();
+            LobbyManager.Instance.SetProfile();
         }
     }
 

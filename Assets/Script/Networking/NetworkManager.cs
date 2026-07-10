@@ -6,7 +6,6 @@ using Photon.Realtime;
 
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
-    public LobbyUIController lobbyUIController;
     public MatchMakingController matchMakingManager;
     public GameDataSO gameDataSO;
 
@@ -36,7 +35,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
                 }
                 AudioManager.Instance.StopMatchmakingScrollSound();
                 PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-                lobbyUIController.ToggleMainMenuScreen(true);
+                LobbyManager.Instance.ToggleMainMenuScreen(true);
             }
         }
     }
@@ -55,7 +54,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedLobby()
     {
-        lobbyUIController.SetProfile();
+        LobbyManager.Instance.SetProfile();
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
@@ -77,7 +76,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
 
         //PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-        //lobbyUIController.ToggleMatchmakingScreen(true);
+        //LobbyManager.Instance.ToggleMatchmakingScreen(true);
 
         if(!PhotonNetwork.IsMasterClient)
         {
@@ -94,7 +93,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
         AudioManager.Instance.StopMatchmakingScrollSound();
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-        lobbyUIController.ToggleMainMenuScreen(true);
+        LobbyManager.Instance.ToggleMainMenuScreen(true);
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
@@ -108,7 +107,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     public override void OnDisconnected(DisconnectCause cause)
     {
         //PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Connecting to network");
-        //lobbyUIController.ToggleMainMenuScreen(true);
+        //LobbyManager.Instance.ToggleMainMenuScreen(true);
     }
 
     private IEnumerator CheckForPropertiesSet(Player newPlayer)
@@ -126,7 +125,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
 
         matchMakingManager.SetPlayerFound(newPlayer.NickName, index);
-        lobbyUIController.SetPlayerData(newPlayer, index);
+        LobbyManager.Instance.SetPlayerData(newPlayer, index);
     }
 
    
