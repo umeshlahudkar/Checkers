@@ -1,48 +1,46 @@
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
-using DG.Tweening;
 using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ModeSelectionPage : Page
 {
-    [SerializeField] private LobbyUIController lobbyUIController;
-    [SerializeField] private Image[] buttons;
-    [SerializeField] private Transform playBtnCoinImg;
+    [SerializeField] private ModeListSO modeList;
+    [SerializeField] private ModeTile tileTemplate;
+    [SerializeField] private Transform tileContainer;
 
-    [SerializeField] private GameObject playButtonWithCoin;
-    [SerializeField] private GameObject playButtonWithoutCoin;
-
-    private GameMode selectedGamemode;
-    private Color originalColor = new(1, 1, 1, 0.5f);
-    private Color selectedColor = new(1, 1, 1, 1);
+    [SerializeField] private GameMode selectedGamemode;
+    private bool tilesCreated;
 
     protected override void OnOpened()
     {
         selectedGamemode = GameMode.None;
-        ResetButton();
+        CreateTiles();
     }
 
-    public void OnModeButtonClick(int buttonNumber)
+    private void CreateTiles()
+    {
+        if (tilesCreated)
+        {
+            return;
+        }
+
+        foreach (ModeInfo info in modeList.modes)
+        {
+            ModeTile tile = Instantiate(tileTemplate, tileContainer);
+            tile.gameObject.SetActive(true);
+            tile.Setup(info, OnModeSelected);
+        }
+
+        tilesCreated = true;
+    }
+
+    private void OnModeSelected(ModeInfo info)
     {
         AudioManager.Instance.PlayButtonClickSound();
-        ResetButton();
-        buttons[buttonNumber - 1].color = selectedColor;
-        buttons[buttonNumber - 1].transform.DOScale(Vector3.one * 0.9f, 0.1f);
-        selectedGamemode = (GameMode)buttonNumber;
-
-        if(selectedGamemode == GameMode.Online || selectedGamemode == GameMode.PVC)
-        {
-            playButtonWithoutCoin.SetActive(false);
-            playButtonWithCoin.SetActive(true);
-        }
-        else
-        {
-            playButtonWithoutCoin.SetActive(true);
-            playButtonWithCoin.SetActive(false);
-        }
+        selectedGamemode = info.mode;
     }
 
+    /*
     public void OnPlayButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
@@ -69,6 +67,7 @@ public class ModeSelectionPage : Page
             }
         }
     }
+    */
 
     private IEnumerator LoadGame()
     {
@@ -85,12 +84,9 @@ public class ModeSelectionPage : Page
         MenuPageManager.Instance.CloseCurrentPage();
     }
 
-    private void ResetButton()
+    public void OnBackButtonClick()
     {
-        for (int i = 0; i < buttons.Length; i++)
-        {
-            buttons[i].color = originalColor;
-            buttons[i].transform.DOScale(Vector3.one, 0.1f);
-        }
+        AudioManager.Instance.PlayButtonClickSound();
+        MenuPageManager.Instance.GoBack();
     }
 }

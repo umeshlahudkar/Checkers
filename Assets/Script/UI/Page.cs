@@ -7,14 +7,14 @@ public class Page : MonoBehaviour
     public virtual void Open()
     {
         IsOpen = true;
-        gameObject.Activate();
+        gameObject.SetActive(true);
         OnOpened();
     }
 
     public virtual void Close()
     {
         IsOpen = false;
-        gameObject.Deactivate();
+        gameObject.SetActive(false);
         OnClosed();
     }
 

@@ -5,9 +5,6 @@ using UnityEngine.SceneManagement;
 
 public class LobbyUIController : MonoBehaviour
 {
-    [Header("Main Menu screen")]
-    [SerializeField] private MainMenuPage mainMenuPage;
-
     [Header("Network Manager")]
     [SerializeField] private NetworkManager networkManager;
 
@@ -16,6 +13,7 @@ public class LobbyUIController : MonoBehaviour
     private void Start()
     {
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        MenuPageManager.Instance.OpenPage(MenuPageType.MainMenu);
     }
 
     public void SetPlayerData(Player opponentPlayer, int avtarIndex)
@@ -36,15 +34,13 @@ public class LobbyUIController : MonoBehaviour
 
     public void ToggleMainMenuScreen(bool status)
     {
-        MenuPageManager.Instance.CloseCurrentPage();
-
         if (status)
         {
-            mainMenuPage.Open();
+            MenuPageManager.Instance.OpenPage(MenuPageType.MainMenu);
         }
         else
         {
-            mainMenuPage.Close();
+            MenuPageManager.Instance.CloseCurrentPage();
         }
     }
 
