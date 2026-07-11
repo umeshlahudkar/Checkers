@@ -11,7 +11,7 @@ public class ProfileManager : Singleton<ProfileManager>
 
     [SerializeField] private Sprite computerAvtar;
     [SerializeField] private Sprite[] pieceAvtar;
-    [SerializeField] private Sprite[] avtars;
+    [SerializeField] private AvatarListSO avatarList;
 
     public delegate void ProfileChange(Sprite avtar, string name);
     public static event ProfileChange OnProfileChange;
@@ -32,11 +32,11 @@ public class ProfileManager : Singleton<ProfileManager>
             userName = data.username;
         }
 
-        if(data.avtarIndex > 0)
+        if(data.avtarIndex > 0 && data.avtarIndex <= avatarList.avatars.Count)
         {
             hasAvtarSelect = true;
             avtarIndex = data.avtarIndex;
-            profileAvtar = avtars[avtarIndex - 1];
+            profileAvtar = avatarList.avatars[avtarIndex - 1];
         }
 #endif
 
@@ -47,7 +47,7 @@ public class ProfileManager : Singleton<ProfileManager>
 
         if (!hasAvtarSelect)
         {
-            SetAvtar(Random.Range(1, avtars.Length + 1));
+            SetAvtar(Random.Range(1, avatarList.avatars.Count + 1));
         }
 
         OnProfileChange?.Invoke(profileAvtar, userName);
@@ -69,11 +69,11 @@ public class ProfileManager : Singleton<ProfileManager>
 
     public void SetAvtar(int index)
     {
-        if(index > 0 && index <= avtars.Length)
+        if(index > 0 && index <= avatarList.avatars.Count)
         {
             hasAvtarSelect = true;
             avtarIndex = index;
-            profileAvtar = avtars[index - 1];
+            profileAvtar = avatarList.avatars[index - 1];
 
             OnProfileChange?.Invoke(profileAvtar, userName);
 
@@ -97,9 +97,9 @@ public class ProfileManager : Singleton<ProfileManager>
 
     public Sprite GetAvtar(int index)
     {
-        if(index <= avtars.Length)
+        if(index > 0 && index <= avatarList.avatars.Count)
         {
-            return avtars[index - 1];
+            return avatarList.avatars[index - 1];
         }
 
         return null;
@@ -127,4 +127,5 @@ public class ProfileManager : Singleton<ProfileManager>
 
     public bool HasAvtarSet { get { return hasAvtarSelect; } }
     public bool HasUserNameSet { get { return hasUsernameSet; } }
+    public int AvtarCount { get { return avatarList.avatars.Count; } }
 }

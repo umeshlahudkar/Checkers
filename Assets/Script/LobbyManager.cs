@@ -14,7 +14,7 @@ public class LobbyManager : Singleton<LobbyManager>
     private void Start()
     {
         PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
-        MenuPageManager.Instance.OpenPage(MenuPageType.MainMenu);
+        MenuPageManager.Instance.OpenPage(MenuPageType.MainMenuPage);
     }
 
     public void SetPlayerData(Player opponentPlayer, int avtarIndex)
@@ -32,7 +32,7 @@ public class LobbyManager : Singleton<LobbyManager>
     {
         if (status)
         {
-            MenuPageManager.Instance.OpenPage(MenuPageType.MainMenu);
+            MenuPageManager.Instance.OpenPage(MenuPageType.MainMenuPage);
         }
         else
         {

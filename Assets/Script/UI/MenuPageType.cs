@@ -2,10 +2,12 @@
 public enum MenuPageType
 {
     None,
-    MainMenu,
+    MainMenuPage,
+    ModeSelectionPage,
+    ProfilePage,
+
     UserNameInput,
     AvtarSelection,
     Setting,
-    ModeSelection,
     Matchmaking
 }

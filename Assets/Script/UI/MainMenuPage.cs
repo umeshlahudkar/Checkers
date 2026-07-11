@@ -5,13 +5,13 @@ public class MainMenuPage : Page
     public void OnPlayButtonClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.ModeSelection);
+        MenuPageManager.Instance.OpenPage(MenuPageType.ModeSelectionPage);
     }
 
     public void OnProfileClick()
     {
         AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.UserNameInput);
+        MenuPageManager.Instance.OpenPage(MenuPageType.ProfilePage);
     }
 
     public void OnSettingButtonClick()
