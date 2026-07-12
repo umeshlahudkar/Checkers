@@ -17,7 +17,7 @@ public class CoinDisplay : MonoBehaviour
         CoinManager.OnCoinValueIncreased += IncrementCoin;
         CoinManager.OnCoinValueDecreased += DecrementCoin;
 
-        coinValueText.text = CoinManager.Instance.GetCoinAmount().ToString();
+        coinValueText.text = ServiceLocator.Get<CoinManager>().GetCoinAmount().ToString();
     }
 
     private void IncrementCoin(int totalCoin, int amountChanged, Transform target, CoinAnimationCompleteEvent OnCoinAnimationComplete = null)
@@ -42,8 +42,8 @@ public class CoinDisplay : MonoBehaviour
     {
         if (target != null)
         {
-            CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
-                            target.position, Quaternion.identity, PersistentUI.Instance.transform);
+            CoinAnimator anim = Instantiate<CoinAnimator>(ServiceLocator.Get<CoinManager>().GetCoinAnimPrefab(),
+                            target.position, Quaternion.identity, ServiceLocator.Get<PersistentUI>().transform);
             yield return StartCoroutine(anim.PlayCoinAnimation(coinImgTran, OnCoinAnimationComplete));
         }
 
@@ -69,8 +69,8 @@ public class CoinDisplay : MonoBehaviour
     {
         if (target != null)
         {
-            CoinAnimator anim = Instantiate<CoinAnimator>(CoinManager.Instance.GetCoinAnimPrefab(),
-                          coinImgTran.position, Quaternion.identity, PersistentUI.Instance.transform);
+            CoinAnimator anim = Instantiate<CoinAnimator>(ServiceLocator.Get<CoinManager>().GetCoinAnimPrefab(),
+                          coinImgTran.position, Quaternion.identity, ServiceLocator.Get<PersistentUI>().transform);
             StartCoroutine(anim.PlayCoinAnimation(target, OnCoinAnimationComplete));
         }
 

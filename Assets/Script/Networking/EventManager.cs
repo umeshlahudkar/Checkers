@@ -50,16 +50,16 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         switch(type)
         {
             case EventType.RematchConfirmation:
-                GameplayUIController.Instance.DisableAllScreen();
-                GameplayUIController.Instance.ToggleRematchScreen(true);
+                ServiceLocator.Get<GameplayUIController>().DisableAllScreen();
+                ServiceLocator.Get<GameplayUIController>().ToggleRematchScreen(true);
                 break;
 
             case EventType.RematchAccept:
                 if(isReadyToRematch)
                 {
                     confirmationElapcedTime = 0;
-                    GameplayUIController.Instance.DisableAllScreen();
-                    GameplayUIController.Instance.ToggleMsgScreen(true, "opponent ready to play!");
+                    ServiceLocator.Get<GameplayUIController>().DisableAllScreen();
+                    ServiceLocator.Get<GameplayUIController>().ToggleMsgScreen(true, "opponent ready to play!");
                     SendRematchEvent();
                 }
                 else
@@ -74,8 +74,8 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
             case EventType.Rematch:
                 confirmationAcknoElapcedTime = 0;
-                //StartCoroutine(GameManager.Instance.Rematch());
-                GameplayUIController.Instance.RematchForOnlineMode();
+                //StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
+                ServiceLocator.Get<GameplayUIController>().RematchForOnlineMode();
                 break;
         }
     }
@@ -123,35 +123,35 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     private void OnRematchDenied()
     {
-        GameplayUIController.Instance.DisableAllScreen();
-        GameplayUIController.Instance.ToggleMsgScreen(true, "opponent not ready to play!", true);
+        ServiceLocator.Get<GameplayUIController>().DisableAllScreen();
+        ServiceLocator.Get<GameplayUIController>().ToggleMsgScreen(true, "opponent not ready to play!", true);
     }
 
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        if (GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.IsReadyToLeaveGameplay)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && ServiceLocator.Get<GameManager>().IsReadyToLeaveGameplay)
         {
-            //StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+            //StartCoroutine(ServiceLocator.Get<GameplayUIController>().LoadMainMenu());
         }
        
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        if(GameplayUIController.Instance.CanOpenGameOverScreen())
+        if(ServiceLocator.Get<GameplayUIController>().CanOpenGameOverScreen())
         {
-            GameManager.Instance.SetGameOver();
-            GameplayUIController.Instance.ToggleGameWinScreen(true);
+            ServiceLocator.Get<GameManager>().SetGameOver();
+            ServiceLocator.Get<GameplayUIController>().ToggleGameWinScreen(true);
         }
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        if(GameManager.Instance.GameMode == GameMode.Online && GameManager.Instance.GameState != GameState.Ending)
+        if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
         {
-            PersistentUI.Instance.massageDisplay.ShowMassage("Connection lost!");
-            StartCoroutine(GameplayUIController.Instance.LoadMainMenu());
+            ServiceLocator.Get<PersistentUI>().massageDisplay.ShowMassage("Connection lost!");
+            StartCoroutine(ServiceLocator.Get<GameplayUIController>().LoadMainMenu());
         }
     }
 

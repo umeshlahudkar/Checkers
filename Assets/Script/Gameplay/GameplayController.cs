@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class GameplayController : Singleton<GameplayController>
+public class GameplayController : Service<GameplayController>
 {
     public Block[,] board = new Block[8, 8];
     public List<Piece> whitePieces = new();

@@ -20,17 +20,17 @@ public class ProfilePage : Page
     {
         CreateTiles();
 
-        selectedAvtarIndex = ProfileManager.Instance.GetProfileAvtarIndex();
+        selectedAvtarIndex = ServiceLocator.Get<ProfileManager>().GetProfileAvtarIndex();
         HighlightSelectedAvatar(selectedAvtarIndex);
 
-        if (ProfileManager.Instance.HasAvtarSet)
+        if (ServiceLocator.Get<ProfileManager>().HasAvtarSet)
         {
-            profileIcon.sprite = ProfileManager.Instance.GetProfileAvtar();
+            profileIcon.sprite = ServiceLocator.Get<ProfileManager>().GetProfileAvtar();
         }
 
-        if (ProfileManager.Instance.HasUserNameSet)
+        if (ServiceLocator.Get<ProfileManager>().HasUserNameSet)
         {
-            userNameInputField.text = ProfileManager.Instance.GetUserName();
+            userNameInputField.text = ServiceLocator.Get<ProfileManager>().GetUserName();
         }
     }
 
@@ -41,12 +41,12 @@ public class ProfilePage : Page
             return;
         }
 
-        int avtarCount = ProfileManager.Instance.AvtarCount;
+        int avtarCount = ServiceLocator.Get<ProfileManager>().AvtarCount;
         for (int i = 1; i <= avtarCount; i++)
         {
             AvatarTile tile = Instantiate(tileTemplate, tileContainer);
             tile.gameObject.SetActive(true);
-            tile.Setup(i, ProfileManager.Instance.GetAvtar(i), OnAvatarSelected);
+            tile.Setup(i, ServiceLocator.Get<ProfileManager>().GetAvtar(i), OnAvatarSelected);
             avatarTiles.Add(tile);
         }
 
@@ -55,9 +55,9 @@ public class ProfilePage : Page
 
     private void OnAvatarSelected(int index)
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         HighlightSelectedAvatar(index);
-        profileIcon.sprite = ProfileManager.Instance.GetAvtar(index);
+        profileIcon.sprite = ServiceLocator.Get<ProfileManager>().GetAvtar(index);
     }
 
     private void HighlightSelectedAvatar(int index)
@@ -77,31 +77,31 @@ public class ProfilePage : Page
 
     public void OnSaveButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
         if (selectedAvtarIndex > 0)
         {
-            ProfileManager.Instance.SetAvtar(selectedAvtarIndex);
+            ServiceLocator.Get<ProfileManager>().SetAvtar(selectedAvtarIndex);
         }
 
         string enteredName = userNameInputField.text.Trim();
         if (!string.IsNullOrEmpty(enteredName))
         {
-            ProfileManager.Instance.SetUserName(enteredName);
+            ServiceLocator.Get<ProfileManager>().SetUserName(enteredName);
         }
 
-        MenuPageManager.Instance.GoBack();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 
     public void OnCloseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.CloseCurrentPage();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
     }
 
     public void OnBackButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.GoBack();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine.Events;
 
 public delegate void CoinAnimationCompleteEvent();
 
-public class CoinManager : Singleton<CoinManager>
+public class CoinManager : Service<CoinManager>
 {
     private int totalCoin;
     [SerializeField] private CoinAnimator coinAnimPrefab;
@@ -30,7 +30,7 @@ public class CoinManager : Singleton<CoinManager>
         totalCoin = Mathf.Clamp(totalCoin, 0, totalCoin);
 
         OnCoinValueIncreased?.Invoke(totalCoin, amount, coinMovetarget, OnCoinAnimationComplete);
-        AudioManager.Instance.PlayCoinSound();
+        ServiceLocator.Get<AudioManager>().PlayCoinSound();
 
         SaveCoin();
     }
@@ -43,7 +43,7 @@ public class CoinManager : Singleton<CoinManager>
             totalCoin = Mathf.Clamp(totalCoin, 0, totalCoin);
 
             OnCoinValueDecreased?.Invoke(totalCoin, amount, target, OnCoinAnimationComplete);
-            AudioManager.Instance.PlayCoinSound();
+            ServiceLocator.Get<AudioManager>().PlayCoinSound();
 
             SaveCoin();
         }

@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 
-public abstract class PageManager<TSelf, TEnum> : Singleton<TSelf>
+public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
     where TSelf : Component
     where TEnum : Enum
 {
@@ -20,7 +21,7 @@ public abstract class PageManager<TSelf, TEnum> : Singleton<TSelf>
     private Page currentPage;
     private TEnum currentKey;
 
-    private void Awake()
+    protected override void Awake()
     {
         foreach (PageEntry entry in pageEntries)
         {

@@ -62,7 +62,7 @@ public class BoardGenerator : MonoBehaviour
                     block.SetBlock(i, j, blackBlockSprite);
                 }
 
-                GameplayController.Instance.board[i, j] = block;
+                ServiceLocator.Get<GameplayController>().board[i, j] = block;
                 currentX += blockSize;
             }
 
@@ -87,25 +87,25 @@ public class BoardGenerator : MonoBehaviour
             {
                 if((i + j) % 2 != 0)
                 {
-                    if (i < 3 && GameManager.Instance.GetPlayer(2).PhotonView.IsMine)
+                    if (i < 3 && ServiceLocator.Get<GameManager>().GetPlayer(2).PhotonView.IsMine)
                     {
-                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity);
+                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = piece.PhotonView;
 
                         view.RPC(nameof(piece.SetPiece), RpcTarget.All, 2 ,i, j, (int)PieceType.White);
-                        GameplayController.Instance.whitePieces.Add(piece);
+                        ServiceLocator.Get<GameplayController>().whitePieces.Add(piece);
                     }
 
-                    if (i > 4 && GameManager.Instance.GetPlayer(1).PhotonView.IsMine)
+                    if (i > 4 && ServiceLocator.Get<GameManager>().GetPlayer(1).PhotonView.IsMine)
                     {
-                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity);
+                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = piece.PhotonView;
 
                         view.RPC(nameof(piece.SetPiece), RpcTarget.All, 1, i, j, (int)PieceType.Black);
 
-                        GameplayController.Instance.blackPieces.Add(piece);
+                        ServiceLocator.Get<GameplayController>().blackPieces.Add(piece);
                     }
                 }
             }
@@ -122,17 +122,17 @@ public class BoardGenerator : MonoBehaviour
                 {
                     if (i < 3)
                     {
-                        Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
+                        Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetPiece(2, i, j, (int)player2_pieceType);
-                        GameplayController.Instance.whitePieces.Add(piece);
+                        ServiceLocator.Get<GameplayController>().whitePieces.Add(piece);
                         
                     }
 
                     if (i > 4)
                     {
-                        Piece piece = Instantiate(piecePrefab, GameplayController.Instance.board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
+                        Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetPiece(1, i, j, (int)player1_pieceType);
-                        GameplayController.Instance.blackPieces.Add(piece);
+                        ServiceLocator.Get<GameplayController>().blackPieces.Add(piece);
                     }
                 }
             }

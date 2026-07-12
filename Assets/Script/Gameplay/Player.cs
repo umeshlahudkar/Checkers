@@ -29,11 +29,11 @@ namespace Gameplay
 
         private void Start()
         {
-            if(GameManager.Instance.GameMode == GameMode.Online)
+            if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
             {
                 playerID = thisPhotonView.OwnerActorNr;
                 pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
-                GameManager.Instance.ListPlayer(this);
+                ServiceLocator.Get<GameManager>().ListPlayer(this);
                 turnMissCount = 0;
             }
         }
@@ -59,7 +59,7 @@ namespace Gameplay
 
         public bool CanPlay()
         {
-            if(GameplayController.Instance.CanMove(playerID))
+            if(ServiceLocator.Get<GameplayController>().CanMove(playerID))
             {
                 PlayTurn();
                 return true;
@@ -70,7 +70,7 @@ namespace Gameplay
         private void PlayTurn()
         {
             movablePieces.Clear();
-            GameplayController.Instance.CheckMovablePieces(playerID, movablePieces);
+            ServiceLocator.Get<GameplayController>().CheckMovablePieces(playerID, movablePieces);
 
             if (movablePieces.Count > 0)
             {
@@ -101,7 +101,7 @@ namespace Gameplay
         {
             for(int i = 0; i < movablePieces.Count; i++)
             {
-                Block block = GameplayController.Instance.board[movablePieces[i].Row_ID, movablePieces[i].Coloum_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[movablePieces[i].Row_ID, movablePieces[i].Coloum_ID];
                 block.HighlightPieceBlock();
                 highlightedBlocks.Add(block);
             }
@@ -129,16 +129,16 @@ namespace Gameplay
         {
             ResetHighlightedBlocks();
 
-            if (GameplayController.Instance.CanPieceMove(clickedPiece))
+            if (ServiceLocator.Get<GameplayController>().CanPieceMove(clickedPiece))
             {
                 selectedPiece = clickedPiece;
 
-                Block block = GameplayController.Instance.board[clickedPiece.Row_ID, clickedPiece.Coloum_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[clickedPiece.Row_ID, clickedPiece.Coloum_ID];
                 block.HighlightPieceBlock();
                 highlightedBlocks.Add(block);
 
                 clickedPiece.ResetAllList();
-                GameplayController.Instance.SetPiecePosition(clickedPiece);
+                ServiceLocator.Get<GameplayController>().SetPiecePosition(clickedPiece);
 
                 HighlightMovementBlocks(clickedPiece);
             }
@@ -168,8 +168,8 @@ namespace Gameplay
                 int targetRow = row + (row > selectedPiece.Row_ID ? -1 : 1);
                 int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
-                Piece piece = GameplayController.Instance.board[targetRow, targetCol].Piece;
-                if (GameManager.Instance.GameMode == GameMode.Online)
+                Piece piece = ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].Piece;
+                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
                 {
                     piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
                 }
@@ -189,7 +189,7 @@ namespace Gameplay
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
             {
-                if (GameManager.Instance.GameMode == GameMode.Online)
+                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
                 {
                     selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
                 }
@@ -203,12 +203,12 @@ namespace Gameplay
 
             selectedPiece = block.Piece;
 
-            if (hasDeleted && GameplayController.Instance.CanPieceKill(selectedPiece) /*CanMove()*/)
+            if (hasDeleted && ServiceLocator.Get<GameplayController>().CanPieceKill(selectedPiece) /*CanMove()*/)
             {
-                if (GameManager.Instance.GameMode == GameMode.PVC && isAI && GameManager.Instance.CurrentTurn == playerID)
+                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC && isAI && ServiceLocator.Get<GameManager>().CurrentTurn == playerID)
                 {
                     selectedPiece.ResetAllList();
-                    GameplayController.Instance.SetAdjacentKillPosition(selectedPiece);
+                    ServiceLocator.Get<GameplayController>().SetAdjacentKillPosition(selectedPiece);
                     BoardPosition position = default;
 
                     if (selectedPiece.safeKillerBlockPositions.Count > 0)
@@ -220,7 +220,7 @@ namespace Gameplay
                         position = selectedPiece.killerBlockPositions[0];
                     }
 
-                    Block b = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block b = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     b.IsNextToNextHighlighted = true;
                     OnHighlightedTargetBlockClick(b);
                     ResetNextToNextHighlightedBlock();
@@ -232,14 +232,14 @@ namespace Gameplay
             }
             else
             {
-                GameManager.Instance.SwitchTurn();
+                ServiceLocator.Get<GameManager>().SwitchTurn();
                 ResetNextToNextHighlightedBlock();
             }
         }
 
         public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
         {
-            if (GameManager.Instance.GameMode == GameMode.Online)
+            if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
             {
                 int viewId = -1;
                 if (pieceToMove != null)
@@ -250,11 +250,11 @@ namespace Gameplay
             }
             else
             {
-                GameplayController.Instance.board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].SetBlockPiece(false, null);
+                ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].SetBlockPiece(false, null);
 
-                StartCoroutine(MovePiece(pieceToMove, GameplayController.Instance.board[targetRow, targetCol]));
-                AudioManager.Instance.PlayPieceMoveSound();
-                GameplayController.Instance.board[targetRow, targetCol].SetBlockPiece(true, pieceToMove);
+                StartCoroutine(MovePiece(pieceToMove, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]));
+                ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
+                ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(true, pieceToMove);
             }
 
         }
@@ -266,12 +266,12 @@ namespace Gameplay
             if (viewId != -1)
             {
                 piece = PhotonView.Find(viewId).GetComponent<Piece>();
-                GameplayController.Instance.board[piece.Row_ID, piece.Coloum_ID].SetBlockPiece(false, null);
+                ServiceLocator.Get<GameplayController>().board[piece.Row_ID, piece.Coloum_ID].SetBlockPiece(false, null);
 
-                StartCoroutine(MovePiece(piece, GameplayController.Instance.board[targetRow, targetCol]));
-                AudioManager.Instance.PlayPieceMoveSound();
+                StartCoroutine(MovePiece(piece, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]));
+                ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
             }
-            GameplayController.Instance.board[targetRow, targetCol].SetBlockPiece((viewId != -1), piece);
+            ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece((viewId != -1), piece);
         }
 
         private bool AreAdjecent(Block b1, Block b2)
@@ -281,7 +281,7 @@ namespace Gameplay
 
         private IEnumerator MovePiece(Piece pieceToMove, Block targetBlock)
         {
-            Block pieceBlock = GameplayController.Instance.board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
+            Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
             float time = AreAdjecent(pieceBlock, targetBlock) ? 0.15f : 0.25f;
             float elapcedTime = 0;
 
@@ -303,7 +303,7 @@ namespace Gameplay
             List<BoardPosition> safeKillerPosition = clickedPiece.safeKillerBlockPositions;
             for (int i = 0; i < safeKillerPosition.Count; i++)
             {
-                Block block = GameplayController.Instance.board[safeKillerPosition[i].row_ID, safeKillerPosition[i].col_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[safeKillerPosition[i].row_ID, safeKillerPosition[i].col_ID];
                 block.HighlightNextMoveBlock(true);
                 highlightedBlocks.Add(block);
                 nextToNexthighlightedBlocks.Add(block);
@@ -312,7 +312,7 @@ namespace Gameplay
             List<BoardPosition> killerPosition = clickedPiece.killerBlockPositions;
             for (int i = 0; i < killerPosition.Count; i++)
             {
-                Block block = GameplayController.Instance.board[killerPosition[i].row_ID, killerPosition[i].col_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[killerPosition[i].row_ID, killerPosition[i].col_ID];
                 block.HighlightNextMoveBlock(true);
                 highlightedBlocks.Add(block);
                 nextToNexthighlightedBlocks.Add(block);
@@ -321,7 +321,7 @@ namespace Gameplay
             List<BoardPosition> safeMovementPosition = clickedPiece.safeMovableBlockPositions;
             for (int i = 0; i < safeMovementPosition.Count; i++)
             {
-                Block block = GameplayController.Instance.board[safeMovementPosition[i].row_ID, safeMovementPosition[i].col_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[safeMovementPosition[i].row_ID, safeMovementPosition[i].col_ID];
                 block.HighlightNextMoveBlock();
                 highlightedBlocks.Add(block);
             }
@@ -329,7 +329,7 @@ namespace Gameplay
             List<BoardPosition> movementPosition = clickedPiece.movableBlockPositions;
             for (int i = 0; i < movementPosition.Count; i++)
             {
-                Block block = GameplayController.Instance.board[movementPosition[i].row_ID, movementPosition[i].col_ID];
+                Block block = ServiceLocator.Get<GameplayController>().board[movementPosition[i].row_ID, movementPosition[i].col_ID];
                 block.HighlightNextMoveBlock();
                 highlightedBlocks.Add(block);
             }
@@ -342,7 +342,7 @@ namespace Gameplay
             {
                 Piece piece = movablePieces[i];
                 piece.ResetAllList();
-                GameplayController.Instance.SetPiecePosition(piece);
+                ServiceLocator.Get<GameplayController>().SetPiecePosition(piece);
             }
         }
 
@@ -357,7 +357,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     block.IsNextToNextHighlighted = true;
                     nextToNexthighlightedBlocks.Add(block);
 
@@ -374,7 +374,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.doubleKillerBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     block.IsNextToNextHighlighted = true;
                     nextToNexthighlightedBlocks.Add(block);
 
@@ -390,7 +390,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.safeKillerBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     block.IsNextToNextHighlighted = true;
                     nextToNexthighlightedBlocks.Add(block);
 
@@ -406,7 +406,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.killerBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     block.IsNextToNextHighlighted = true;
                     nextToNexthighlightedBlocks.Add(block);
 
@@ -423,7 +423,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.safeMovableBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
 
                     OnHighlightedTargetBlockClick(block);
                     return;
@@ -438,7 +438,7 @@ namespace Gameplay
                 {
                     selectedPiece = piece;
                     BoardPosition position = piece.movableBlockPositions[0];
-                    Block block = GameplayController.Instance.board[position.row_ID, position.col_ID];
+                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
 
                     OnHighlightedTargetBlockClick(block);
                     return;

@@ -9,7 +9,9 @@ public class Block : MonoBehaviour
 
     [SerializeField] private Image blockImage;
     [SerializeField] private Image highlightImage;
+    [SerializeField] private Image highlightHoleImage;
     [SerializeField] private Image targetImage;
+    [SerializeField] private Image targetHoleImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
@@ -126,6 +128,10 @@ public class Block : MonoBehaviour
 
         SetHighlightImageAlpha(minAlpha);
         highlightImage.gameObject.SetActive(true);
+
+        highlightHoleImage.sprite = blockImage.sprite;
+        highlightHoleImage.color = blockImage.color;
+        highlightHoleImage.gameObject.SetActive(true);
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
@@ -137,22 +143,39 @@ public class Block : MonoBehaviour
         isNextTargetBlockHighlighted = nextToNextHighlighted;
         targetImage.gameObject.SetActive(true);
         button.interactable = true;
+
+        if (nextToNextHighlighted)
+        {
+            targetImage.rectTransform.anchorMin = new Vector2(0.32f, 0.32f);
+            targetImage.rectTransform.anchorMax = new Vector2(0.68f, 0.68f);
+            targetHoleImage.gameObject.SetActive(false);
+        }
+        else
+        {
+            targetImage.rectTransform.anchorMin = new Vector2(0.2f, 0.2f);
+            targetImage.rectTransform.anchorMax = new Vector2(0.8f, 0.8f);
+            targetHoleImage.sprite = blockImage.sprite;
+            targetHoleImage.color = blockImage.color;
+            targetHoleImage.gameObject.SetActive(true);
+        }
     }
 
     public void ResetBlock()
     {
         button.interactable = false;
         isTargetBlockHighlighted = false;
-        
+
         highlightImage.gameObject.SetActive(false);
+        highlightHoleImage.gameObject.SetActive(false);
         targetImage.gameObject.SetActive(false);
+        targetHoleImage.gameObject.SetActive(false);
     }
 
     public void OnClick()
     {
         if(isTargetBlockHighlighted)
         {
-            GameManager.Instance.GetPlayer(GameManager.Instance.CurrentTurn).OnHighlightedTargetBlockClick(this);
+            ServiceLocator.Get<GameManager>().GetPlayer(ServiceLocator.Get<GameManager>().CurrentTurn).OnHighlightedTargetBlockClick(this);
         }
     }
 

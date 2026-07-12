@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ProfileManager : Singleton<ProfileManager>
+public class ProfileManager : Service<ProfileManager>
 {
     private bool hasUsernameSet;
     private bool hasAvtarSelect;

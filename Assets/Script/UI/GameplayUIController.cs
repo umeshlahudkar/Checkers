@@ -5,17 +5,24 @@ using TMPro;
 using Photon.Pun;
 using System.Collections;
 
-public class GameplayUIController : Singleton<GameplayUIController>
+public class GameplayUIController : Service<GameplayUIController>
 {
     [Header("Player1 profile")]
     [SerializeField] private TextMeshProUGUI player1_nameText;
     [SerializeField] private Image player1_avtarImag;
     [SerializeField] private Image player1_timerImg;
+    [SerializeField] private TextMeshProUGUI player1_timerText;
+    [SerializeField] private GameObject player1_turnBorder;
 
     [Header("Player2 profile")]
     [SerializeField] private TextMeshProUGUI player2_nameText;
     [SerializeField] private Image player2_avtarImag;
     [SerializeField] private Image player2_timerImg;
+    [SerializeField] private TextMeshProUGUI player2_timerText;
+    [SerializeField] private GameObject player2_turnBorder;
+
+    [Header("Turn status")]
+    [SerializeField] private TextMeshProUGUI turnStatusText;
 
     [Header("Game Win screens")]
     [SerializeField] private Transform winScreenCoinImg;
@@ -46,7 +53,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void SetUpScreens()
     {
-        if(GameManager.Instance.GameMode == GameMode.Online || GameManager.Instance.GameMode == GameMode.PVC)
+        if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online || ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC)
         {
             winScreenReamatchWithCoin.SetActive(true);
             winScreenReamatchWithoutCoin.SetActive(false);
@@ -58,7 +65,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
             gameOverScreenReamatchWithoutCoin.SetActive(false);
 
 
-            if(GameManager.Instance.GameMode == GameMode.Online)
+            if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
             {
                 retryButton.SetActive(false);
             }
@@ -67,7 +74,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
                 retryButton.SetActive(true);
             }
         }
-        else if (GameManager.Instance.GameMode == GameMode.PVP)
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVP)
         {
             winScreenReamatchWithCoin.SetActive(false);
             winScreenReamatchWithoutCoin.SetActive(true);
@@ -87,6 +94,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
         return (playerNumber == 1) ? player1_timerImg : player2_timerImg;
     }
 
+    public TextMeshProUGUI GetTimerText(int playerNumber)
+    {
+        return (playerNumber == 1) ? player1_timerText : player2_timerText;
+    }
+
     public void ShowPlayerInfo(string player1_name, Sprite player1_Avtar, string player2_name, Sprite player2_Avtar)
     {
         player1_nameText.text = player1_name;
@@ -96,21 +108,50 @@ public class GameplayUIController : Singleton<GameplayUIController>
         player2_avtarImag.sprite = player2_Avtar;
     }
 
+    public void SetActiveTurn(int playerNumber)
+    {
+        player1_turnBorder.SetActive(playerNumber == 1);
+        player2_turnBorder.SetActive(playerNumber == 2);
+
+        if (turnStatusText == null)
+        {
+            return;
+        }
+
+        bool isLocalTurn;
+        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+        {
+            Gameplay.Player currentPlayer = ServiceLocator.Get<GameManager>().GetPlayer(playerNumber);
+            isLocalTurn = currentPlayer != null && currentPlayer.PhotonView.IsMine;
+        }
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC)
+        {
+            isLocalTurn = playerNumber == 1;
+        }
+        else
+        {
+            isLocalTurn = true;
+        }
+
+        string activeName = (playerNumber == 1) ? player1_nameText.text : player2_nameText.text;
+        turnStatusText.text = isLocalTurn ? "Your move" : activeName + "'s move";
+    }
+
     public void DisableAllScreen()
     {
-        GameplayPageManager.Instance.CloseCurrentPage();
+        ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
     }
 
     public void ToggleGameWinScreen(bool status)
     {
         if (status)
         {
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.Win);
-            CoinManager.Instance.AddCoin(500, winScreenCoinImg);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.Win);
+            ServiceLocator.Get<CoinManager>().AddCoin(500, winScreenCoinImg);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
@@ -118,11 +159,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         if (status)
         {
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.Lose);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.Lose);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
@@ -131,11 +172,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
         if (status)
         {
             gameOverMsgText.text = "The " + winnerName + " piece wins the game.Better luck next time, "+ loserName + " piece!";
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.GameOver);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.GameOver);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
@@ -143,11 +184,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         if(status)
         {
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.Exit);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.Exit);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
@@ -155,11 +196,11 @@ public class GameplayUIController : Singleton<GameplayUIController>
     {
         if (status)
         {
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.Rematch);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.Rematch);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
@@ -172,26 +213,26 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
         if (status)
         {
-            GameplayPageManager.Instance.OpenPage(GameplayPageType.Message);
+            ServiceLocator.Get<GameplayPageManager>().OpenPage(GameplayPageType.Message);
         }
         else
         {
-            GameplayPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<GameplayPageManager>().CloseCurrentPage();
         }
     }
 
     public void RematchForOnlineMode()
     {
-        if(GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Message))
+        if(ServiceLocator.Get<GameplayPageManager>().IsPageOpen(GameplayPageType.Message))
         {
             msgHomeButton.SetActive(false);
             msgScreenfeeImg.SetActive(true);
 
-            CoinManager.Instance.DeductCoin(250, msgScreenfeeImg.transform, () =>
+            ServiceLocator.Get<CoinManager>().DeductCoin(250, msgScreenfeeImg.transform, () =>
             {
                 DisableAllScreen();
-                AudioManager.Instance.StopTimeTickingSound();
-                StartCoroutine(GameManager.Instance.Rematch());
+                ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+                StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
             });
         }
     }
@@ -213,31 +254,31 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     private void HandleRematch(Transform coinImgTran)
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
-        if (GameManager.Instance.GameMode != GameMode.PVP && CoinManager.Instance.GetCoinAmount() < 250)
+        if (ServiceLocator.Get<GameManager>().GameMode != GameMode.PVP && ServiceLocator.Get<CoinManager>().GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.Open();
+            ServiceLocator.Get<PersistentUI>().shopScreen.Open();
             return;
         }
 
-        if (GameManager.Instance.GameMode == GameMode.Online)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
         {
             DisableAllScreen();
             ToggleMsgScreen(true, "waiting for opponent confirmation");
             eventManager.SendRematchConfirmationEvent();
         }
-        else if (GameManager.Instance.GameMode == GameMode.PVP)
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVP)
         {
             DisableAllScreen();
-            StartCoroutine(GameManager.Instance.Rematch());
+            StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
         }
         else
         {
-            CoinManager.Instance.DeductCoin(250, coinImgTran, () =>
+            ServiceLocator.Get<CoinManager>().DeductCoin(250, coinImgTran, () =>
             {
                 DisableAllScreen();
-                StartCoroutine(GameManager.Instance.Rematch());
+                StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
             });
         }
     }
@@ -245,17 +286,17 @@ public class GameplayUIController : Singleton<GameplayUIController>
     public void OnRetryButtonClick()
     {
         DisableAllScreen();
-        AudioManager.Instance.StopTimeTickingSound();
-        StartCoroutine(GameManager.Instance.Rematch());
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+        StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
     }
 
     public void OnRematchYesButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
-        if (CoinManager.Instance.GetCoinAmount() < 250)
+        if (ServiceLocator.Get<CoinManager>().GetCoinAmount() < 250)
         {
-            PersistentUI.Instance.shopScreen.Open();
+            ServiceLocator.Get<PersistentUI>().shopScreen.Open();
             return;
         }
 
@@ -266,7 +307,7 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void OnRematchNoButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         DisableAllScreen();
 
         eventManager.SendRematchDeniedEvent();
@@ -276,14 +317,14 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public bool CanOpenGameOverScreen()
     {
-        return !(GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Win) || GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Lose) || GameplayPageManager.Instance.IsPageOpen(GameplayPageType.Message));
+        return !(ServiceLocator.Get<GameplayPageManager>().IsPageOpen(GameplayPageType.Win) || ServiceLocator.Get<GameplayPageManager>().IsPageOpen(GameplayPageType.Lose) || ServiceLocator.Get<GameplayPageManager>().IsPageOpen(GameplayPageType.Message));
     }
 
     public void OnExitScreenYesButtonClick()
     {
-        if (GameManager.Instance.GameMode == GameMode.Online && PhotonNetwork.IsConnected)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && PhotonNetwork.IsConnected)
         {
-            GameManager.Instance.IsReadyToLeaveGameplay = true;
+            ServiceLocator.Get<GameManager>().IsReadyToLeaveGameplay = true;
             if (PhotonNetwork.IsMasterClient)
             {
                 PhotonNetwork.DestroyAll();
@@ -292,23 +333,23 @@ public class GameplayUIController : Singleton<GameplayUIController>
             PhotonNetwork.AutomaticallySyncScene = false;
             PhotonNetwork.LeaveRoom();
             ToggleExitScreen(false);
-            AudioManager.Instance.PlayButtonClickSound();
-            AudioManager.Instance.StopTimeTickingSound();
+            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+            ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
             StartCoroutine(LoadMainMenu());
         }
         else
         {
-            AudioManager.Instance.PlayButtonClickSound();
+            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
             StartCoroutine(LoadMainMenu());
         }
     }
 
     public IEnumerator LoadMainMenu()
     {
-        AudioManager.Instance.StopTimeTickingSound();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
         DisableAllScreen();
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen();
+        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen();
 
         yield return new WaitForSeconds(1f);
 
@@ -317,13 +358,13 @@ public class GameplayUIController : Singleton<GameplayUIController>
 
     public void OnPauseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ToggleExitScreen(true);
     }
 
     public void OnExitScreenCloseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ToggleExitScreen(false);
     }
 }

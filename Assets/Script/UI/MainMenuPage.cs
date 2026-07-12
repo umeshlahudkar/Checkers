@@ -4,24 +4,24 @@ public class MainMenuPage : Page
 {
     public void OnPlayButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.ModeSelectionPage);
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.ModeSelectionPage);
     }
 
     public void OnProfileClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.ProfilePage);
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.ProfilePage);
     }
 
     public void OnSettingButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.OpenPage(MenuPageType.Setting);
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Setting);
     }
 
     public void OnHowToPlayButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
     }
 }

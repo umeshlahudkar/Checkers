@@ -1,5 +1,5 @@
 
-public class PersistentUI : Singleton<PersistentUI>
+public class PersistentUI : Service<PersistentUI>
 {
     public LoadingScreen loadingScreen;
     public ShopScreen shopScreen;

@@ -51,13 +51,13 @@ public class Piece : MonoBehaviour
         }
 
         thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
-        thisTransform.position = GameplayController.Instance.board[rowID, columID].ThisTransform.position;
-        thisTransform.sizeDelta = GameplayController.Instance.board[rowID, columID].ThisTransform.sizeDelta;
+        thisTransform.position = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.position;
+        thisTransform.sizeDelta = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
-        GameplayController.Instance.board[rowID, columID].SetBlockPiece(true, this);
+        ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(true, this);
 
-        if((GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine) || GameManager.Instance.GameMode != GameMode.Online)
+        if((ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && photonView.IsMine) || ServiceLocator.Get<GameManager>().GameMode != GameMode.Online)
         {
             button.interactable = true;
         }
@@ -68,33 +68,33 @@ public class Piece : MonoBehaviour
     {
         isCrownedKing = true;
         crownImage.gameObject.SetActive(true);
-        AudioManager.Instance.PlayCrownKingSound();
+        ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
     }
 
     [PunRPC]
     public void Destroy()
     {
-        GameplayController.Instance.board[rowID, columID].SetBlockPiece(false, null);
+        ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(false, null);
         blackPieceImage.gameObject.SetActive(false);
         whitePieceImage.gameObject.SetActive(false);
         crownImage.gameObject.SetActive(false);
 
-        AudioManager.Instance.PlayPieceKillSound();
+        ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
 
         if (playerID == 2)
         {
-            GameplayController.Instance.whitePieces.Remove(this);
+            ServiceLocator.Get<GameplayController>().whitePieces.Remove(this);
         }
         else
         {
-            GameplayController.Instance.blackPieces.Remove(this);
+            ServiceLocator.Get<GameplayController>().blackPieces.Remove(this);
         }
 
-        if (GameManager.Instance.GameMode == GameMode.Online && photonView.IsMine)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && photonView.IsMine)
         {
             PhotonNetwork.Destroy(this.gameObject);
         }
-        else if(GameManager.Instance.GameMode != GameMode.Online)
+        else if(ServiceLocator.Get<GameManager>().GameMode != GameMode.Online)
         {
             Destroy(gameObject);
         }
@@ -128,9 +128,9 @@ public class Piece : MonoBehaviour
 
     public void OnClick()
     {
-        if(playerID == GameManager.Instance.CurrentTurn)
+        if(playerID == ServiceLocator.Get<GameManager>().CurrentTurn)
         {
-            GameManager.Instance.GetPlayer(playerID).OnHighlightedPieceClick(this);
+            ServiceLocator.Get<GameManager>().GetPlayer(playerID).OnHighlightedPieceClick(this);
         }
     }
 

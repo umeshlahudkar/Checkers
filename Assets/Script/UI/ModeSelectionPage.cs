@@ -32,19 +32,19 @@ public class ModeSelectionPage : Page
 
     private void OnModeSelected(ModeInfo info)
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        LobbyManager.Instance.StartMatch(info.mode);
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<LobbyManager>().StartMatch(info.mode);
     }
 
     public void OnCloseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.CloseCurrentPage();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
     }
 
     public void OnBackButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.GoBack();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 }

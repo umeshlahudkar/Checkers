@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 
-public class GameManager : Singleton<GameManager>
+public class GameManager : Service<GameManager>
 {
     [SerializeField] private GameDataSO gameDataSO;
     [SerializeField] private BoardGenerator boardGenerator;
@@ -68,8 +68,8 @@ public class GameManager : Singleton<GameManager>
                 players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType, false);
             }
 
-            GameplayUIController.Instance.ShowPlayerInfo(player1_PieceType.ToString(), ProfileManager.Instance.GetPieceAvtar(player1_PieceType),
-                      player2_PieceType.ToString(), ProfileManager.Instance.GetPieceAvtar(player2_PieceType));
+            ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
+                      player2_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player2_PieceType));
 
             boardGenerator.GenerateBoard();
             boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
@@ -77,8 +77,8 @@ public class GameManager : Singleton<GameManager>
             currentTurn = 2;
             SwitchTurn();
 
-            GameplayUIController.Instance.SetUpScreens();
-            PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+            ServiceLocator.Get<GameplayUIController>().SetUpScreens();
+            ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
         else
         {
@@ -91,8 +91,8 @@ public class GameManager : Singleton<GameManager>
                 players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType : player2_PieceType, ((i+1) == 2));
             }
 
-            GameplayUIController.Instance.ShowPlayerInfo(ProfileManager.Instance.GetUserName(), ProfileManager.Instance.GetProfileAvtar(),
-                      "Computer", ProfileManager.Instance.GetComputerAvtar());
+            ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
+                      "Computer", ServiceLocator.Get<ProfileManager>().GetComputerAvtar());
 
             boardGenerator.GenerateBoard();
             boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
@@ -100,8 +100,8 @@ public class GameManager : Singleton<GameManager>
             currentTurn = 2;
             SwitchTurn();
 
-            GameplayUIController.Instance.SetUpScreens();
-            PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+            ServiceLocator.Get<GameplayUIController>().SetUpScreens();
+            ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
     }
 
@@ -113,8 +113,8 @@ public class GameManager : Singleton<GameManager>
         PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
         PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
 
-        GameplayUIController.Instance.ShowPlayerInfo(player1.userName, ProfileManager.Instance.GetAvtar(player1.avtarIndex),
-            player2.userName, ProfileManager.Instance.GetAvtar(player2.avtarIndex));
+        ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(player1.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player1.avtarIndex),
+            player2.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player2.avtarIndex));
 
         while(!HasBothPlayerReady())
         {
@@ -129,11 +129,11 @@ public class GameManager : Singleton<GameManager>
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
-        GameplayUIController.Instance.SetUpScreens();
+        ServiceLocator.Get<GameplayUIController>().SetUpScreens();
 
         yield return new WaitForSeconds(1f);
 
-        PersistentUI.Instance.loadingScreen.DeactivateLoadingScreen();
+        ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
     }
 
     private bool HasBothPlayerReady()
@@ -185,6 +185,7 @@ public class GameManager : Singleton<GameManager>
 
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = players[currentTurn - 1].PieceType;
+            ServiceLocator.Get<GameplayUIController>().SetActiveTurn(currentTurn);
 
             if (!players[currentTurn - 1].CanPlay())
             {
@@ -203,6 +204,7 @@ public class GameManager : Singleton<GameManager>
         players[currentTurn - 1].ResetPlayer();
         currentTurn = nextTurn;
         timer.ResetTimer();
+        ServiceLocator.Get<GameplayUIController>().SetActiveTurn(currentTurn);
 
         if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
         {
@@ -223,11 +225,11 @@ public class GameManager : Singleton<GameManager>
         {
             if(players[winnerPlayerNumber-1].PhotonView.IsMine)
             {
-                GameplayUIController.Instance.ToggleGameWinScreen(true);
+                ServiceLocator.Get<GameplayUIController>().ToggleGameWinScreen(true);
             }
             else
             {
-                GameplayUIController.Instance.ToggleGameLoseScreen(true);
+                ServiceLocator.Get<GameplayUIController>().ToggleGameLoseScreen(true);
             }
         }
         else if (gameMode == GameMode.PVP)
@@ -235,17 +237,17 @@ public class GameManager : Singleton<GameManager>
             string winnerName = players[winnerPlayerNumber - 1].PieceType.ToString();
             string loserName = players[(winnerPlayerNumber == 1 ? 2 : 1) - 1].PieceType.ToString();
 
-            GameplayUIController.Instance.ToggleGameOverScreen(true, winnerName, loserName);
+            ServiceLocator.Get<GameplayUIController>().ToggleGameOverScreen(true, winnerName, loserName);
         }
         else if (gameMode == GameMode.PVC)
         {
             if (winnerPlayerNumber == 1)
             {
-                GameplayUIController.Instance.ToggleGameWinScreen(true);
+                ServiceLocator.Get<GameplayUIController>().ToggleGameWinScreen(true);
             }
             else
             {
-                GameplayUIController.Instance.ToggleGameLoseScreen(true);
+                ServiceLocator.Get<GameplayUIController>().ToggleGameLoseScreen(true);
             }
         }
     }
@@ -253,7 +255,7 @@ public class GameManager : Singleton<GameManager>
     public void SetGameOver()
     {
         gameState = GameState.Ending;
-        AudioManager.Instance.StopTimeTickingSound();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
     }
 
     private void ResetGameManager()
@@ -285,13 +287,13 @@ public class GameManager : Singleton<GameManager>
             PhotonNetwork.DestroyAll();
         }
         ResetGameManager();
-        GameplayController.Instance.ResetGameplay();
-        GameplayUIController.Instance.DisableAllScreen();
+        ServiceLocator.Get<GameplayController>().ResetGameplay();
+        ServiceLocator.Get<GameplayUIController>().DisableAllScreen();
     }
 
     public IEnumerator Rematch()
     {
-        PersistentUI.Instance.loadingScreen.ActivateLoadingScreen("Starting match");
+        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen("Starting match");
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();

@@ -23,9 +23,9 @@ public class ShopScreen : Page
 
     public void OnGetCoinButtonClick(int coinAmount)
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         getCoinButton.interactable = false;
-        CoinManager.Instance.AddCoin(coinAmount, coinImg, ()=>
+        ServiceLocator.Get<CoinManager>().AddCoin(coinAmount, coinImg, ()=>
         {
             Close();
         });
@@ -33,7 +33,7 @@ public class ShopScreen : Page
 
     public void OnCloseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         Close();
     }
 }

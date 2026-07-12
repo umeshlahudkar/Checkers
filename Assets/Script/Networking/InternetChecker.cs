@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 
-public class InternetChecker : Singleton<InternetChecker>
+public class InternetChecker : Service<InternetChecker>
 {
     private WaitForSeconds waitforSeconds;
 

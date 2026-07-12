@@ -11,18 +11,18 @@ public class UserNameInputScreen : Page
         string username = usernameInputField.text;
         if (!string.IsNullOrEmpty(username))
         {
-            ProfileManager.Instance.SetUserName(username);
-            AudioManager.Instance.PlayButtonClickSound();
-            MenuPageManager.Instance.CloseCurrentPage();
+            ServiceLocator.Get<ProfileManager>().SetUserName(username);
+            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+            ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
 
-            LobbyManager.Instance.SetProfile();
+            ServiceLocator.Get<LobbyManager>().SetProfile();
         }
     }
 
     public void OnCloseButtonClick()
     {
-        AudioManager.Instance.PlayButtonClickSound();
-        MenuPageManager.Instance.CloseCurrentPage();
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
     }
 
     protected override void OnClosed()

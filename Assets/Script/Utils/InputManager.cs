@@ -2,14 +2,15 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class InputManager : Singleton<InputManager>
+public class InputManager : Service<InputManager>
 {
 	bool isTouchAvailable = true;
 	private EventSystem eventSystem;
 	private Coroutine enableCoroutine;
 
-	private void Awake()
+	protected override void Awake()
 	{
+		base.Awake();
 		SetEventSystem();
 	}
 
