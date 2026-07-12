@@ -1,7 +1,6 @@
 using System.Collections;
 using Unity.VectorGraphics;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Bootstrapper : MonoBehaviour
 {
@@ -17,21 +16,11 @@ public class Bootstrapper : MonoBehaviour
     {
         yield return StartCoroutine(HandleSplashPage());
         yield return StartCoroutine(HandleLoadingPage());
-        yield return StartCoroutine(HandleSceneLoading());
-    }
 
-    private IEnumerator HandleSceneLoading() 
-    {
-        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
-
-        ddolPageManager.OpenPage(DDOLPageType.LoadingPage);
-        FaderPage faderPage = (FaderPage)ddolPageManager.GetPage(DDOLPageType.LoadingPage);
-
-        yield return faderPage.FadeIn();
-        yield return SceneManager.LoadSceneAsync(nextSceneName);
-        yield return faderPage.FadeOut();
-
-        ddolPageManager.GoBack();
+        // Fire-and-forget: SceneLoader lives on a DontDestroyOnLoad object, so it keeps
+        // running the fade-out/GoBack() steps after this scene (and this Bootstrapper)
+        // is unloaded - no need to yield on it from here.
+        ServiceLocator.Get<SceneLoader>().LoadScene(nextSceneName);
     }
 
     private IEnumerator HandleLoadingPage()
