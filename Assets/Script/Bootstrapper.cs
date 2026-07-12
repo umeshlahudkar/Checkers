@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,7 +16,26 @@ public class Bootstrapper : MonoBehaviour
     private IEnumerator Boot()
     {
         yield return StartCoroutine(HandleSplashPage());
+        yield return StartCoroutine(HandleLoadingPage());
+        yield return StartCoroutine(HandleSceneLoading());
+    }
 
+    private IEnumerator HandleSceneLoading() 
+    {
+        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
+
+        ddolPageManager.OpenPage(DDOLPageType.LoadingPage);
+        FaderPage faderPage = (FaderPage)ddolPageManager.GetPage(DDOLPageType.LoadingPage);
+
+        yield return faderPage.FadeIn();
+        yield return SceneManager.LoadSceneAsync(nextSceneName);
+        yield return faderPage.FadeOut();
+
+        ddolPageManager.GoBack();
+    }
+
+    private IEnumerator HandleLoadingPage()
+    {
         StartPageManager pageManager = ServiceLocator.Get<StartPageManager>();
         pageManager.OpenPage(StartScenePageType.LoadingPage);
         LoadingPage loadingPage = (LoadingPage)pageManager.GetPage(StartScenePageType.LoadingPage);
@@ -35,8 +55,6 @@ public class Bootstrapper : MonoBehaviour
         }
 
         loadingPage.SetProgress(1f, "Ready");
-
-        yield return SceneManager.LoadSceneAsync(nextSceneName);
     }
 
     private IEnumerator HandleSplashPage()
