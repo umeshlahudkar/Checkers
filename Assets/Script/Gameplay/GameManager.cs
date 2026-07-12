@@ -9,7 +9,8 @@ public class GameManager : Service<GameManager>
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private TimerController timer;
 
-    [SerializeField] private Gameplay.Player playerPrefab;
+    [SerializeField] private Gameplay.HumanPlayer humanPlayerPrefab;
+    [SerializeField] private Gameplay.BotPlayer botPlayerPrefab;
 
     [SerializeField] private Gameplay.Player[] players = new Gameplay.Player[2];
 
@@ -64,8 +65,8 @@ public class GameManager : Service<GameManager>
 
             for (int i = 0; i < 2; i++)
             {
-                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
-                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType, false);
+                players[i] = Instantiate(humanPlayerPrefab, transform.position, Quaternion.identity);
+                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType);
             }
 
             ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
@@ -85,11 +86,11 @@ public class GameManager : Service<GameManager>
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
             PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
-            for (int i = 0; i < 2; i++)
-            {
-                players[i] = Instantiate(playerPrefab, transform.position, Quaternion.identity);
-                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType : player2_PieceType, ((i+1) == 2));
-            }
+            players[0] = Instantiate(humanPlayerPrefab, transform.position, Quaternion.identity);
+            players[0].SetPlayer(1, player1_PieceType);
+
+            players[1] = Instantiate(botPlayerPrefab, transform.position, Quaternion.identity);
+            players[1].SetPlayer(2, player2_PieceType);
 
             ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
                       "Computer", ServiceLocator.Get<ProfileManager>().GetComputerAvtar());
@@ -108,7 +109,7 @@ public class GameManager : Service<GameManager>
     private IEnumerator PrepareOnlineMode()
     {
         boardGenerator.GenerateBoard();
-        PhotonNetwork.Instantiate(playerPrefab.name, transform.position, Quaternion.identity);
+        PhotonNetwork.Instantiate("Prefab/" + humanPlayerPrefab.name, transform.position, Quaternion.identity);
 
         PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
         PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;

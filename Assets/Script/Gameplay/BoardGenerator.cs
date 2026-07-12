@@ -89,7 +89,7 @@ public class BoardGenerator : MonoBehaviour
                 {
                     if (i < 3 && ServiceLocator.Get<GameManager>().GetPlayer(2).PhotonView.IsMine)
                     {
-                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
+                        GameObject obj = PhotonNetwork.Instantiate("Prefab/" + piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = piece.PhotonView;
 
@@ -99,7 +99,7 @@ public class BoardGenerator : MonoBehaviour
 
                     if (i > 4 && ServiceLocator.Get<GameManager>().GetPlayer(1).PhotonView.IsMine)
                     {
-                        GameObject obj = PhotonNetwork.Instantiate(piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
+                        GameObject obj = PhotonNetwork.Instantiate("Prefab/" + piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
                         Piece piece = obj.GetComponent<Piece>();
                         PhotonView view = piece.PhotonView;
 

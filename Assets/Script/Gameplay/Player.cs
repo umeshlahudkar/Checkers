@@ -5,21 +5,18 @@ using UnityEngine;
 
 namespace Gameplay
 {
-    public class Player : MonoBehaviour
+    public abstract class Player : MonoBehaviour
     {
         [SerializeField] private PhotonView thisPhotonView;
         [SerializeField] private int playerID;
 
         private PieceType pieceType;
-        private bool isAI;
         [SerializeField] private int turnMissCount;
 
-        private readonly List<Block> highlightedBlocks = new();
-        private readonly List<Block> nextToNexthighlightedBlocks = new();
-        private readonly List<Piece> movablePieces = new();
-        private Piece selectedPiece;
-        private WaitForSeconds waitForSeconds;
-       
+        protected readonly List<Block> highlightedBlocks = new();
+        protected readonly List<Block> nextToNexthighlightedBlocks = new();
+        protected readonly List<Piece> movablePieces = new();
+        protected Piece selectedPiece;
 
         public PieceType PieceType { get { return pieceType; } }
         public int Player_ID { get { return playerID; } }
@@ -38,17 +35,11 @@ namespace Gameplay
             }
         }
 
-        public void SetPlayer(int playerNumber, PieceType pieceType, bool isAI)
+        public void SetPlayer(int playerNumber, PieceType pieceType)
         {
             this.playerID = playerNumber;
             this.pieceType = pieceType;
-            this.isAI = isAI;
             turnMissCount = 0;
-
-            if(isAI)
-            {
-                waitForSeconds = new WaitForSeconds(1f);
-            }
         }
 
         public void ResetPlayer()
@@ -74,40 +65,18 @@ namespace Gameplay
 
             if (movablePieces.Count > 0)
             {
-                if(playerID == 2 && isAI)
-                {
-                    StartCoroutine(PlayAITurn());
-                }
-                else
-                {
-                    HighlightMovablePieceBlock();
-                }
+                OnTurnReady();
             }
         }
 
-        private IEnumerator PlayAITurn()
-        {
-            SetMovablePosition();
-            yield return waitForSeconds;
-            CheckPieceMove();
-        }
+        protected abstract void OnTurnReady();
 
         public void UpdateTurnMissCount()
         {
             turnMissCount++;
         }
 
-        private void HighlightMovablePieceBlock()
-        {
-            for(int i = 0; i < movablePieces.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[movablePieces[i].Row_ID, movablePieces[i].Coloum_ID];
-                block.HighlightPieceBlock();
-                highlightedBlocks.Add(block);
-            }
-        }
-
-        private void ResetHighlightedBlocks()
+        protected void ResetHighlightedBlocks()
         {
             for (int i = 0; i < highlightedBlocks.Count; i++)
             {
@@ -116,7 +85,7 @@ namespace Gameplay
             highlightedBlocks.Clear();
         }
 
-        private void ResetNextToNextHighlightedBlock()
+        protected void ResetNextToNextHighlightedBlock()
         {
             for (int i = 0; i < nextToNexthighlightedBlocks.Count; i++)
             {
@@ -125,27 +94,8 @@ namespace Gameplay
             nextToNexthighlightedBlocks.Clear();
         }
 
-        public void OnHighlightedPieceClick(Piece clickedPiece)
+        public virtual void OnHighlightedPieceClick(Piece clickedPiece)
         {
-            ResetHighlightedBlocks();
-
-            if (ServiceLocator.Get<GameplayController>().CanPieceMove(clickedPiece))
-            {
-                selectedPiece = clickedPiece;
-
-                Block block = ServiceLocator.Get<GameplayController>().board[clickedPiece.Row_ID, clickedPiece.Coloum_ID];
-                block.HighlightPieceBlock();
-                highlightedBlocks.Add(block);
-
-                clickedPiece.ResetAllList();
-                ServiceLocator.Get<GameplayController>().SetPiecePosition(clickedPiece);
-
-                HighlightMovementBlocks(clickedPiece);
-            }
-            else
-            {
-                HighlightMovablePieceBlock();
-            }
         }
 
         public void OnHighlightedTargetBlockClick(Block block)
@@ -184,7 +134,7 @@ namespace Gameplay
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
 
             yield return new WaitForSeconds(0.5f);
-           
+
 
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
@@ -199,36 +149,11 @@ namespace Gameplay
                 }
             }
 
-            //yield return new WaitForSeconds(0.25f);
-
             selectedPiece = block.Piece;
 
-            if (hasDeleted && ServiceLocator.Get<GameplayController>().CanPieceKill(selectedPiece) /*CanMove()*/)
+            if (hasDeleted && ServiceLocator.Get<GameplayController>().CanPieceKill(selectedPiece))
             {
-                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsBot && isAI && ServiceLocator.Get<GameManager>().CurrentTurn == playerID)
-                {
-                    selectedPiece.ResetAllList();
-                    ServiceLocator.Get<GameplayController>().SetAdjacentKillPosition(selectedPiece);
-                    BoardPosition position = default;
-
-                    if (selectedPiece.safeKillerBlockPositions.Count > 0)
-                    {
-                        position = selectedPiece.safeKillerBlockPositions[0];
-                    }
-                    else if (selectedPiece.killerBlockPositions.Count > 0)
-                    {
-                        position = selectedPiece.killerBlockPositions[0];
-                    }
-
-                    Block b = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    b.IsNextToNextHighlighted = true;
-                    OnHighlightedTargetBlockClick(b);
-                    ResetNextToNextHighlightedBlock();
-                }
-                else
-                {
-                    OnHighlightedPieceClick(selectedPiece);
-                }
+                ContinueAfterKill(selectedPiece);
             }
             else
             {
@@ -236,6 +161,8 @@ namespace Gameplay
                 ResetNextToNextHighlightedBlock();
             }
         }
+
+        protected abstract void ContinueAfterKill(Piece selectedPiece);
 
         public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
         {
@@ -297,154 +224,6 @@ namespace Gameplay
             }
             pieceToMove.transform.position = targetPos;
         }
-
-        private void HighlightMovementBlocks(Piece clickedPiece)
-        {
-            List<BoardPosition> safeKillerPosition = clickedPiece.safeKillerBlockPositions;
-            for (int i = 0; i < safeKillerPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[safeKillerPosition[i].row_ID, safeKillerPosition[i].col_ID];
-                block.HighlightNextMoveBlock(true);
-                highlightedBlocks.Add(block);
-                nextToNexthighlightedBlocks.Add(block);
-            }
-
-            List<BoardPosition> killerPosition = clickedPiece.killerBlockPositions;
-            for (int i = 0; i < killerPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[killerPosition[i].row_ID, killerPosition[i].col_ID];
-                block.HighlightNextMoveBlock(true);
-                highlightedBlocks.Add(block);
-                nextToNexthighlightedBlocks.Add(block);
-            }
-
-            List<BoardPosition> safeMovementPosition = clickedPiece.safeMovableBlockPositions;
-            for (int i = 0; i < safeMovementPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[safeMovementPosition[i].row_ID, safeMovementPosition[i].col_ID];
-                block.HighlightNextMoveBlock();
-                highlightedBlocks.Add(block);
-            }
-
-            List<BoardPosition> movementPosition = clickedPiece.movableBlockPositions;
-            for (int i = 0; i < movementPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[movementPosition[i].row_ID, movementPosition[i].col_ID];
-                block.HighlightNextMoveBlock();
-                highlightedBlocks.Add(block);
-            }
-        }
-
-        // AI
-        private void SetMovablePosition()
-        {
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                piece.ResetAllList();
-                ServiceLocator.Get<GameplayController>().SetPiecePosition(piece);
-            }
-        }
-
-        private void CheckPieceMove()
-        {
-            movablePieces.Shuffle();
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.safeDoubleKillerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-
-                    return;
-                }
-            }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.doubleKillerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.doubleKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.safeKillerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.killerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.killerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.safeMovableBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeMovableBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.movableBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.movableBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-        }
     }
 }
 
@@ -459,4 +238,3 @@ public struct BoardPosition
         col_ID = col;
     }
 }
-
