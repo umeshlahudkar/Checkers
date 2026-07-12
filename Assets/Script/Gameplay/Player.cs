@@ -29,7 +29,7 @@ namespace Gameplay
 
         private void Start()
         {
-            if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+            if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
             {
                 playerID = thisPhotonView.OwnerActorNr;
                 pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
@@ -169,7 +169,7 @@ namespace Gameplay
                 int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
                 Piece piece = ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].Piece;
-                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
                 {
                     piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
                 }
@@ -189,7 +189,7 @@ namespace Gameplay
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
             {
-                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
                 {
                     selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
                 }
@@ -205,7 +205,7 @@ namespace Gameplay
 
             if (hasDeleted && ServiceLocator.Get<GameplayController>().CanPieceKill(selectedPiece) /*CanMove()*/)
             {
-                if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC && isAI && ServiceLocator.Get<GameManager>().CurrentTurn == playerID)
+                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsBot && isAI && ServiceLocator.Get<GameManager>().CurrentTurn == playerID)
                 {
                     selectedPiece.ResetAllList();
                     ServiceLocator.Get<GameplayController>().SetAdjacentKillPosition(selectedPiece);
@@ -239,7 +239,7 @@ namespace Gameplay
 
         public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
         {
-            if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+            if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
             {
                 int viewId = -1;
                 if (pieceToMove != null)

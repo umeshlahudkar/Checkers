@@ -17,7 +17,7 @@ public class GameManager : Service<GameManager>
     private int currentTurn;
 
     private GameState gameState = GameState.Waiting;
-    private GameMode gameMode;
+    private GameModeType gameMode;
     private bool isReadyToLeaveGameplay = false;
 
     private readonly int maxTurnMissCount = 3;
@@ -27,7 +27,7 @@ public class GameManager : Service<GameManager>
         get { return gameState; }
     }
 
-    public GameMode GameMode
+    public GameModeType GameMode
     {
         get { return gameMode; }
     }
@@ -53,11 +53,11 @@ public class GameManager : Service<GameManager>
         gameMode = gameDataSO.gameMode;
         gameState = GameState.Playing;
 
-        if (gameMode == GameMode.Online)
+        if (gameMode == GameModeType.Multiplayer)
         {
             StartCoroutine(PrepareOnlineMode());
         }
-        else if (gameMode == GameMode.PVP)
+        else if (gameMode == GameModeType.VsPlayer)
         {
             PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
             PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
@@ -143,7 +143,7 @@ public class GameManager : Service<GameManager>
 
     public void HandleTurnMissCount()
     {
-        if(gameMode == GameMode.Online && players[currentTurn - 1].PhotonView.IsMine)
+        if(gameMode == GameModeType.Multiplayer && players[currentTurn - 1].PhotonView.IsMine)
         {
             players[currentTurn - 1].UpdateTurnMissCount();
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
@@ -156,7 +156,7 @@ public class GameManager : Service<GameManager>
                 SwitchTurn();
             }
         }
-        else if(gameMode != GameMode.Online)
+        else if(gameMode != GameModeType.Multiplayer)
         {
             players[currentTurn - 1].UpdateTurnMissCount();
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
@@ -173,7 +173,7 @@ public class GameManager : Service<GameManager>
 
     public void SwitchTurn()
     {
-        if(gameMode == GameMode.Online)
+        if(gameMode == GameModeType.Multiplayer)
         {
             int nextTurn = currentTurn == 1 ? 2 : 1;
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
@@ -221,7 +221,7 @@ public class GameManager : Service<GameManager>
     {
         SetGameOver();
 
-        if (gameMode == GameMode.Online)
+        if (gameMode == GameModeType.Multiplayer)
         {
             if(players[winnerPlayerNumber-1].PhotonView.IsMine)
             {
@@ -232,14 +232,14 @@ public class GameManager : Service<GameManager>
                 ServiceLocator.Get<GameplayUIController>().ToggleGameLoseScreen(true);
             }
         }
-        else if (gameMode == GameMode.PVP)
+        else if (gameMode == GameModeType.VsPlayer)
         {
             string winnerName = players[winnerPlayerNumber - 1].PieceType.ToString();
             string loserName = players[(winnerPlayerNumber == 1 ? 2 : 1) - 1].PieceType.ToString();
 
             ServiceLocator.Get<GameplayUIController>().ToggleGameOverScreen(true, winnerName, loserName);
         }
-        else if (gameMode == GameMode.PVC)
+        else if (gameMode == GameModeType.VsBot)
         {
             if (winnerPlayerNumber == 1)
             {
@@ -282,7 +282,7 @@ public class GameManager : Service<GameManager>
 
     private void ResetGameplay()
     {
-        if( gameMode == GameMode.Online && PhotonNetwork.IsMasterClient)
+        if( gameMode == GameModeType.Multiplayer && PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.DestroyAll();
         }

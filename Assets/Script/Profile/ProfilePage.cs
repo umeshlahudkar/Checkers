@@ -20,17 +20,20 @@ public class ProfilePage : Page
     {
         CreateTiles();
 
-        selectedAvtarIndex = ServiceLocator.Get<ProfileManager>().GetProfileAvtarIndex();
+        ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
+
+        selectedAvtarIndex = profileManager.GetProfileAvtarID();
         HighlightSelectedAvatar(selectedAvtarIndex);
 
-        if (ServiceLocator.Get<ProfileManager>().HasAvtarSet)
+        if (selectedAvtarIndex > 0)
         {
-            profileIcon.sprite = ServiceLocator.Get<ProfileManager>().GetProfileAvtar();
+            profileIcon.sprite = profileManager.GetProfileAvtar();
         }
 
-        if (ServiceLocator.Get<ProfileManager>().HasUserNameSet)
+        string userName = profileManager.GetUserName();
+        if (!string.IsNullOrEmpty(userName))
         {
-            userNameInputField.text = ServiceLocator.Get<ProfileManager>().GetUserName();
+            userNameInputField.text = userName;
         }
     }
 

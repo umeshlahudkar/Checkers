@@ -33,7 +33,7 @@ public class ModeSelectionPage : Page
     private void OnModeSelected(ModeInfo info)
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<LobbyManager>().StartMatch(info.mode);
+        ServiceLocator.Get<PhotonNetworkManager>().StartMatch(info.mode);
     }
 
     public void OnCloseButtonClick()

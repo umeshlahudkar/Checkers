@@ -130,7 +130,7 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
     public override void OnLeftRoom()
     {
         base.OnLeftRoom();
-        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && ServiceLocator.Get<GameManager>().IsReadyToLeaveGameplay)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().IsReadyToLeaveGameplay)
         {
             //StartCoroutine(ServiceLocator.Get<GameplayUIController>().LoadMainMenu());
         }
@@ -148,7 +148,7 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
+        if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
         {
             ServiceLocator.Get<PersistentUI>().massageDisplay.ShowMassage("Connection lost!");
             StartCoroutine(ServiceLocator.Get<GameplayUIController>().LoadMainMenu());

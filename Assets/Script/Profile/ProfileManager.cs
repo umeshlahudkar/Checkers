@@ -3,12 +3,9 @@ using UnityEngine;
 
 public class ProfileManager : Service<ProfileManager>, IInitializable
 {
-    private bool hasUsernameSet;
-    private bool hasAvtarSelect;
-
-    private string userName;
+    private string userName = string.Empty;
     private Sprite profileAvtar;
-    private int avtarIndex;
+    private int avtarID = -1;
 
     [SerializeField] private Sprite computerAvtar;
     [SerializeField] private Sprite[] pieceAvtar;
@@ -19,34 +16,30 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
 
     public IEnumerator Initialize()
     {
-        hasUsernameSet = false;
-        hasAvtarSelect = false;
         userName = string.Empty;
-        avtarIndex = -1;
+        avtarID = -1;
 
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
 
         if(!string.IsNullOrEmpty(data.username))
         {
-            hasUsernameSet = true;
             userName = data.username;
         }
 
         if(data.avtarIndex > 0 && data.avtarIndex <= avatarList.avatars.Count)
         {
-            hasAvtarSelect = true;
-            avtarIndex = data.avtarIndex;
-            profileAvtar = avatarList.avatars[avtarIndex - 1];
+            avtarID = data.avtarIndex;
+            profileAvtar = avatarList.avatars[avtarID - 1];
         }
 #endif
 
-        if (!hasUsernameSet)
+        if (string.IsNullOrEmpty(userName))
         {
             SetUserName("Random_" + Random.Range(1000, 10000));
         }
 
-        if (!hasAvtarSelect)
+        if (avtarID <= 0)
         {
             SetAvtar(Random.Range(1, avatarList.avatars.Count + 1));
         }
@@ -58,7 +51,6 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
 
     public void SetUserName(string name)
     {
-        hasUsernameSet = true;
         userName = name;
 
         OnProfileChange?.Invoke(profileAvtar, userName);
@@ -74,28 +66,30 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
     {
         if(index > 0 && index <= avatarList.avatars.Count)
         {
-            hasAvtarSelect = true;
-            avtarIndex = index;
+            avtarID = index;
             profileAvtar = avatarList.avatars[index - 1];
 
             OnProfileChange?.Invoke(profileAvtar, userName);
 
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
             ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
-            data.avtarIndex = avtarIndex;
+            data.avtarIndex = avtarID;
             SavingSystem.Save(ProfileData.FileName, data);
 #endif
         }
     }
 
-    public string GetUserName() 
-    { 
-        return hasUsernameSet == true ? userName : string.Empty; 
+    public string UserName { get { return userName; } }
+    public int AvatarID { get { return avtarID; } }
+
+    public string GetUserName()
+    {
+        return userName;
     }
 
-    public Sprite GetProfileAvtar() 
-    { 
-        return hasAvtarSelect == true ? profileAvtar : null;
+    public Sprite GetProfileAvtar()
+    {
+        return profileAvtar;
     }
 
     public Sprite GetAvtar(int index)
@@ -123,12 +117,10 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
         return computerAvtar;
     }
 
-    public int GetProfileAvtarIndex() 
-    { 
-        return hasAvtarSelect == true ? avtarIndex : -1;
+    public int GetProfileAvtarID()
+    {
+        return avtarID;
     }
 
-    public bool HasAvtarSet { get { return hasAvtarSelect; } }
-    public bool HasUserNameSet { get { return hasUsernameSet; } }
     public int AvtarCount { get { return avatarList.avatars.Count; } }
 }

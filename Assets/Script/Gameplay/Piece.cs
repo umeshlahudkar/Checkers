@@ -57,7 +57,7 @@ public class Piece : MonoBehaviour
 
         ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(true, this);
 
-        if((ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && photonView.IsMine) || ServiceLocator.Get<GameManager>().GameMode != GameMode.Online)
+        if((ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && photonView.IsMine) || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer)
         {
             button.interactable = true;
         }
@@ -90,11 +90,11 @@ public class Piece : MonoBehaviour
             ServiceLocator.Get<GameplayController>().blackPieces.Remove(this);
         }
 
-        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && photonView.IsMine)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && photonView.IsMine)
         {
             PhotonNetwork.Destroy(this.gameObject);
         }
-        else if(ServiceLocator.Get<GameManager>().GameMode != GameMode.Online)
+        else if(ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer)
         {
             Destroy(gameObject);
         }

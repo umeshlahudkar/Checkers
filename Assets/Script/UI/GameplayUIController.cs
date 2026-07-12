@@ -53,7 +53,7 @@ public class GameplayUIController : Service<GameplayUIController>
 
     public void SetUpScreens()
     {
-        if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online || ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC)
+        if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer || ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsBot)
         {
             winScreenReamatchWithCoin.SetActive(true);
             winScreenReamatchWithoutCoin.SetActive(false);
@@ -65,7 +65,7 @@ public class GameplayUIController : Service<GameplayUIController>
             gameOverScreenReamatchWithoutCoin.SetActive(false);
 
 
-            if(ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+            if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
             {
                 retryButton.SetActive(false);
             }
@@ -74,7 +74,7 @@ public class GameplayUIController : Service<GameplayUIController>
                 retryButton.SetActive(true);
             }
         }
-        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVP)
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsPlayer)
         {
             winScreenReamatchWithCoin.SetActive(false);
             winScreenReamatchWithoutCoin.SetActive(true);
@@ -119,12 +119,12 @@ public class GameplayUIController : Service<GameplayUIController>
         }
 
         bool isLocalTurn;
-        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
         {
             Gameplay.Player currentPlayer = ServiceLocator.Get<GameManager>().GetPlayer(playerNumber);
             isLocalTurn = currentPlayer != null && currentPlayer.PhotonView.IsMine;
         }
-        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVC)
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsBot)
         {
             isLocalTurn = playerNumber == 1;
         }
@@ -256,19 +256,19 @@ public class GameplayUIController : Service<GameplayUIController>
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
-        if (ServiceLocator.Get<GameManager>().GameMode != GameMode.PVP && ServiceLocator.Get<CoinManager>().GetCoinAmount() < 250)
+        if (ServiceLocator.Get<GameManager>().GameMode != GameModeType.VsPlayer && ServiceLocator.Get<CoinManager>().GetCoinAmount() < 250)
         {
             ServiceLocator.Get<PersistentUI>().shopScreen.Open();
             return;
         }
 
-        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
         {
             DisableAllScreen();
             ToggleMsgScreen(true, "waiting for opponent confirmation");
             eventManager.SendRematchConfirmationEvent();
         }
-        else if (ServiceLocator.Get<GameManager>().GameMode == GameMode.PVP)
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsPlayer)
         {
             DisableAllScreen();
             StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
@@ -322,7 +322,7 @@ public class GameplayUIController : Service<GameplayUIController>
 
     public void OnExitScreenYesButtonClick()
     {
-        if (ServiceLocator.Get<GameManager>().GameMode == GameMode.Online && PhotonNetwork.IsConnected)
+        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && PhotonNetwork.IsConnected)
         {
             ServiceLocator.Get<GameManager>().IsReadyToLeaveGameplay = true;
             if (PhotonNetwork.IsMasterClient)

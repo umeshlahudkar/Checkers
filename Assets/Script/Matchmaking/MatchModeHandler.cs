@@ -1,0 +1,131 @@
+using System.Collections.Generic;
+using Photon.Realtime;
+
+public abstract class MatchModeHandler
+{
+    protected readonly PhotonNetworkManager photonNetworkManager;
+    protected readonly GameDataSO gameDataSO;
+    protected MatchmakingPage matchmakingPage;
+
+    protected MatchModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
+    {
+        this.photonNetworkManager = photonNetworkManager;
+        this.gameDataSO = gameDataSO;
+    }
+
+    public abstract GameModeType Mode { get; }
+
+    public void SetMatchmakingPage(MatchmakingPage page)
+    {
+        matchmakingPage = page;
+    }
+
+    public abstract void StartMatch();
+
+    public virtual void CancelMatch()
+    {
+    }
+
+    public virtual void OnJoinedRoom()
+    {
+    }
+
+    public virtual void OnLeft()
+    {
+    }
+
+    public virtual void OnCreateRoomFailed()
+    {
+    }
+
+    public virtual void OnOpponentFound(Player opponentPlayer, int avtarIndex)
+    {
+    }
+
+    // Connection callbacks
+    public virtual void OnConnected()
+    {
+    }
+
+    public virtual void OnConnectedToMaster()
+    {
+    }
+
+    public virtual void OnDisconnected(DisconnectCause cause)
+    {
+    }
+
+    public virtual void OnRegionListReceived(RegionHandler regionHandler)
+    {
+    }
+
+    public virtual void OnCustomAuthenticationResponse(Dictionary<string, object> data)
+    {
+    }
+
+    public virtual void OnCustomAuthenticationFailed(string debugMessage)
+    {
+    }
+
+    // Matchmaking callbacks
+    public virtual void OnFriendListUpdate(List<FriendInfo> friendList)
+    {
+    }
+
+    public virtual void OnCreatedRoom()
+    {
+    }
+
+    public virtual void OnJoinRoomFailed(short returnCode, string message)
+    {
+    }
+
+    public virtual void OnJoinRandomFailed(short returnCode, string message)
+    {
+    }
+
+    // In-room callbacks
+    public virtual void OnPlayerLeftRoom(Player otherPlayer)
+    {
+    }
+
+    public virtual void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+    }
+
+    public virtual void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
+    {
+    }
+
+    public virtual void OnMasterClientSwitched(Player newMasterClient)
+    {
+    }
+
+    // Lobby callbacks
+    public virtual void OnLeftLobby()
+    {
+    }
+
+    public virtual void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+    }
+
+    public virtual void OnLobbyStatisticsUpdate(List<TypedLobbyInfo> lobbyStatistics)
+    {
+    }
+
+    public virtual void SetProfile()
+    {
+        ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
+
+        ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
+        if (string.IsNullOrEmpty(profileManager.GetUserName()))
+        {
+            ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.UserNameInput);
+        }
+        else if (profileManager.GetProfileAvtarID() <= 0)
+        {
+            ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.AvtarSelection);
+        }
+    }
+}

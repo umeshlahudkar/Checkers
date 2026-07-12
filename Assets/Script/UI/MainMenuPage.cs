@@ -24,4 +24,16 @@ public class MainMenuPage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
     }
+
+    public void OnQuitButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        Application.Quit();
+    }
+
+    public void OnAvtarButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.AvtarSelection);
+    }
 }
