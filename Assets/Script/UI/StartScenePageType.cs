@@ -2,5 +2,6 @@ using UnityEngine;
 
 public enum StartScenePageType
 {
-   SplashPage
+   SplashPage,
+   LoadingPage
 }

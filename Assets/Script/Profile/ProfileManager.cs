@@ -1,6 +1,7 @@
+using System.Collections;
 using UnityEngine;
 
-public class ProfileManager : Service<ProfileManager>
+public class ProfileManager : Service<ProfileManager>, IInitializable
 {
     private bool hasUsernameSet;
     private bool hasAvtarSelect;
@@ -16,7 +17,7 @@ public class ProfileManager : Service<ProfileManager>
     public delegate void ProfileChange(Sprite avtar, string name);
     public static event ProfileChange OnProfileChange;
 
-    private void Start()
+    public IEnumerator Initialize()
     {
         hasUsernameSet = false;
         hasAvtarSelect = false;
@@ -51,6 +52,8 @@ public class ProfileManager : Service<ProfileManager>
         }
 
         OnProfileChange?.Invoke(profileAvtar, userName);
+
+        yield break;
     }
 
     public void SetUserName(string name)

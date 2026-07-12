@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Page : MonoBehaviour
 {
-    public bool IsOpen { get; private set; }
+    public bool IsOpen { get; protected set; }
 
     public virtual void Open()
     {

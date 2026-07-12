@@ -1,6 +1,7 @@
+using System.Collections;
 using UnityEngine;
 
-public class AudioManager : Service<AudioManager>
+public class AudioManager : Service<AudioManager>, IInitializable
 {
     [SerializeField] private AudioSource bgAudioSource;
     [SerializeField] private AudioSource sfxAudioSource;
@@ -26,7 +27,7 @@ public class AudioManager : Service<AudioManager>
     public bool IsBgMute { get { return isBgMute; } }
     public bool IsSFXMute { get { return isSfxMute; } }
 
-    private void Start()
+    public IEnumerator Initialize()
     {
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         if (SavingSystem.Exists(AudioData.FileName))
@@ -49,6 +50,8 @@ public class AudioManager : Service<AudioManager>
         sfxAudioSource.volume = sfxVolume;
         pieceKillAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
+
+        yield break;
     }
 
     public void ToggleBgMusicMute()

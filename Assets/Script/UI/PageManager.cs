@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 
 public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
@@ -23,6 +22,8 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
 
     protected override void Awake()
     {
+        base.Awake();
+
         foreach (PageEntry entry in pageEntries)
         {
             pages[entry.key] = entry.page;

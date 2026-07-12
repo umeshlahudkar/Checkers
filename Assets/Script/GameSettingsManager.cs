@@ -1,6 +1,7 @@
+using System.Collections;
 using UnityEngine;
 
-public class GameSettingsManager : Service<GameSettingsManager>
+public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
 {
     [SerializeField] private BoardThemeListSO boardThemeList;
 
@@ -12,7 +13,7 @@ public class GameSettingsManager : Service<GameSettingsManager>
     public bool ShowMoveHints { get { return showMoveHints; } }
     public bool VibrationEnabled { get { return vibrationEnabled; } }
 
-    private void Start()
+    public IEnumerator Initialize()
     {
         boardThemeIndex = 0;
         showMoveHints = true;
@@ -28,6 +29,8 @@ public class GameSettingsManager : Service<GameSettingsManager>
             vibrationEnabled = data.vibrationEnabled;
         }
 #endif
+
+        yield break;
     }
 
     public BoardThemeInfo GetBoardTheme(int index)
