@@ -47,9 +47,9 @@ public class TimerController : MonoBehaviour
                 return;
             }
 
-            activeCard.UpdateTimer(currentTime, turnTime);
+            bool isLowTime = activeCard.UpdateTimer(currentTime, turnTime);
 
-            if (!hasPlayedTickingSound && currentTime <= (turnTime - (turnTime * 0.75f)))
+            if (!hasPlayedTickingSound && isLowTime)
             {
                 hasPlayedTickingSound = true;
                 ServiceLocator.Get<AudioManager>().PlayTimeTickingSound();

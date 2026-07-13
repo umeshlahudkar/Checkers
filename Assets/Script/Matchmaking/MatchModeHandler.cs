@@ -116,8 +116,6 @@ public abstract class MatchModeHandler
 
     public virtual void SetProfile()
     {
-        ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
-
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
         if (string.IsNullOrEmpty(profileManager.GetUserName()))
         {

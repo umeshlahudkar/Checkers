@@ -25,10 +25,6 @@ public class OnlineModeHandler : MatchModeHandler
             ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Matchmaking);
             roomJoinTimeoutCoroutine = photonNetworkManager.RunCoroutine(RoomJoinTimeout());
         }
-        else
-        {
-            ServiceLocator.Get<PersistentUI>().massageDisplay.ShowMassage("No internet connection!");
-        }
     }
 
     private IEnumerator RoomJoinTimeout()
@@ -94,8 +90,6 @@ public class OnlineModeHandler : MatchModeHandler
         yield return new WaitForSeconds(1.5f);
 
         ServiceLocator.Get<CoinManager>().DeductCoin(OnlineStakeAmount);
-
-        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen("Starting Match");
 
         photonNetworkManager.CloseRoomAndLoadOnlineScene("GameplayScene");
     }

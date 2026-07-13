@@ -60,7 +60,6 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
             PhotonNetwork.ConnectUsingSettings();
         }
 
-        ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.MainMenuPage);
     }
 
@@ -184,10 +183,6 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InLobby)
         {
             PhotonNetwork.JoinLobby();
-        }
-        else
-        {
-            ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
 
         activeHandler?.OnConnectedToMaster();

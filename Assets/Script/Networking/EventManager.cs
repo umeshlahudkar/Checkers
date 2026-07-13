@@ -144,7 +144,6 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
     {
         if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
         {
-            ServiceLocator.Get<PersistentUI>().massageDisplay.ShowMassage("Connection lost!");
             StartCoroutine(ServiceLocator.Get<GameManager>().LoadMainMenu());
         }
     }

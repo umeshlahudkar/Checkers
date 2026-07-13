@@ -26,7 +26,7 @@ public class GamePage : Page
         opponentCard.anchoredPosition = new Vector2(0, height);
         ownCard.anchoredPosition = new Vector2(0, -height);
 
-        height = cardSpacing + (buttonsParent.rect.height / 2);
+        height += (opponentCard.rect.height / 2) + cardSpacing + (buttonsParent.rect.height / 2);
         buttonsParent.anchoredPosition = new Vector2(0, -height);
     }
 

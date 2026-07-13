@@ -63,7 +63,7 @@ public class PlayerCardUI : MonoBehaviour
         }
     }
 
-    public void UpdateTimer(float currentTime, float turnTime)
+    public bool UpdateTimer(float currentTime, float turnTime)
     {
         SetTimerText(currentTime);
 
@@ -76,6 +76,8 @@ public class PlayerCardUI : MonoBehaviour
         {
             StopBlinking();
         }
+
+        return shouldBlink;
     }
 
     public void ResetDisplay(float turnTime)
@@ -96,12 +98,12 @@ public class PlayerCardUI : MonoBehaviour
 
     private IEnumerator BlinkBg()
     {
+        float t = 0f;
         while (true)
         {
-            bg.color = blinkColor;
-            yield return new WaitForSeconds(blinkInterval);
-            bg.color = bgDefaultColor;
-            yield return new WaitForSeconds(blinkInterval);
+            t += Time.deltaTime / blinkInterval;
+            bg.color = Color.Lerp(bgDefaultColor, blinkColor, Mathf.PingPong(t, 1f));
+            yield return null;
         }
     }
 

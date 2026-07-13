@@ -84,7 +84,6 @@ public class GameManager : Service<GameManager>
             SwitchTurn();
 
             retryButton.SetActive(true);
-            ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
         else
         {
@@ -110,7 +109,6 @@ public class GameManager : Service<GameManager>
             SwitchTurn();
 
             retryButton.SetActive(true);
-            ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
     }
 
@@ -144,8 +142,6 @@ public class GameManager : Service<GameManager>
         retryButton.SetActive(false);
 
         yield return new WaitForSeconds(1f);
-
-        ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
     }
 
     private bool HasBothPlayerReady()
@@ -295,7 +291,6 @@ public class GameManager : Service<GameManager>
 
     public IEnumerator Rematch()
     {
-        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen("Starting match");
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();
@@ -347,7 +342,6 @@ public class GameManager : Service<GameManager>
     public IEnumerator LoadMainMenu()
     {
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen();
 
         yield return new WaitForSeconds(1f);
 
