@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Photon.Pun;
 
 public class GameManager : Service<GameManager>
@@ -8,6 +9,7 @@ public class GameManager : Service<GameManager>
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private TimerController timer;
+    [SerializeField] private GameObject retryButton;
 
     [SerializeField] private Gameplay.HumanPlayer humanPlayerPrefab;
     [SerializeField] private Gameplay.BotPlayer botPlayerPrefab;
@@ -23,8 +25,8 @@ public class GameManager : Service<GameManager>
 
     private readonly int maxTurnMissCount = 3;
 
-    public GameState GameState 
-    { 
+    public GameState GameState
+    {
         get { return gameState; }
     }
 
@@ -37,8 +39,8 @@ public class GameManager : Service<GameManager>
 
     public PieceType PieceType { get { return pieceType; } }
 
-    public bool IsReadyToLeaveGameplay 
-    { 
+    public bool IsReadyToLeaveGameplay
+    {
         get { return isReadyToLeaveGameplay; }
         set { isReadyToLeaveGameplay = value; }
     }
@@ -69,16 +71,19 @@ public class GameManager : Service<GameManager>
                 players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType);
             }
 
-            ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
+            ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
                       player2_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player2_PieceType));
+            ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
             boardGenerator.GenerateBoard();
+            ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
             boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
 
             currentTurn = 2;
             SwitchTurn();
 
-            ServiceLocator.Get<GameplayUIController>().SetUpScreens();
+            retryButton.SetActive(true);
             ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
         else
@@ -92,16 +97,19 @@ public class GameManager : Service<GameManager>
             players[1] = Instantiate(botPlayerPrefab, transform.position, Quaternion.identity);
             players[1].SetPlayer(2, player2_PieceType);
 
-            ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
+            ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
                       "Computer", ServiceLocator.Get<ProfileManager>().GetComputerAvtar());
+            ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
             boardGenerator.GenerateBoard();
+            ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
             boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
 
             currentTurn = 2;
             SwitchTurn();
 
-            ServiceLocator.Get<GameplayUIController>().SetUpScreens();
+            retryButton.SetActive(true);
             ServiceLocator.Get<PersistentUI>().loadingScreen.DeactivateLoadingScreen();
         }
     }
@@ -109,13 +117,16 @@ public class GameManager : Service<GameManager>
     private IEnumerator PrepareOnlineMode()
     {
         boardGenerator.GenerateBoard();
+        ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
         PhotonNetwork.Instantiate("Prefab/" + humanPlayerPrefab.name, transform.position, Quaternion.identity);
 
         PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
         PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
 
-        ServiceLocator.Get<GameplayUIController>().ShowPlayerInfo(player1.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player1.avtarIndex),
+        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
+        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player1.avtarIndex),
             player2.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player2.avtarIndex));
+        ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
         while(!HasBothPlayerReady())
         {
@@ -130,7 +141,7 @@ public class GameManager : Service<GameManager>
             gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
         }
 
-        ServiceLocator.Get<GameplayUIController>().SetUpScreens();
+        retryButton.SetActive(false);
 
         yield return new WaitForSeconds(1f);
 
@@ -186,7 +197,7 @@ public class GameManager : Service<GameManager>
 
             currentTurn = (currentTurn == 1) ? 2 : 1;
             pieceType = players[currentTurn - 1].PieceType;
-            ServiceLocator.Get<GameplayUIController>().SetActiveTurn(currentTurn);
+            ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
 
             if (!players[currentTurn - 1].CanPlay())
             {
@@ -205,7 +216,7 @@ public class GameManager : Service<GameManager>
         players[currentTurn - 1].ResetPlayer();
         currentTurn = nextTurn;
         timer.ResetTimer();
-        ServiceLocator.Get<GameplayUIController>().SetActiveTurn(currentTurn);
+        ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
 
         if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
         {
@@ -222,34 +233,24 @@ public class GameManager : Service<GameManager>
     {
         SetGameOver();
 
+        bool isLocalWin;
         if (gameMode == GameModeType.Multiplayer)
         {
-            if(players[winnerPlayerNumber-1].PhotonView.IsMine)
-            {
-                ServiceLocator.Get<GameplayUIController>().ToggleGameWinScreen(true);
-            }
-            else
-            {
-                ServiceLocator.Get<GameplayUIController>().ToggleGameLoseScreen(true);
-            }
+            isLocalWin = players[winnerPlayerNumber - 1].PhotonView.IsMine;
         }
-        else if (gameMode == GameModeType.VsPlayer)
+        else
         {
-            string winnerName = players[winnerPlayerNumber - 1].PieceType.ToString();
-            string loserName = players[(winnerPlayerNumber == 1 ? 2 : 1) - 1].PieceType.ToString();
+            isLocalWin = winnerPlayerNumber == 1;
+        }
 
-            ServiceLocator.Get<GameplayUIController>().ToggleGameOverScreen(true, winnerName, loserName);
-        }
-        else if (gameMode == GameModeType.VsBot)
+        if (isLocalWin)
         {
-            if (winnerPlayerNumber == 1)
-            {
-                ServiceLocator.Get<GameplayUIController>().ToggleGameWinScreen(true);
-            }
-            else
-            {
-                ServiceLocator.Get<GameplayUIController>().ToggleGameLoseScreen(true);
-            }
+            ServiceLocator.Get<CoinManager>().AddCoin(500);
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.WinPage);
+        }
+        else
+        {
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.LosePage);
         }
     }
 
@@ -289,7 +290,7 @@ public class GameManager : Service<GameManager>
         }
         ResetGameManager();
         ServiceLocator.Get<GameplayController>().ResetGameplay();
-        ServiceLocator.Get<GameplayUIController>().DisableAllScreen();
+        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
     }
 
     public IEnumerator Rematch()
@@ -298,6 +299,59 @@ public class GameManager : Service<GameManager>
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();
+    }
+
+    public void OnRetryButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+        StartCoroutine(Rematch());
+    }
+
+    public void OnPauseButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.QuitPage);
+    }
+
+    public void OnQuitCancelled()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GamePageManager>().GoBack();
+    }
+
+    public void OnQuitConfirmed()
+    {
+        if (gameMode == GameModeType.Multiplayer && PhotonNetwork.IsConnected)
+        {
+            IsReadyToLeaveGameplay = true;
+            if (PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.DestroyAll();
+            }
+
+            PhotonNetwork.AutomaticallySyncScene = false;
+            PhotonNetwork.LeaveRoom();
+            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+            ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+
+            StartCoroutine(LoadMainMenu());
+        }
+        else
+        {
+            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+            StartCoroutine(LoadMainMenu());
+        }
+    }
+
+    public IEnumerator LoadMainMenu()
+    {
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+        ServiceLocator.Get<PersistentUI>().loadingScreen.ActivateLoadingScreen();
+
+        yield return new WaitForSeconds(1f);
+
+        SceneManager.LoadScene(0);
     }
 }
 

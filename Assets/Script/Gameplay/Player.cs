@@ -31,7 +31,7 @@ namespace Gameplay
                 playerID = thisPhotonView.OwnerActorNr;
                 pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
                 ServiceLocator.Get<GameManager>().ListPlayer(this);
-                turnMissCount = 0;
+                SetTurnMissCount(0);
             }
         }
 
@@ -39,7 +39,13 @@ namespace Gameplay
         {
             this.playerID = playerNumber;
             this.pieceType = pieceType;
-            turnMissCount = 0;
+            SetTurnMissCount(0);
+        }
+
+        private void SetTurnMissCount(int value)
+        {
+            turnMissCount = value;
+            ServiceLocator.Get<GamePageManager>().GamePage.UpdateMissIndicators(playerID, turnMissCount);
         }
 
         public void ResetPlayer()
@@ -55,6 +61,7 @@ namespace Gameplay
                 PlayTurn();
                 return true;
             }
+
             return false;
         }
 
@@ -73,7 +80,7 @@ namespace Gameplay
 
         public void UpdateTurnMissCount()
         {
-            turnMissCount++;
+            SetTurnMissCount(turnMissCount + 1);
         }
 
         protected void ResetHighlightedBlocks()
@@ -105,7 +112,7 @@ namespace Gameplay
 
         private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
         {
-            turnMissCount = 0;
+            SetTurnMissCount(0);
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;
