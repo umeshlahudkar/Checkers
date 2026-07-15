@@ -17,6 +17,7 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
 
     private readonly Dictionary<TEnum, Page> pages = new();
     private readonly Stack<TEnum> pageStack = new();
+    private readonly List<Page> overlayPages = new();
     private Page currentPage;
     private TEnum currentKey;
 
@@ -40,8 +41,31 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
         SwitchTo(key);
     }
 
+    public void OpenPageAsOverlay(TEnum key)
+    {
+        Page page = pages[key];
+        overlayPages.Add(page);
+        page.Open();
+        OnPageOpened(key);
+    }
+
+    public void CloseOverlay(TEnum key)
+    {
+        Page page = pages[key];
+        if (overlayPages.Remove(page))
+        {
+            page.Close();
+            OnPageClosed();
+        }
+    }
+
     public void GoBack()
     {
+        if (overlayPages.Count > 0)
+        {
+            return;
+        }
+
         if (pageStack.Count > 0)
         {
             SwitchTo(pageStack.Pop());
@@ -54,6 +78,7 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
 
     public void CloseCurrentPage()
     {
+        CloseAllOverlays();
         currentPage?.Close();
         currentPage = null;
         pageStack.Clear();
@@ -69,16 +94,26 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
 
     public bool IsPageOpen(TEnum key)
     {
-        return currentPage != null && pages.TryGetValue(key, out Page page) && page == currentPage;
+        return pages.TryGetValue(key, out Page page) && (page == currentPage || overlayPages.Contains(page));
     }
 
     private void SwitchTo(TEnum key)
     {
+        CloseAllOverlays();
         currentPage?.Close();
         currentKey = key;
         currentPage = pages[key];
         currentPage.Open();
         OnPageOpened(key);
+    }
+
+    private void CloseAllOverlays()
+    {
+        for (int i = overlayPages.Count - 1; i >= 0; i--)
+        {
+            overlayPages[i].Close();
+        }
+        overlayPages.Clear();
     }
 
     protected virtual void OnPageOpened(TEnum key) { }

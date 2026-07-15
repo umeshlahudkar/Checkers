@@ -14,7 +14,7 @@ public class Bootstrapper : MonoBehaviour
 
     private IEnumerator Boot()
     {
-        yield return StartCoroutine(HandleSplashPage());
+        //yield return StartCoroutine(HandleSplashPage());
         yield return StartCoroutine(HandleLoadingPage());
 
         // Fire-and-forget: SceneLoader lives on a DontDestroyOnLoad object, so it keeps
@@ -36,11 +36,13 @@ public class Bootstrapper : MonoBehaviour
             ("Loading audio", ServiceLocator.Get<AudioManager>()),
         };
 
+        WaitForSeconds waitForSeconds = new WaitForSeconds(0.25f);
+
         for (int i = 0; i < steps.Length; i++)
         {
             loadingPage.SetProgress((float)i / steps.Length, steps[i].label + "...");
             yield return StartCoroutine(steps[i].service.Initialize());
-            yield return new WaitForSeconds(0.25f);
+            yield return waitForSeconds;
         }
 
         loadingPage.SetProgress(1f, "Ready");

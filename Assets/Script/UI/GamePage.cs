@@ -62,13 +62,13 @@ public class GamePage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-        StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
+        ServiceLocator.Get<GameManager>().StartRematch();
     }
 
     public void OnHomeButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.QuitPage);
+        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.QuitPage);
     }
 
 }

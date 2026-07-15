@@ -72,7 +72,7 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
                 ServiceLocator.Get<CoinManager>().DeductCoin(250, null, () =>
                 {
                     ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-                    StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
+                    ServiceLocator.Get<GameManager>().StartRematch();
                 });
                 break;
         }
@@ -137,7 +137,7 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
             ServiceLocator.Get<GameManager>().SetGameOver();
             ServiceLocator.Get<CoinManager>().AddCoin(500);
             ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
+            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
         }
     }
 

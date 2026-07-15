@@ -12,6 +12,6 @@ public class QuitPage : Page
     public void OnKeepPlayingButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<GamePageManager>().GoBack();
+        ServiceLocator.Get<GamePageManager>().CloseOverlay(GamePageType.QuitPage);
     }
 }

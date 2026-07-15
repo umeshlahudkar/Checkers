@@ -258,14 +258,14 @@ public class GameManager : Service<GameManager>
 
         if (isLocalWin)
         {
-            ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
+            //ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
             ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictory(loserName, GetRemainingPieceCount(winnerPlayerNumber), matchWinCoinReward);
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
+            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
         }
         else
         {
             ServiceLocator.Get<GamePageManager>().ResultPage.ShowDefeat(winnerName, reason);
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
+            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
         }
     }
 
@@ -274,6 +274,18 @@ public class GameManager : Service<GameManager>
         return playerNumber == 2
             ? ServiceLocator.Get<GameplayController>().whitePieces.Count
             : ServiceLocator.Get<GameplayController>().blackPieces.Count;
+    }
+
+    [ContextMenu("Force Win")]
+    private void ForceWin()
+    {
+        GameOver(1, "debug win");
+    }
+
+    [ContextMenu("Force Lose")]
+    private void ForceLose()
+    {
+        GameOver(2, "debug loss");
     }
 
     public void SetGameOver()
@@ -315,17 +327,18 @@ public class GameManager : Service<GameManager>
         ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
     }
 
-    public IEnumerator Rematch()
+    public void StartRematch()
+    {
+        ResetGameplay();
+        InitializeGame();
+        //StartCoroutine(Rematch());
+    }
+
+    private IEnumerator Rematch()
     {
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();
-    }
-
-    public void OnQuitCancelled()
-    {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<GamePageManager>().GoBack();
     }
 
     public void OnQuitConfirmed()

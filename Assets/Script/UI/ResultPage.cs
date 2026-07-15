@@ -61,7 +61,8 @@ public class ResultPage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-        StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
+
+        ServiceLocator.Get<GameManager>().StartRematch();
     }
 
     public void OnMainMenuButtonClick()
