@@ -16,11 +16,16 @@ public class GamePage : Page
 
     public void PositionCardsAroundBoard()
     {
-        RectTransform opponentCard = (RectTransform)player2Card.transform;
-        RectTransform ownCard = (RectTransform)player1Card.transform;
+       
+        RectTransform opponentCard = player2Card.RectTransform;
+        RectTransform ownCard = player1Card.RectTransform;
 
         opponentCard.sizeDelta = new Vector2(boardBorder.rect.width, opponentCard.sizeDelta.y);
         ownCard.sizeDelta = new Vector2(boardBorder.rect.width, ownCard.sizeDelta.y);
+        buttonsParent.sizeDelta = new Vector2(boardBorder.rect.width, ownCard.sizeDelta.y);
+
+        return;
+
 
         float height = (boardBorder.rect.height / 2) + cardSpacing + (opponentCard.rect.height / 2);
         opponentCard.anchoredPosition = new Vector2(0, height);

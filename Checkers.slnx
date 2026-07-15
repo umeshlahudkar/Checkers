@@ -11,6 +11,6 @@
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
   <Project Path="PunDemos.DemoHubEditor.csproj" />
   <Project Path="PhotonUnityNetworking.Utilities.PhotonPlayer.Editor.csproj" />
-  <Project Path="PhotonUnityNetworking.Utilities.Culling.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="PhotonUnityNetworking.Utilities.Culling.Editor.csproj" />
 </Solution>

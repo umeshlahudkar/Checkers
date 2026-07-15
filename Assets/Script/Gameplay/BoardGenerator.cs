@@ -1,5 +1,7 @@
-using UnityEngine;
 using Photon.Pun;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class BoardGenerator : MonoBehaviour
 {
@@ -28,6 +30,118 @@ public class BoardGenerator : MonoBehaviour
     [Header("Board Canvas")]
     [SerializeField] private RectTransform canvasRect;
 
+    [Header("Board Canvas")]
+    [SerializeField] private RectTransform layout;
+
+    public void GenerateBoard()
+    {
+        Canvas.ForceUpdateCanvases(); // flushes pending canvas updates
+        LayoutRebuilder.ForceRebuildLayoutImmediate(layout); // rootLayoutRect = the RectTransform with your VerticalLayoutGroup
+
+        blockHolderParent.localPosition = Vector3.zero;
+        pieceHolderParent.localPosition = Vector3.zero;
+
+        float screenWidth = canvasRect.rect.width;
+        float totalWidth = screenWidth * 0.90f;
+
+        blockSize = (totalWidth / 8);
+
+        float startX = -((blockSize * colums) / 2 + (blockSize / 2));
+        float startY = ((blockSize * rows) / 2) - (blockSize / 2);
+
+        float currentX = startX;
+        float currentY = startY;
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < colums; j++)
+            {
+                Block block = Instantiate(blockPrefab, blockHolderParent);
+                block.gameObject.name = "Block " + i + " " + j;
+                block.ThisTransform.localPosition = new Vector3(currentX, currentY, 0);
+                block.ThisTransform.sizeDelta = new Vector2(blockSize, blockSize);
+
+                if ((i + j) % 2 == 0)
+                {
+                    block.SetBlock(i, j, whiteBlockSprite);
+                }
+                else
+                {
+                    block.SetBlock(i, j, blackBlockSprite);
+                }
+
+                ServiceLocator.Get<GameplayController>().board[i, j] = block;
+                currentX += blockSize;
+            }
+
+            currentX = startX;
+            currentY -= blockSize;
+        }
+
+        blockHolderParent.localPosition += new Vector3(blockSize, 0, 0);
+        pieceHolderParent.localPosition += new Vector3(blockSize, 0, 0);
+
+        float borderX = (blockSize * colums) + (blockSize / 2);
+        float borderY = (blockSize * rows) + (blockSize / 2);
+
+        boardBorder.sizeDelta = new Vector2(borderX, borderY);
+        //StartCoroutine(Temp());
+    }
+
+    public IEnumerator Temp()
+    {
+        yield return null;
+
+        blockHolderParent.localPosition = Vector3.zero;
+        pieceHolderParent.localPosition = Vector3.zero;
+
+        float screenWidth = canvasRect.rect.width;
+        float totalWidth = screenWidth * 0.90f;
+
+        blockSize = (totalWidth / 8);
+
+        float startX = -((blockSize * colums) / 2 + (blockSize / 2));
+        float startY = ((blockSize * rows) / 2) - (blockSize / 2);
+
+        float currentX = startX;
+        float currentY = startY;
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < colums; j++)
+            {
+                Block block = Instantiate(blockPrefab, blockHolderParent);
+                block.gameObject.name = "Block " + i + " " + j;
+                block.ThisTransform.localPosition = new Vector3(currentX, currentY, 0);
+                block.ThisTransform.sizeDelta = new Vector2(blockSize, blockSize);
+
+                if ((i + j) % 2 == 0)
+                {
+                    block.SetBlock(i, j, whiteBlockSprite);
+                }
+                else
+                {
+                    block.SetBlock(i, j, blackBlockSprite);
+                }
+
+                ServiceLocator.Get<GameplayController>().board[i, j] = block;
+                currentX += blockSize;
+            }
+
+            currentX = startX;
+            currentY -= blockSize;
+        }
+
+        blockHolderParent.localPosition += new Vector3(blockSize, 0, 0);
+        pieceHolderParent.localPosition += new Vector3(blockSize, 0, 0);
+
+        float borderX = (blockSize * colums) + (blockSize / 2);
+        float borderY = (blockSize * rows) + (blockSize / 2);
+
+        boardBorder.sizeDelta = new Vector2(borderX, borderY);
+    }
+
+    /*
     public void GenerateBoard()
     {
         blockHolderParent.localPosition = Vector3.zero;
@@ -78,7 +192,7 @@ public class BoardGenerator : MonoBehaviour
 
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
     }
-
+    */
     public void GeneratePieces()
     {
         for(int i = 0; i < rows; i++)

@@ -6,6 +6,7 @@ using TMPro;
 
 public class PlayerCardUI : MonoBehaviour
 {
+    [SerializeField] private RectTransform rectTransform;
     [SerializeField] private Image avatarImage;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI timerText;
@@ -22,6 +23,8 @@ public class PlayerCardUI : MonoBehaviour
     private readonly List<GameObject> turnIndicators = new();
     private Color bgDefaultColor;
     private Coroutine blinkCoroutine;
+
+    public RectTransform RectTransform { get { return rectTransform; } }
 
     private void Awake()
     {
