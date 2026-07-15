@@ -22,6 +22,11 @@ public class ModeSelectionPage : Page
 
         foreach (ModeInfo info in modeList.modes)
         {
+            if (!info.isActive)
+            {
+                continue;
+            }
+
             ModeTile tile = Instantiate(tileTemplate, tileContainer);
             tile.gameObject.SetActive(true);
             tile.Setup(info, OnModeSelected);
