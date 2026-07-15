@@ -130,13 +130,14 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        bool canOpenGameOverScreen = !(ServiceLocator.Get<GamePageManager>().IsPageOpen(GamePageType.WinPage) || ServiceLocator.Get<GamePageManager>().IsPageOpen(GamePageType.LosePage));
+        bool canOpenGameOverScreen = !ServiceLocator.Get<GamePageManager>().IsPageOpen(GamePageType.ResultPage);
 
         if(canOpenGameOverScreen)
         {
             ServiceLocator.Get<GameManager>().SetGameOver();
             ServiceLocator.Get<CoinManager>().AddCoin(500);
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.WinPage);
+            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
         }
     }
 

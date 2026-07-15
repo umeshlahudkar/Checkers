@@ -2,7 +2,6 @@
 public enum GamePageType
 {
     GamePage,
-    WinPage,
-    LosePage,
+    ResultPage,
     QuitPage
 }

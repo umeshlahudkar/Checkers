@@ -57,4 +57,18 @@ public class GamePage : Page
         player1Card.SetTurnActive(playerNumber == 1);
         player2Card.SetTurnActive(playerNumber == 2);
     }
+
+    public void OnRetryButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+        StartCoroutine(ServiceLocator.Get<GameManager>().Rematch());
+    }
+
+    public void OnHomeButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.QuitPage);
+    }
+
 }

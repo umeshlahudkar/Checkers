@@ -24,6 +24,10 @@ public class GameManager : Service<GameManager>
     private bool isReadyToLeaveGameplay = false;
 
     private readonly int maxTurnMissCount = 3;
+    private readonly int matchWinCoinReward = 500;
+
+    private string player1DisplayName;
+    private string player2DisplayName;
 
     public GameState GameState
     {
@@ -71,6 +75,9 @@ public class GameManager : Service<GameManager>
                 players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType);
             }
 
+            player1DisplayName = player1_PieceType.ToString();
+            player2DisplayName = player2_PieceType.ToString();
+
             ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
             ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
                       player2_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player2_PieceType));
@@ -96,6 +103,9 @@ public class GameManager : Service<GameManager>
             players[1] = Instantiate(botPlayerPrefab, transform.position, Quaternion.identity);
             players[1].SetPlayer(2, player2_PieceType);
 
+            player1DisplayName = ServiceLocator.Get<ProfileManager>().GetUserName();
+            player2DisplayName = "Computer";
+
             ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
             ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
                       "Computer", ServiceLocator.Get<ProfileManager>().GetComputerAvtar());
@@ -120,6 +130,9 @@ public class GameManager : Service<GameManager>
 
         PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
         PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
+
+        player1DisplayName = player1.userName;
+        player2DisplayName = player2.userName;
 
         ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
         ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player1.avtarIndex),
@@ -157,7 +170,7 @@ public class GameManager : Service<GameManager>
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
             {
                 int winner = currentTurn == 1 ? 2 : 1;
-                gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner);
+                gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "out of time");
             }
             else
             {
@@ -170,7 +183,7 @@ public class GameManager : Service<GameManager>
             if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
             {
                 int winner = currentTurn == 1 ? 2 : 1;
-                GameOver(winner);
+                GameOver(winner, "out of time");
             }
             else
             {
@@ -198,7 +211,7 @@ public class GameManager : Service<GameManager>
             if (!players[currentTurn - 1].CanPlay())
             {
                 int winner = (currentTurn == 1) ? 2 : 1;
-                GameOver(winner);
+                GameOver(winner, "no legal moves left");
                 return;
             }
 
@@ -217,7 +230,7 @@ public class GameManager : Service<GameManager>
         if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
         {
             int winner = (currentTurn == 1) ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner);
+            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "no legal moves left");
             return;
         }
 
@@ -225,7 +238,7 @@ public class GameManager : Service<GameManager>
     }
 
     [PunRPC]
-    public void GameOver(int winnerPlayerNumber)
+    public void GameOver(int winnerPlayerNumber, string reason)
     {
         SetGameOver();
 
@@ -239,15 +252,28 @@ public class GameManager : Service<GameManager>
             isLocalWin = winnerPlayerNumber == 1;
         }
 
+        int loserPlayerNumber = winnerPlayerNumber == 1 ? 2 : 1;
+        string winnerName = winnerPlayerNumber == 1 ? player1DisplayName : player2DisplayName;
+        string loserName = loserPlayerNumber == 1 ? player1DisplayName : player2DisplayName;
+
         if (isLocalWin)
         {
-            ServiceLocator.Get<CoinManager>().AddCoin(500);
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.WinPage);
+            ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
+            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictory(loserName, GetRemainingPieceCount(winnerPlayerNumber), matchWinCoinReward);
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
         }
         else
         {
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.LosePage);
+            ServiceLocator.Get<GamePageManager>().ResultPage.ShowDefeat(winnerName, reason);
+            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.ResultPage);
         }
+    }
+
+    private int GetRemainingPieceCount(int playerNumber)
+    {
+        return playerNumber == 2
+            ? ServiceLocator.Get<GameplayController>().whitePieces.Count
+            : ServiceLocator.Get<GameplayController>().blackPieces.Count;
     }
 
     public void SetGameOver()
@@ -294,19 +320,6 @@ public class GameManager : Service<GameManager>
         ResetGameplay();
         yield return new WaitForSeconds(2f);
         InitializeGame();
-    }
-
-    public void OnRetryButtonClick()
-    {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-        StartCoroutine(Rematch());
-    }
-
-    public void OnPauseButtonClick()
-    {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.QuitPage);
     }
 
     public void OnQuitCancelled()
