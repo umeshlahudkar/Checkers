@@ -52,6 +52,18 @@ public class GamePage : Page
         player2Card.InitTurnIndicators(maxMissCount);
     }
 
+    public void InitPiecesLeft(int player1Total, int player2Total)
+    {
+        player1Card.InitPiecesLeft(player1Total);
+        player2Card.InitPiecesLeft(player2Total);
+    }
+
+    public void UpdatePiecesLeft(int player1PiecesLeft, int player2PiecesLeft)
+    {
+        player1Card.SetPiecesLeft(player1PiecesLeft);
+        player2Card.SetPiecesLeft(player2PiecesLeft);
+    }
+
     public void UpdateMissIndicators(int playerNumber, int missCount)
     {
         GetPlayerCard(playerNumber).SetMissCount(missCount);

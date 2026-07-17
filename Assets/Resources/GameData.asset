@@ -12,11 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 638bb518134b9a649bb5e2b33ec32365, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
+  gameMode: 3
   ownPlayer:
-    userName: 
-    avtarIndex: 0
-    profileAvtar: {fileID: 0}
+    userName: Guest_123
+    avatar: {fileID: -2834533167014588821, guid: 6a85261219de1b948aec181913276a54, type: 3}
+    pieceType: 2
   opponentPlayer:
-    userName: 
-    avtarIndex: 0
-    profileAvtar: {fileID: 0}
+    userName: Computer
+    avatar: {fileID: 21300000, guid: b48ca84c3ceec0541a9ef3c03ae083b1, type: 3}
+    pieceType: 1
+  botDifficulty: 2

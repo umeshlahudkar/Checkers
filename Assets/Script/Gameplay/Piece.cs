@@ -79,14 +79,18 @@ public class Piece : MonoBehaviour
 
         ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
 
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+
         if (playerID == 2)
         {
-            ServiceLocator.Get<GameplayController>().whitePieces.Remove(this);
+            gameplayController.whitePieces.Remove(this);
         }
         else
         {
-            ServiceLocator.Get<GameplayController>().blackPieces.Remove(this);
+            gameplayController.blackPieces.Remove(this);
         }
+
+        ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
 
         Destroy(gameObject);
     }

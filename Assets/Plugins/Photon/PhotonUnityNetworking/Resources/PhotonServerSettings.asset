@@ -45,6 +45,8 @@ MonoBehaviour:
   - SetCrownKing
   - SetPiece
   - UpdateGrid
+  - CrownPieceAt
+  - DestroyPieceAt
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

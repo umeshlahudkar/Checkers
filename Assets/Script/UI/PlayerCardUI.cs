@@ -10,6 +10,7 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private Image avatarImage;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI timerText;
+    [SerializeField] private TextMeshProUGUI piecesLeftText;
     [SerializeField] private GameObject border;
     [SerializeField] private Image bg;
     [SerializeField] private Transform turnIndicatorParent;
@@ -23,6 +24,7 @@ public class PlayerCardUI : MonoBehaviour
     private readonly List<GameObject> turnIndicators = new();
     private Color bgDefaultColor;
     private Coroutine blinkCoroutine;
+    private int totalPieces;
 
     public RectTransform RectTransform { get { return rectTransform; } }
 
@@ -40,6 +42,17 @@ public class PlayerCardUI : MonoBehaviour
     public void SetTurnActive(bool isActive)
     {
         border.SetActive(isActive);
+    }
+
+    public void InitPiecesLeft(int total)
+    {
+        totalPieces = total;
+        SetPiecesLeft(total);
+    }
+
+    public void SetPiecesLeft(int count)
+    {
+        piecesLeftText.text = $"Pieces : {count}/{totalPieces}";
     }
 
     public void InitTurnIndicators(int maxMissCount)

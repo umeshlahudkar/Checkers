@@ -101,6 +101,7 @@ public class GameManager : Service<GameManager>
         boardGenerator.GenerateBoard();
         ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
         boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
+        ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
 
         currentTurn = 2;
         SwitchTurn();
@@ -134,6 +135,7 @@ public class GameManager : Service<GameManager>
         // White), so every client builds the identical board locally instead of spawning pieces over
         // the network.
         boardGenerator.GeneratePieces(PieceType.Black, PieceType.White);
+        ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
 
         currentTurn = 1;
         if (PhotonNetwork.IsMasterClient)
