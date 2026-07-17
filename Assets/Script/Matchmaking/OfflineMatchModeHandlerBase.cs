@@ -1,3 +1,5 @@
+using Photon.Realtime;
+
 public class OfflineMatchModeHandlerBase : MatchModeHandler
 {
     public override GameModeType Mode => GameModeType.VsPlayer;
@@ -10,10 +12,28 @@ public class OfflineMatchModeHandlerBase : MatchModeHandler
     public override void StartMatch()
     {
         gameDataSO.gameMode = Mode;
-        photonNetworkManager.StartOfflineMatch();
+        SetupPlayerInfo();
+
+        if(photonNetworkManager.IsConnected)
+        {
+            photonNetworkManager.Disconnect();
+        }
+        else
+        {
+            StartGameplayScene();
+        }
     }
 
-    public override void OnJoinedRoom()
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        StartGameplayScene();
+    }
+
+    protected virtual void SetupPlayerInfo()
+    {
+    }
+
+    private void StartGameplayScene()
     {
         ServiceLocator.Get<SceneLoader>().LoadScene("GameplayScene");
     }

@@ -126,6 +126,8 @@ public class Piece : MonoBehaviour
 
     public PhotonView PhotonView { get { return photonView; } }
 
+    public RectTransform ThisTransform { get { return thisTransform; } }
+
     public void OnClick()
     {
         if(playerID == ServiceLocator.Get<GameManager>().CurrentTurn)

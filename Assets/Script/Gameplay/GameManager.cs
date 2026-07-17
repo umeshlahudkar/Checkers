@@ -66,60 +66,41 @@ public class GameManager : Service<GameManager>
         }
         else if (gameMode == GameModeType.VsPlayer)
         {
-            PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
-            PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
-
-            for (int i = 0; i < 2; i++)
-            {
-                players[i] = Instantiate(humanPlayerPrefab, transform.position, Quaternion.identity);
-                players[i].SetPlayer(i + 1, (i + 1 == 1) ? player1_PieceType:player2_PieceType);
-            }
-
-            player1DisplayName = player1_PieceType.ToString();
-            player2DisplayName = player2_PieceType.ToString();
-
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
-            ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player1_PieceType),
-                      player2_PieceType.ToString(), ServiceLocator.Get<ProfileManager>().GetPieceAvtar(player2_PieceType));
-            ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
-
-            boardGenerator.GenerateBoard();
-            ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
-            boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
-
-            currentTurn = 2;
-            SwitchTurn();
-
-            retryButton.SetActive(true);
+            SetupLocalMatch(humanPlayerPrefab, humanPlayerPrefab);
         }
         else
         {
-            PieceType player1_PieceType = (PieceType)Random.Range(1, 3);
-            PieceType player2_PieceType = (player1_PieceType == PieceType.White) ? PieceType.Black : PieceType.White;
-
-            players[0] = Instantiate(humanPlayerPrefab, transform.position, Quaternion.identity);
-            players[0].SetPlayer(1, player1_PieceType);
-
-            players[1] = Instantiate(botPlayerPrefab, transform.position, Quaternion.identity);
-            players[1].SetPlayer(2, player2_PieceType);
-
-            player1DisplayName = ServiceLocator.Get<ProfileManager>().GetUserName();
-            player2DisplayName = "Computer";
-
-            ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
-            ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(ServiceLocator.Get<ProfileManager>().GetUserName(), ServiceLocator.Get<ProfileManager>().GetProfileAvtar(),
-                      "Computer", ServiceLocator.Get<ProfileManager>().GetComputerAvtar());
-            ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
-
-            boardGenerator.GenerateBoard();
-            ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
-            boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
-
-            currentTurn = 2;
-            SwitchTurn();
-
-            retryButton.SetActive(true);
+            SetupLocalMatch(humanPlayerPrefab, botPlayerPrefab);
         }
+    }
+
+    private void SetupLocalMatch(Gameplay.Player ownPlayerPrefab, Gameplay.Player opponentPlayerPrefab)
+    {
+        PlayerInfo ownInfo = gameDataSO.ownPlayer;
+        PlayerInfo opponentInfo = gameDataSO.opponentPlayer;
+
+        players[0] = Instantiate(ownPlayerPrefab, transform.position, Quaternion.identity);
+        players[0].SetPlayer(1, ownInfo.pieceType);
+
+        players[1] = Instantiate(opponentPlayerPrefab, transform.position, Quaternion.identity);
+        players[1].SetPlayer(2, opponentInfo.pieceType);
+
+        player1DisplayName = ownInfo.userName;
+        player2DisplayName = opponentInfo.userName;
+
+        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
+        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar,
+                  opponentInfo.userName, opponentInfo.avatar);
+        ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
+
+        boardGenerator.GenerateBoard();
+        ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
+        boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
+
+        currentTurn = 2;
+        SwitchTurn();
+
+        retryButton.SetActive(true);
     }
 
     private IEnumerator PrepareOnlineMode()
@@ -128,15 +109,15 @@ public class GameManager : Service<GameManager>
         ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
         PhotonNetwork.Instantiate("Prefab/" + humanPlayerPrefab.name, transform.position, Quaternion.identity);
 
-        PlayerInfo player1 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
-        PlayerInfo player2 = gameDataSO.ownPlayer.isMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
+        PlayerInfo player1 = PhotonNetwork.IsMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
+        PlayerInfo player2 = PhotonNetwork.IsMasterClient ? gameDataSO.opponentPlayer : gameDataSO.ownPlayer;
 
         player1DisplayName = player1.userName;
         player2DisplayName = player2.userName;
 
         ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
-        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player1.avtarIndex),
-            player2.userName, ServiceLocator.Get<ProfileManager>().GetAvtar(player2.avtarIndex));
+        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1.userName, player1.avatar,
+            player2.userName, player2.avatar);
         ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
         while(!HasBothPlayerReady())

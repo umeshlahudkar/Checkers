@@ -52,6 +52,11 @@ public class MatchmakingPage : Page
         statusText.text = "Searching for opponent...";
     }
 
+    public void UpdateRemainingTime(int secondsLeft)
+    {
+        statusText.text = $"Searching for opponent... {secondsLeft}s";
+    }
+
     public void ShowOpponentFound(string opponentName, Sprite opponentAvtar)
     {
         backButton.enabled = false;
@@ -62,6 +67,16 @@ public class MatchmakingPage : Page
 
         searchingSpinner.SetActive(false);
         statusText.text = "Opponent found — starting...";
+
+        ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
+    }
+
+    public void ShowFailed(string message)
+    {
+        backButton.enabled = true;
+
+        searchingSpinner.SetActive(false);
+        statusText.text = message;
 
         ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
     }

@@ -18,7 +18,7 @@ MonoBehaviour:
     modeName: vs Computer
     modeDescription: Practice against a bot.
     modeIcon: {fileID: -2375545498015344480, guid: fda98e1a68d6f0c46892b77d01d5e30c, type: 3}
-  - isActive: 0
+  - isActive: 1
     mode: 1
     modeName: Online Match
     modeDescription: 

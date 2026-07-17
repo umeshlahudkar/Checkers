@@ -26,6 +26,10 @@ public abstract class MatchModeHandler
     {
     }
 
+    public virtual void Update()
+    {
+    }
+
     public virtual void OnJoinedRoom()
     {
     }
@@ -38,9 +42,7 @@ public abstract class MatchModeHandler
     {
     }
 
-    public virtual void OnOpponentFound(Player opponentPlayer, int avtarIndex)
-    {
-    }
+
 
     // Connection callbacks
     public virtual void OnConnected()
@@ -85,6 +87,10 @@ public abstract class MatchModeHandler
     }
 
     // In-room callbacks
+    public virtual void OnPlayerEnteredRoom(Player newPlayer)
+    {
+    }
+
     public virtual void OnPlayerLeftRoom(Player otherPlayer)
     {
     }

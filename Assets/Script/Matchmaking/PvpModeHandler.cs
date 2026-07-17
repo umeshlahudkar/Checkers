@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public class PvpModeHandler : OfflineMatchModeHandlerBase
 {
     public PvpModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
@@ -6,4 +8,26 @@ public class PvpModeHandler : OfflineMatchModeHandlerBase
     }
 
     public override GameModeType Mode => GameModeType.VsPlayer;
+
+    protected override void SetupPlayerInfo()
+    {
+        ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
+
+        PieceType ownPieceType = (PieceType)Random.Range(1, 3);
+        PieceType opponentPieceType = (ownPieceType == PieceType.White) ? PieceType.Black : PieceType.White;
+
+        gameDataSO.ownPlayer = new PlayerInfo
+        {
+            userName = ownPieceType.ToString(),
+            avatar = profileManager.GetPieceAvtar(ownPieceType),
+            pieceType = ownPieceType
+        };
+
+        gameDataSO.opponentPlayer = new PlayerInfo
+        {
+            userName = opponentPieceType.ToString(),
+            avatar = profileManager.GetPieceAvtar(opponentPieceType),
+            pieceType = opponentPieceType
+        };
+    }
 }

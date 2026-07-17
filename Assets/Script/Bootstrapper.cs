@@ -7,6 +7,12 @@ public class Bootstrapper : MonoBehaviour
     [SerializeField] private string nextSceneName = "MainScene";
     [SerializeField] private float splashDuration = 1f;
 
+    private void Awake()
+    {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 60;
+    }
+
     private void Start()
     {
         StartCoroutine(Boot());

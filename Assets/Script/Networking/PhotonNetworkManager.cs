@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-using System;
 using ExitGames.Client.Photon;
+using Unity.Mathematics;
 
 public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 {
@@ -45,32 +45,17 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
         activeHandler = null;
     }
 
+    private void Update()
+    {
+        activeHandler?.Update();
+    }
+
     private void OnDestroy()
     {
         if (ServiceLocator.TryGet<PhotonNetworkManager>(out PhotonNetworkManager current) && current == this)
         {
             ServiceLocator.Unregister<PhotonNetworkManager>();
         }
-    }
-
-    private void Start()
-    {
-        if (!PhotonNetwork.IsConnected)
-        {
-            PhotonNetwork.ConnectUsingSettings();
-        }
-
-        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.MainMenuPage);
-    }
-
-    public Coroutine RunCoroutine(IEnumerator routine)
-    {
-        return StartCoroutine(routine);
-    }
-
-    public void StopRunningCoroutine(Coroutine routine)
-    {
-        StopCoroutine(routine);
     }
 
     public void StartMatch(GameModeType mode)
@@ -94,37 +79,11 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
         activeHandler?.CancelMatch();
     }
 
-    public void SetProfile()
-    {
-        activeHandler?.SetProfile();
-    }
-
-    public bool RequestJoinRandomRoom()
-    {
-        return PhotonNetwork.IsConnectedAndReady && PhotonNetwork.JoinRandomRoom();
-    }
-
-    private Action onDisconnected;
-
-    public void StartOfflineMatch()
-    {
-        if(IsConnected)
-        {
-            onDisconnected = CreateOfflineRom;
-            Disconnect();
-        }
-        else
-        {
-            onDisconnected = null;
-            CreateOfflineRom();
-        }
-    }
-
-    private void CreateOfflineRom()
+    public void Connect()
     {
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
 
-        PhotonNetwork.OfflineMode = true;
+        PhotonNetwork.OfflineMode = false;
         PhotonNetwork.NickName = profileManager.UserName;
 
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
@@ -134,17 +93,66 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
         };
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-        PhotonNetwork.CreateRoom(null, new RoomOptions { MaxPlayers = 2 });
+        PhotonNetwork.ConnectUsingSettings();
+    }
+
+    public void CreateRoom()
+    {
+        string roomName = "Online_" + (UnityEngine.Random.Range(1000, 9999)).ToString();
+
+        RoomOptions roomOptions = new RoomOptions
+        {
+            MaxPlayers = 2,
+            IsVisible = true,
+            IsOpen = true
+        };
+
+        PhotonNetwork.CreateRoom(roomName, roomOptions);
+    }
+
+    public bool JoinRandomRoom()
+    {
+        if(IsConnectedAndReady)
+        {
+            return PhotonNetwork.JoinRandomRoom();
+        }
+
+        return false;
+    }
+
+    public bool IsRoomFull => PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.PlayerCount >= PhotonNetwork.CurrentRoom.MaxPlayers;
+
+    public PlayerInfo GetOwnPlayerInfo()
+    {
+        return BuildPlayerInfo(PhotonNetwork.LocalPlayer);
+    }
+
+    public PlayerInfo GetOpponentPlayerInfo()
+    {
+        foreach (Player player in PhotonNetwork.CurrentRoom.Players.Values)
+        {
+            if (!player.IsLocal)
+            {
+                return BuildPlayerInfo(player);
+            }
+        }
+
+        return default;
+    }
+
+    private PlayerInfo BuildPlayerInfo(Player player)
+    {
+        int avtarIndex = player.CustomProperties.TryGetValue("avtarID", out object avtarID) ? (int)avtarID : -1;
+
+        return new PlayerInfo
+        {
+            userName = player.NickName,
+            avatar = ServiceLocator.Get<ProfileManager>().GetAvtar(avtarIndex)
+        };
     }
 
     public void LeaveRoom()
     {
-        if (PhotonNetwork.OfflineMode)
-        {
-            PhotonNetwork.OfflineMode = false;
-            return;
-        }
-
         if (PhotonNetwork.InRoom)
         {
             PhotonNetwork.LeaveRoom();
@@ -164,7 +172,7 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
     }
 
 
-    private void Disconnect()
+    public void Disconnect()
     {
         PhotonNetwork.Disconnect();
     }
@@ -172,89 +180,66 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
     public override void OnConnected()
     {
         Debug.Log("[PhotonNetworkManager] OnConnected");
-
         activeHandler?.OnConnected();
     }
 
     public override void OnConnectedToMaster()
     {
         Debug.Log($"[PhotonNetworkManager] OnConnectedToMaster - inLobby: {PhotonNetwork.InLobby}");
-
-        if (!PhotonNetwork.InLobby)
-        {
-            PhotonNetwork.JoinLobby();
-        }
-
         activeHandler?.OnConnectedToMaster();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
         Debug.Log($"[PhotonNetworkManager] OnDisconnected - cause: {cause}");
-
-        if(cause == DisconnectCause.DisconnectByClientLogic)
-        {
-            onDisconnected?.Invoke();
-        }
-        else
-        {
-            activeHandler?.OnDisconnected(cause);
-        }
+        activeHandler?.OnDisconnected(cause);
     }
 
     public override void OnRegionListReceived(RegionHandler regionHandler)
     {
         Debug.Log("[PhotonNetworkManager] OnRegionListReceived");
-
         activeHandler?.OnRegionListReceived(regionHandler);
     }
 
     public override void OnCustomAuthenticationResponse(Dictionary<string, object> data)
     {
         Debug.Log("[PhotonNetworkManager] OnCustomAuthenticationResponse");
-
         activeHandler?.OnCustomAuthenticationResponse(data);
     }
 
     public override void OnCustomAuthenticationFailed(string debugMessage)
     {
         Debug.Log($"[PhotonNetworkManager] OnCustomAuthenticationFailed - message: {debugMessage}");
-
         activeHandler?.OnCustomAuthenticationFailed(debugMessage);
     }
 
     public override void OnFriendListUpdate(List<FriendInfo> friendList)
     {
         Debug.Log("[PhotonNetworkManager] OnFriendListUpdate");
-
         activeHandler?.OnFriendListUpdate(friendList);
     }
 
     public override void OnJoinedLobby()
     {
         Debug.Log("[PhotonNetworkManager] OnJoinedLobby");
-
         activeHandler?.SetProfile();
     }
 
     public override void OnLeftLobby()
     {
         Debug.Log("[PhotonNetworkManager] OnLeftLobby");
-
         activeHandler?.OnLeftLobby();
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
         Debug.Log($"[PhotonNetworkManager] OnRoomListUpdate - count: {roomList.Count}");
-
         activeHandler?.OnRoomListUpdate(roomList);
     }
 
     public override void OnLobbyStatisticsUpdate(List<TypedLobbyInfo> lobbyStatistics)
     {
         Debug.Log("[PhotonNetworkManager] OnLobbyStatisticsUpdate");
-
         activeHandler?.OnLobbyStatisticsUpdate(lobbyStatistics);
     }
 
@@ -267,48 +252,22 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
         Debug.Log($"[PhotonNetworkManager] OnJoinRoomFailed - code: {returnCode}, message: {message}");
-
         activeHandler?.OnJoinRoomFailed(returnCode, message);
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
-        Debug.Log($"[PhotonNetworkManager] OnJoinRandomFailed - code: {returnCode}, message: {message} - creating a new room");
-
-        RoomOptions options = new RoomOptions();
-        options.MaxPlayers = 2;
-        string roomName = "Room " + UnityEngine.Random.Range(1, 1000);
-        PhotonNetwork.CreateRoom(roomName, options);
-
+        Debug.Log($"[PhotonNetworkManager] OnJoinRandomFailed - code: {returnCode}, message: {message}");
         activeHandler?.OnJoinRandomFailed(returnCode, message);
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log($"[PhotonNetworkManager] OnJoinedRoom - room: {PhotonNetwork.CurrentRoom?.Name}, offline: {PhotonNetwork.OfflineMode}, isMasterClient: {PhotonNetwork.IsMasterClient}");
+        Debug.Log($"[PhotonNetworkManager] OnJoinedRoom - room: {PhotonNetwork.CurrentRoom?.Name}, isMasterClient: {PhotonNetwork.IsMasterClient}");
 
         PhotonNetwork.AutomaticallySyncScene = true;
 
-        if (PhotonNetwork.OfflineMode)
-        {
-            activeHandler?.OnJoinedRoom();
-            return;
-        }
-
-        PhotonNetwork.NickName = ServiceLocator.Get<ProfileManager>().GetUserName();
-
-        ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
-        hashtable["ProfileIndex"] = ServiceLocator.Get<ProfileManager>().GetProfileAvtarID();
-
-        PhotonNetwork.LocalPlayer.SetCustomProperties(hashtable);
-
         activeHandler?.OnJoinedRoom();
-
-        if (!PhotonNetwork.IsMasterClient)
-        {
-            Player masterPlayer = PhotonNetwork.CurrentRoom.GetPlayer(PhotonNetwork.CurrentRoom.masterClientId);
-            StartCoroutine(CheckForPropertiesSet(masterPlayer));
-        }
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -321,63 +280,36 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         Debug.Log($"[PhotonNetworkManager] OnPlayerEnteredRoom - player: {newPlayer.NickName}, playerCount: {PhotonNetwork.CurrentRoom.PlayerCount}");
-
-        if (PhotonNetwork.CurrentRoom.PlayerCount >= 2)
-        {
-            StartCoroutine(CheckForPropertiesSet(newPlayer));
-        }
+        activeHandler?.OnPlayerEnteredRoom(newPlayer);
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.Log($"[PhotonNetworkManager] OnPlayerLeftRoom - player: {otherPlayer.NickName}");
-
         activeHandler?.OnPlayerLeftRoom(otherPlayer);
     }
 
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
     {
         Debug.Log("[PhotonNetworkManager] OnRoomPropertiesUpdate");
-
         activeHandler?.OnRoomPropertiesUpdate(propertiesThatChanged);
     }
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
         Debug.Log($"[PhotonNetworkManager] OnPlayerPropertiesUpdate - player: {targetPlayer.NickName}");
-
         activeHandler?.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
     }
 
     public override void OnMasterClientSwitched(Player newMasterClient)
     {
         Debug.Log($"[PhotonNetworkManager] OnMasterClientSwitched - newMasterClient: {newMasterClient.NickName}");
-
         activeHandler?.OnMasterClientSwitched(newMasterClient);
     }
 
     public override void OnLeftRoom()
     {
         Debug.Log("[PhotonNetworkManager] OnLeftRoom");
-
         activeHandler?.OnLeft();
-    }
-
-    private IEnumerator CheckForPropertiesSet(Player newPlayer)
-    {
-        int index;
-        while (true)
-        {
-            if (newPlayer.CustomProperties.TryGetValue("ProfileIndex", out object profileIndexObj))
-            {
-                index = (int)profileIndexObj;
-                break;
-            }
-            yield return null;
-        }
-
-        Debug.Log($"[PhotonNetworkManager] Opponent found - player: {newPlayer.NickName}, avtarIndex: {index}");
-
-        activeHandler?.OnOpponentFound(newPlayer, index);
     }
 }

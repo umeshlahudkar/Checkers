@@ -1,13 +1,17 @@
-using System.Collections;
 using UnityEngine;
 using Photon.Realtime;
 
 public class OnlineModeHandler : MatchModeHandler
 {
-    private const float RoomJoinWaitTime = 10f;
-    private const int OnlineStakeAmount = 250;
+    private const string GameplaySceneName = "GameplayScene";
 
-    private Coroutine roomJoinTimeoutCoroutine;
+    private const float MatchmakingTimeoutSeconds = 15f;
+    private const float BotFallbackLeadTimeSeconds = 3f;
+
+    private bool isCancelled;
+    private bool isTimerRunning;
+    private float matchmakingElapsed;
+    private int lastDisplayedSeconds;
 
     public OnlineModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
         : base(photonNetworkManager, gameDataSO)
@@ -19,78 +23,202 @@ public class OnlineModeHandler : MatchModeHandler
     public override void StartMatch()
     {
         gameDataSO.gameMode = Mode;
+        isCancelled = false;
 
-        if (photonNetworkManager.RequestJoinRandomRoom())
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Matchmaking);
+
+        StartMatchmakingTimer();
+
+        if(photonNetworkManager.IsConnectedAndReady)
         {
-            ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Matchmaking);
-            roomJoinTimeoutCoroutine = photonNetworkManager.RunCoroutine(RoomJoinTimeout());
+            if(!photonNetworkManager.JoinRandomRoom())
+            {
+                photonNetworkManager.CreateRoom();
+            }
         }
-    }
-
-    private IEnumerator RoomJoinTimeout()
-    {
-        yield return new WaitForSeconds(RoomJoinWaitTime);
-
-        roomJoinTimeoutCoroutine = null;
-        photonNetworkManager.LeaveRoom();
-        CancelMatch();
-    }
-
-    public override void OnJoinedRoom()
-    {
-        CancelRoomJoinTimeout();
-    }
-
-    public override void OnCreateRoomFailed()
-    {
-        CancelRoomJoinTimeout();
-        CancelMatch();
-    }
-
-    public override void OnOpponentFound(Player opponentPlayer, int avtarIndex)
-    {
-        CancelRoomJoinTimeout();
-        SetPlayerData(opponentPlayer, avtarIndex);
-
-        matchmakingPage.ShowOpponentFound(opponentPlayer.NickName, ServiceLocator.Get<ProfileManager>().GetAvtar(avtarIndex));
-
-        photonNetworkManager.CloseRoomAndLoadOnlineScene("GameplayScene");
-    }
-
-    private void SetPlayerData(Player opponentPlayer, int avtarIndex)
-    {
-        gameDataSO.ownPlayer.isMasterClient = photonNetworkManager.IsMasterClient;
-        gameDataSO.ownPlayer.userName = ServiceLocator.Get<ProfileManager>().GetUserName();
-        gameDataSO.ownPlayer.avtarIndex = ServiceLocator.Get<ProfileManager>().GetProfileAvtarID();
-
-        gameDataSO.opponentPlayer.isMasterClient = opponentPlayer.IsMasterClient;
-        gameDataSO.opponentPlayer.userName = opponentPlayer.NickName;
-        gameDataSO.opponentPlayer.avtarIndex = avtarIndex;
+        else
+        {
+            photonNetworkManager.Connect();
+        }
     }
 
     public override void CancelMatch()
     {
-        CancelRoomJoinTimeout();
+        isCancelled = true;
+        StopMatchmakingTimer();
         photonNetworkManager.LeaveRoom();
-        ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
-        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 
-    private void CancelRoomJoinTimeout()
+    public override void Update()
     {
-        if (roomJoinTimeoutCoroutine != null)
+        if(!isTimerRunning)
         {
-            photonNetworkManager.StopRunningCoroutine(roomJoinTimeoutCoroutine);
-            roomJoinTimeoutCoroutine = null;
+            return;
+        }
+
+        matchmakingElapsed += Time.deltaTime;
+        float remaining = MatchmakingTimeoutSeconds - matchmakingElapsed;
+
+        if(remaining <= BotFallbackLeadTimeSeconds)
+        {
+            StopMatchmakingTimer();
+            OnMatchmakingTimeout();
+            return;
+        }
+
+        int displaySeconds = Mathf.CeilToInt(remaining);
+        if(displaySeconds != lastDisplayedSeconds)
+        {
+            lastDisplayedSeconds = displaySeconds;
+            matchmakingPage.UpdateRemainingTime(displaySeconds);
         }
     }
 
-    private IEnumerator StartOnlineMatch()
+    public override void OnConnectedToMaster()
     {
-        yield return new WaitForSeconds(1.5f);
+        base.OnConnectedToMaster();
 
-        ServiceLocator.Get<CoinManager>().DeductCoin(OnlineStakeAmount);
+        if(isCancelled)
+        {
+            return;
+        }
 
-        photonNetworkManager.CloseRoomAndLoadOnlineScene("GameplayScene");
+        if(!photonNetworkManager.JoinRandomRoom())
+        {
+            Debug.LogError("[OnlineModeHandler] JoinRandomRoom could not be processed");
+            StopMatchmakingTimer();
+            matchmakingPage.ShowFailed("Could not start matchmaking. Please try again.");
+        }
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        base.OnDisconnected(cause);
+
+        if(isCancelled)
+        {
+            return;
+        }
+
+        StopMatchmakingTimer();
+        matchmakingPage.ShowFailed($"Connection lost ({cause}). Please try again.");
+    }
+
+    public override void OnCustomAuthenticationFailed(string debugMessage)
+    {
+        base.OnCustomAuthenticationFailed(debugMessage);
+
+        if(isCancelled)
+        {
+            return;
+        }
+
+        StopMatchmakingTimer();
+        matchmakingPage.ShowFailed("Could not authenticate. Please try again.");
+    }
+
+    public override void OnJoinRandomFailed(short returnCode, string message)
+    {
+        base.OnJoinRandomFailed(returnCode, message);
+
+        if(isCancelled)
+        {
+            return;
+        }
+
+        photonNetworkManager.CreateRoom();
+    }
+
+    public override void OnCreatedRoom()
+    {
+        base.OnCreatedRoom();
+    }
+
+    public override void OnCreateRoomFailed()
+    {
+        base.OnCreateRoomFailed();
+
+        if(isCancelled)
+        {
+            return;
+        }
+
+        StopMatchmakingTimer();
+        matchmakingPage.ShowFailed("Could not create a match. Please try again.");
+    }
+
+    public override void OnJoinedRoom()
+    {
+        base.OnJoinedRoom();
+        TryStartGameplay();
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        base.OnPlayerEnteredRoom(newPlayer);
+        TryStartGameplay();
+    }
+
+    private void TryStartGameplay()
+    {
+        if(isCancelled || !photonNetworkManager.IsRoomFull)
+        {
+            return;
+        }
+
+        StopMatchmakingTimer();
+
+        gameDataSO.ownPlayer = photonNetworkManager.GetOwnPlayerInfo();
+        gameDataSO.opponentPlayer = photonNetworkManager.GetOpponentPlayerInfo();
+
+        matchmakingPage.ShowOpponentFound(gameDataSO.opponentPlayer.userName, gameDataSO.opponentPlayer.avatar);
+
+        photonNetworkManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
+    }
+
+    private void OnMatchmakingTimeout()
+    {
+        if(isCancelled || photonNetworkManager.IsRoomFull)
+        {
+            return;
+        }
+
+        isCancelled = true;
+
+        // Starting a VsBot match sets gameDataSO.opponentPlayer to "Computer" (with the correct
+        // piece type) via PvcModeHandler; overwrite the name/avatar afterwards so the player
+        // believes they matched with a real opponent, but keep the piece type it assigned.
+        photonNetworkManager.StartMatch(GameModeType.VsBot);
+
+        PlayerInfo disguisedOpponent = CreateDisguisedOpponent(gameDataSO.opponentPlayer.pieceType);
+        gameDataSO.opponentPlayer = disguisedOpponent;
+
+        matchmakingPage.ShowOpponentFound(disguisedOpponent.userName, disguisedOpponent.avatar);
+    }
+
+    private PlayerInfo CreateDisguisedOpponent(PieceType pieceType)
+    {
+        ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
+        int avtarIndex = Random.Range(1, profileManager.AvtarCount + 1);
+
+        return new PlayerInfo
+        {
+            userName = "Random_" + Random.Range(1000, 10000),
+            avatar = profileManager.GetAvtar(avtarIndex),
+            pieceType = pieceType
+        };
+    }
+
+    private void StartMatchmakingTimer()
+    {
+        matchmakingElapsed = 0f;
+        lastDisplayedSeconds = -1;
+        isTimerRunning = true;
+    }
+
+    private void StopMatchmakingTimer()
+    {
+        isTimerRunning = false;
     }
 }

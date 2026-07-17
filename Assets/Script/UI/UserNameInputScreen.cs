@@ -15,7 +15,7 @@ public class UserNameInputScreen : Page
             ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
             ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
 
-            ServiceLocator.Get<PhotonNetworkManager>().SetProfile();
+            //ServiceLocator.Get<PhotonNetworkManager>().SetProfile();
         }
     }
 

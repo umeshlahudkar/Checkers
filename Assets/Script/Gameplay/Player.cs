@@ -216,20 +216,21 @@ namespace Gameplay
         private IEnumerator MovePiece(Piece pieceToMove, Block targetBlock)
         {
             Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
-            float time = AreAdjecent(pieceBlock, targetBlock) ? 0.15f : 0.25f;
+            float duration = AreAdjecent(pieceBlock, targetBlock) ? 0.2f : 0.32f;
             float elapcedTime = 0;
 
-            Vector3 initialPos = pieceToMove.transform.position;
-            Vector3 targetPos = targetBlock.transform.position;
+            Vector2 initialPos = pieceToMove.ThisTransform.anchoredPosition;
+            Vector2 targetPos = targetBlock.ThisTransform.anchoredPosition;
 
-            while (elapcedTime < time)
+            while (elapcedTime < duration)
             {
                 elapcedTime += Time.deltaTime;
-                Vector3 pos = Vector3.Lerp(initialPos, targetPos, elapcedTime / time);
-                pieceToMove.transform.position = pos;
+                float t = Mathf.Clamp01(elapcedTime / duration);
+                float easedT = 1f - Mathf.Pow(1f - t, 3f);
+                pieceToMove.ThisTransform.anchoredPosition = Vector2.Lerp(initialPos, targetPos, easedT);
                 yield return null;
             }
-            pieceToMove.transform.position = targetPos;
+            pieceToMove.ThisTransform.anchoredPosition = targetPos;
         }
     }
 }
