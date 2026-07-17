@@ -39,6 +39,11 @@ public class GameManager : Service<GameManager>
         get { return gameMode; }
     }
 
+    public BotDifficulty BotDifficulty
+    {
+        get { return gameDataSO.botDifficulty; }
+    }
+
     public int CurrentTurn { get { return currentTurn; } }
 
     public PieceType PieceType { get { return pieceType; } }
