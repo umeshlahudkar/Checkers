@@ -1,4 +1,3 @@
-using Photon.Pun;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -193,39 +192,6 @@ public class BoardGenerator : MonoBehaviour
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
     }
     */
-    public void GeneratePieces()
-    {
-        for(int i = 0; i < rows; i++)
-        {
-            for(int j = 0; j < colums; j++)
-            {
-                if((i + j) % 2 != 0)
-                {
-                    if (i < 3 && ServiceLocator.Get<GameManager>().GetPlayer(2).PhotonView.IsMine)
-                    {
-                        GameObject obj = PhotonNetwork.Instantiate("Prefab/" + piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
-                        Piece piece = obj.GetComponent<Piece>();
-                        PhotonView view = piece.PhotonView;
-
-                        view.RPC(nameof(piece.SetPiece), RpcTarget.All, 2 ,i, j, (int)PieceType.White);
-                        ServiceLocator.Get<GameplayController>().whitePieces.Add(piece);
-                    }
-
-                    if (i > 4 && ServiceLocator.Get<GameManager>().GetPlayer(1).PhotonView.IsMine)
-                    {
-                        GameObject obj = PhotonNetwork.Instantiate("Prefab/" + piecePrefab.name, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity);
-                        Piece piece = obj.GetComponent<Piece>();
-                        PhotonView view = piece.PhotonView;
-
-                        view.RPC(nameof(piece.SetPiece), RpcTarget.All, 1, i, j, (int)PieceType.Black);
-
-                        ServiceLocator.Get<GameplayController>().blackPieces.Add(piece);
-                    }
-                }
-            }
-        }
-    }
-
     public void GeneratePieces(PieceType player1_pieceType, PieceType player2_pieceType)
     {
         for (int i = 0; i < rows; i++)

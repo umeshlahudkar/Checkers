@@ -1,13 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Photon.Pun;
 using System.Collections.Generic;
 
 public class Piece : MonoBehaviour
 {
     [SerializeField] private RectTransform thisTransform;
     [SerializeField] private Button button;
-    [SerializeField] private PhotonView photonView;
 
     [SerializeField] private Image whitePieceImage;
     [SerializeField] private Image blackPieceImage;
@@ -32,7 +30,6 @@ public class Piece : MonoBehaviour
     [HideInInspector] public List<BoardPosition> safeDoubleKillerBlockPositions = new();
 
 
-    [PunRPC]
     public void SetPiece(int _playerID, int _row, int _colum, int _pieceType)
     {
         playerID = _playerID;
@@ -57,13 +54,15 @@ public class Piece : MonoBehaviour
 
         ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(true, this);
 
-        if((ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && photonView.IsMine) || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer)
+        bool isOwnPiece = ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer
+            || ServiceLocator.Get<GameManager>().GetPlayer(playerID).PhotonView.IsMine;
+
+        if(isOwnPiece)
         {
             button.interactable = true;
         }
     }
 
-    [PunRPC]
     public void SetCrownKing()
     {
         isCrownedKing = true;
@@ -71,7 +70,6 @@ public class Piece : MonoBehaviour
         ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
     }
 
-    [PunRPC]
     public void Destroy()
     {
         ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(false, null);
@@ -90,14 +88,7 @@ public class Piece : MonoBehaviour
             ServiceLocator.Get<GameplayController>().blackPieces.Remove(this);
         }
 
-        if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && photonView.IsMine)
-        {
-            PhotonNetwork.Destroy(this.gameObject);
-        }
-        else if(ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer)
-        {
-            Destroy(gameObject);
-        }
+        Destroy(gameObject);
     }
 
     public bool IsCrownedKing
@@ -123,8 +114,6 @@ public class Piece : MonoBehaviour
     }
 
     public PieceType PieceType { get { return pieceType; } }
-
-    public PhotonView PhotonView { get { return photonView; } }
 
     public RectTransform ThisTransform { get { return thisTransform; } }
 

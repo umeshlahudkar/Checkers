@@ -5,32 +5,48 @@ using Photon.Pun;
 
 public class GameplayController : Service<GameplayController>
 {
+    // The four diagonal directions a piece can move in: down-left, down-right, up-left, up-right.
+    private static readonly (int dRow, int dCol)[] DiagonalDirections =
+    {
+        (1, -1), (1, 1), (-1, -1), (-1, 1)
+    };
+
     public Block[,] board = new Block[8, 8];
     public List<Piece> whitePieces = new();
     public List<Piece> blackPieces = new();
 
-    public bool CanMove(int playerNumber)
+    // Player 2 (white) advances down the board, player 1 (black) advances up it.
+    private static int ForwardDirection(int playerID)
     {
-        if (playerNumber == 1)
+        return playerID == 2 ? 1 : -1;
+    }
+
+    // Non-king pieces may only move/kill in their forward direction; kings move in all four.
+    private IEnumerable<(int dRow, int dCol)> GetMoveDirections(Piece piece)
+    {
+        int forward = ForwardDirection(piece.Player_ID);
+        foreach ((int dRow, int dCol) dir in DiagonalDirections)
         {
-            for(int i = 0; i < blackPieces.Count; i++)
+            if (piece.IsCrownedKing || dir.dRow == forward)
             {
-                bool moveFound = CanPieceMove(blackPieces[i]);
-                if(moveFound)
-                {
-                    return moveFound;
-                }
+                yield return dir;
             }
         }
-        else if (playerNumber == 2)
+    }
+
+    private List<Piece> GetPiecesForPlayer(int playerID)
+    {
+        return playerID == 1 ? blackPieces : whitePieces;
+    }
+
+    public bool CanMove(int playerNumber)
+    {
+        List<Piece> pieces = GetPiecesForPlayer(playerNumber);
+        for (int i = 0; i < pieces.Count; i++)
         {
-            for (int i = 0; i < whitePieces.Count; i++)
+            if (CanPieceMove(pieces[i]))
             {
-                bool moveFound = CanPieceMove(whitePieces[i]);
-                if (moveFound)
-                {
-                    return moveFound;
-                }
+                return true;
             }
         }
         return false;
@@ -56,107 +72,43 @@ public class GameplayController : Service<GameplayController>
     public bool CanPieceMove(Piece piece)
     {
         int row = piece.Row_ID;
-        int coloum = piece.Coloum_ID;
+        int col = piece.Coloum_ID;
         int playerID = piece.Player_ID;
 
-        bool moveFound = false;
-
-        if (playerID == 2)
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(piece))
         {
-            // diagonally down left
-            moveFound |= CheckPieceCanMove(playerID, row + 1, coloum - 1, row + 2, coloum - 2);
-            //diagonally down right
-            moveFound |= CheckPieceCanMove(playerID, row + 1, coloum + 1, row + 2, coloum + 2);
-
-            if (piece.IsCrownedKing)
+            if (CheckPieceCanMove(playerID, row + dir.dRow, col + dir.dCol, row + dir.dRow * 2, col + dir.dCol * 2))
             {
-                // diagonally up left
-                moveFound |= CheckPieceCanMove(playerID, row - 1, coloum - 1, row - 2, coloum - 2);
-                //diagonally up right
-                moveFound |= CheckPieceCanMove(playerID, row - 1, coloum + 1, row - 2, coloum + 2);
+                return true;
             }
         }
-        else if (playerID == 1)
-        {
-            // diagonally up left
-            moveFound |= CheckPieceCanMove(playerID, row - 1, coloum - 1, row - 2, coloum - 2);
-            // diagonally up right
-            moveFound |= CheckPieceCanMove(playerID, row - 1, coloum + 1, row - 2, coloum + 2);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonally down left
-                moveFound |= CheckPieceCanMove(playerID, row + 1, coloum - 1, row + 2, coloum - 2);
-                //diagonally down right
-                moveFound |= CheckPieceCanMove(playerID, row + 1, coloum + 1, row + 2, coloum + 2);
-            }
-        }
-        return moveFound;
+        return false;
     }
 
     public bool CanPieceKill(Piece piece)
     {
         int row = piece.Row_ID;
-        int coloum = piece.Coloum_ID;
+        int col = piece.Coloum_ID;
 
-        bool canKill = false;
-
-        if (piece.Player_ID == 2)
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(piece))
         {
-            // diagonally down left
-            canKill |= CanKillAdjecentPiece(piece, row + 2, coloum - 2);
-            //diagonally down right
-            canKill |= CanKillAdjecentPiece(piece, row + 2, coloum + 2);
-
-            if (piece.IsCrownedKing)
+            if (CanKillAdjecentPiece(piece, row + dir.dRow * 2, col + dir.dCol * 2))
             {
-                // diagonally up left
-                canKill |= CanKillAdjecentPiece(piece, row - 2, coloum - 2);
-                //diagonally up right
-                canKill |= CanKillAdjecentPiece(piece, row - 2, coloum + 2);
+                return true;
             }
         }
-        else if (piece.Player_ID == 1)
-        {
-            // diagonally up left
-            canKill |= CanKillAdjecentPiece(piece, row - 2, coloum - 2);
-            // diagonally up right
-            canKill |= CanKillAdjecentPiece(piece, row - 2, coloum + 2);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonally down left
-                canKill |= CanKillAdjecentPiece(piece, row + 2, coloum - 2);
-                //diagonally down right
-                canKill |= CanKillAdjecentPiece(piece, row + 2, coloum + 2);
-            }
-        }
-        return canKill;
+        return false;
     }
 
-    //AI 
+    //AI
     public void CheckMovablePieces(int playerID, List<Piece> movablePieces)
     {
-        if (playerID == 1)
+        List<Piece> pieces = GetPiecesForPlayer(playerID);
+        for (int i = 0; i < pieces.Count; i++)
         {
-            for (int i = 0; i < blackPieces.Count; i++)
+            if (CanPieceMove(pieces[i]))
             {
-                bool moveFound = CanPieceMove(blackPieces[i]);
-                if (moveFound)
-                {
-                    movablePieces.Add(blackPieces[i]);
-                }
-            }
-        }
-        else if (playerID == 2)
-        {
-            for (int i = 0; i < whitePieces.Count; i++)
-            {
-                bool moveFound = CanPieceMove(whitePieces[i]);
-                if (moveFound)
-                {
-                    movablePieces.Add(whitePieces[i]);
-                }
+                movablePieces.Add(pieces[i]);
             }
         }
     }
@@ -185,39 +137,9 @@ public class GameplayController : Service<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if(piece.Player_ID == 2)
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(piece))
         {
-            // diagonal down left
-            CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
-
-            // diagonal down right
-            CheckDiagonalAdjacentKill(piece, row + 2, col + 2);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonal up left
-                CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
-
-                // diagonal up right
-                CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
-            }
-        }
-        else if (piece.Player_ID == 1)
-        {
-            // diagonal up left
-            CheckDiagonalAdjacentKill(piece, row - 2, col - 2);
-
-            // diagonal up right
-            CheckDiagonalAdjacentKill(piece, row - 2, col + 2);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonal down left
-                CheckDiagonalAdjacentKill(piece, row + 2, col - 2);
-
-                // diagonal down right
-                CheckDiagonalAdjacentKill(piece, row + 2, col + 2);
-            }
+            CheckDiagonalAdjacentKill(piece, row + dir.dRow * 2, col + dir.dCol * 2);
         }
     }
 
@@ -226,39 +148,9 @@ public class GameplayController : Service<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if (piece.Player_ID == 2)
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(piece))
         {
-            // diagonal down left
-            CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
-
-            // diagonal down right
-            CheckDiagonalAdjacentMove(piece, row + 1, col + 1);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonal up left
-                CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
-
-                // diagonal up right
-                CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
-            }
-        }
-        else if (piece.Player_ID == 1)
-        {
-            // diagonal up left
-            CheckDiagonalAdjacentMove(piece, row - 1, col - 1);
-
-            // diagonal up right
-            CheckDiagonalAdjacentMove(piece, row - 1, col + 1);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonal down left
-                CheckDiagonalAdjacentMove(piece, row + 1, col - 1);
-
-                // diagonal down right
-                CheckDiagonalAdjacentMove(piece, row + 1, col + 1);
-            }
+            CheckDiagonalAdjacentMove(piece, row + dir.dRow, col + dir.dCol);
         }
     }
 
@@ -267,39 +159,9 @@ public class GameplayController : Service<GameplayController>
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
 
-        if (piece.Player_ID == 2)
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(piece))
         {
-            // diagonal down left
-            CheckForDoubleKill(piece, row + 2, col - 2);
-
-            // diagonal down right
-            CheckForDoubleKill(piece, row + 2, col + 2);
-
-            if(piece.IsCrownedKing)
-            {
-                // diagonal up left
-                CheckForDoubleKill(piece, row - 2, col - 2);
-
-                // diagonal up right
-                CheckForDoubleKill(piece, row - 2, col + 2);
-            }
-        }
-        else if (piece.Player_ID == 1)
-        {
-            // diagonal up left
-            CheckForDoubleKill(piece, row - 2, col - 2);
-
-            // diagonal up right
-            CheckForDoubleKill(piece, row - 2, col + 2);
-
-            if (piece.IsCrownedKing)
-            {
-                // diagonal down left
-                CheckForDoubleKill(piece, row + 2, col - 2);
-
-                // diagonal down right
-                CheckForDoubleKill(piece, row + 2, col + 2);
-            }
+            CheckForDoubleKill(piece, row + dir.dRow * 2, col + dir.dCol * 2);
         }
     }
 
@@ -483,86 +345,55 @@ public class GameplayController : Service<GameplayController>
         }
     }
 
+    // A piece is unsafe if an enemy piece adjacent to it could jump over it to the opposite square.
+    // The enemy can do so unconditionally from its own forward direction, or from its backward
+    // direction only if it's a king.
     private bool IsSafe(Piece piece)
     {
         int row = piece.Row_ID;
         int col = piece.Coloum_ID;
         int playerID = piece.Player_ID;
 
-        if (col == 0 || col == 7 || row == 0 || row == 7) 
+        if (col == 0 || col == 7 || row == 0 || row == 7)
         {
             /* safe position */
             return true;
         }
 
-        if (playerID == 2)
+        int forward = ForwardDirection(playerID);
+
+        foreach ((int dRow, int dCol) dir in DiagonalDirections)
         {
-            // diagonal down left
-            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.Player_ID != playerID &&
-               IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
+            int enemyRow = row + dir.dRow;
+            int enemyCol = col + dir.dCol;
+
+            if (!IsValidPosition(enemyRow, enemyCol) || !board[enemyRow, enemyCol].IsPiecePresent)
             {
-                /* not safe position */
-                return false;
+                continue;
             }
 
-            // diagonal down right
-            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.Player_ID != playerID &&
-              IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
+            Piece enemy = board[enemyRow, enemyCol].Piece;
+            if (enemy.Player_ID == playerID)
             {
-                /* not safe position */
-                return false;
+                continue;
             }
 
-            // diagonal up left
-            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.Player_ID != playerID &&
-               board[row - 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
+            bool enemyMovingBackward = dir.dRow != forward;
+            if (enemyMovingBackward && !enemy.IsCrownedKing)
             {
-                /* not safe position */
-                return false;
+                continue;
             }
 
-            // diagonal up right
-            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.Player_ID != playerID &&
-              board[row - 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
+            int landingRow = row - dir.dRow;
+            int landingCol = col - dir.dCol;
+
+            if (IsValidPosition(landingRow, landingCol) && !board[landingRow, landingCol].IsPiecePresent)
             {
                 /* not safe position */
                 return false;
             }
         }
-        else if(playerID == 1)
-        {
-            // diagonal up left
-            if (IsValidPosition(row - 1, col - 1) && board[row - 1, col - 1].IsPiecePresent && board[row - 1, col - 1].Piece.Player_ID != playerID &&
-              IsValidPosition(row + 1, col + 1) && !board[row + 1, col + 1].IsPiecePresent)
-            {
-                /* not safe position */
-                return false;
-            }
 
-            // diagonal up right
-            if (IsValidPosition(row - 1, col + 1) && board[row - 1, col + 1].IsPiecePresent && board[row - 1, col + 1].Piece.Player_ID != playerID &&
-              IsValidPosition(row + 1, col - 1) && !board[row + 1, col - 1].IsPiecePresent)
-            {
-                /* not safe position */
-                return false;
-            }
-
-            // diagonal down left
-            if (IsValidPosition(row + 1, col - 1) && board[row + 1, col - 1].IsPiecePresent && board[row + 1, col - 1].Piece.Player_ID != playerID &&
-               board[row + 1, col - 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col + 1) && !board[row - 1, col + 1].IsPiecePresent)
-            {
-                /* not safe position */
-                return false;
-            }
-
-            // diagonal down right
-            if (IsValidPosition(row + 1, col + 1) && board[row + 1, col + 1].IsPiecePresent && board[row + 1, col + 1].Piece.Player_ID != playerID &&
-              board[row + 1, col + 1].Piece.IsCrownedKing && IsValidPosition(row - 1, col - 1) && !board[row - 1, col - 1].IsPiecePresent)
-            {
-                /* not safe position */
-                return false;
-            }
-        }
         return true;
     }
 

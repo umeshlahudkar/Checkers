@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Gameplay
@@ -23,16 +25,12 @@ namespace Gameplay
         {
             selectedPiece.ResetAllList();
             ServiceLocator.Get<GameplayController>().SetAdjacentKillPosition(selectedPiece);
-            BoardPosition position = default;
 
-            if (selectedPiece.safeKillerBlockPositions.Count > 0)
-            {
-                position = selectedPiece.safeKillerBlockPositions[0];
-            }
-            else if (selectedPiece.killerBlockPositions.Count > 0)
-            {
-                position = selectedPiece.killerBlockPositions[0];
-            }
+            List<BoardPosition> positions = selectedPiece.safeKillerBlockPositions.Count > 0
+                ? selectedPiece.safeKillerBlockPositions
+                : selectedPiece.killerBlockPositions;
+
+            BoardPosition position = positions[0];
 
             Block b = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
             b.IsNextToNextHighlighted = true;
@@ -54,100 +52,38 @@ namespace Gameplay
         {
             movablePieces.Shuffle();
 
+            // Priority order: a safe double-kill beats an unsafe one, which beats a safe single
+            // kill, and so on down to a plain (unsafe) move. The first list with any positions wins.
+            if (TryMakeMove(p => p.safeDoubleKillerBlockPositions, isKillMove: true)) { return; }
+            if (TryMakeMove(p => p.doubleKillerBlockPositions, isKillMove: true)) { return; }
+            if (TryMakeMove(p => p.safeKillerBlockPositions, isKillMove: true)) { return; }
+            if (TryMakeMove(p => p.killerBlockPositions, isKillMove: true)) { return; }
+            if (TryMakeMove(p => p.safeMovableBlockPositions, isKillMove: false)) { return; }
+            TryMakeMove(p => p.movableBlockPositions, isKillMove: false);
+        }
+
+        private bool TryMakeMove(Func<Piece, List<BoardPosition>> getPositions, bool isKillMove)
+        {
             for (int i = 0; i < movablePieces.Count; i++)
             {
                 Piece piece = movablePieces[i];
-                if (piece.safeDoubleKillerBlockPositions.Count > 0)
+                List<BoardPosition> positions = getPositions(piece);
+                if (positions.Count == 0) { continue; }
+
+                selectedPiece = piece;
+                BoardPosition position = positions[0];
+                Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
+
+                if (isKillMove)
                 {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeDoubleKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
                     block.IsNextToNextHighlighted = true;
                     nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-
-                    return;
                 }
+
+                OnHighlightedTargetBlockClick(block);
+                return true;
             }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.doubleKillerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.doubleKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.safeKillerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeKillerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.killerBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.killerBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-                    block.IsNextToNextHighlighted = true;
-                    nextToNexthighlightedBlocks.Add(block);
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.safeMovableBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.safeMovableBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
-
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                if (piece.movableBlockPositions.Count > 0)
-                {
-                    selectedPiece = piece;
-                    BoardPosition position = piece.movableBlockPositions[0];
-                    Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-
-                    OnHighlightedTargetBlockClick(block);
-                    return;
-                }
-            }
+            return false;
         }
     }
 }

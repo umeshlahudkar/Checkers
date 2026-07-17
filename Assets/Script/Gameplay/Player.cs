@@ -128,7 +128,7 @@ namespace Gameplay
                 Piece piece = ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].Piece;
                 if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
                 {
-                    piece.PhotonView.RPC(nameof(piece.Destroy), RpcTarget.All);
+                    thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, targetRow, targetCol);
                 }
                 else
                 {
@@ -148,7 +148,7 @@ namespace Gameplay
             {
                 if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
                 {
-                    selectedPiece.PhotonView.RPC(nameof(selectedPiece.SetCrownKing), RpcTarget.All);
+                    thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
                 }
                 else
                 {
@@ -175,12 +175,14 @@ namespace Gameplay
         {
             if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
             {
-                int viewId = -1;
+                int sourceRow = -1;
+                int sourceCol = -1;
                 if (pieceToMove != null)
                 {
-                    viewId = pieceToMove.PhotonView.ViewID;
+                    sourceRow = pieceToMove.Row_ID;
+                    sourceCol = pieceToMove.Coloum_ID;
                 }
-                thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, viewId);
+                thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, sourceRow, sourceCol);
             }
             else
             {
@@ -194,18 +196,31 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void UpdateGrid(int targetRow, int targetCol, int viewId)
+        public void UpdateGrid(int targetRow, int targetCol, int sourceRow, int sourceCol)
         {
             Piece piece = null;
-            if (viewId != -1)
+            bool hasPiece = sourceRow != -1;
+            if (hasPiece)
             {
-                piece = PhotonView.Find(viewId).GetComponent<Piece>();
-                ServiceLocator.Get<GameplayController>().board[piece.Row_ID, piece.Coloum_ID].SetBlockPiece(false, null);
+                piece = ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].Piece;
+                ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].SetBlockPiece(false, null);
 
                 StartCoroutine(MovePiece(piece, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]));
                 ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
             }
-            ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece((viewId != -1), piece);
+            ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(hasPiece, piece);
+        }
+
+        [PunRPC]
+        private void DestroyPieceAt(int row, int col)
+        {
+            ServiceLocator.Get<GameplayController>().board[row, col].Piece.Destroy();
+        }
+
+        [PunRPC]
+        private void CrownPieceAt(int row, int col)
+        {
+            ServiceLocator.Get<GameplayController>().board[row, col].Piece.SetCrownKing();
         }
 
         private bool AreAdjecent(Block b1, Block b2)

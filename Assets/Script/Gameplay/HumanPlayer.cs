@@ -49,38 +49,24 @@ namespace Gameplay
 
         private void HighlightMovementBlocks(Piece clickedPiece)
         {
-            List<BoardPosition> safeKillerPosition = clickedPiece.safeKillerBlockPositions;
-            for (int i = 0; i < safeKillerPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[safeKillerPosition[i].row_ID, safeKillerPosition[i].col_ID];
-                block.HighlightNextMoveBlock(true);
-                highlightedBlocks.Add(block);
-                nextToNexthighlightedBlocks.Add(block);
-            }
+            HighlightBlocks(clickedPiece.safeKillerBlockPositions, isKillMove: true);
+            HighlightBlocks(clickedPiece.killerBlockPositions, isKillMove: true);
+            HighlightBlocks(clickedPiece.safeMovableBlockPositions, isKillMove: false);
+            HighlightBlocks(clickedPiece.movableBlockPositions, isKillMove: false);
+        }
 
-            List<BoardPosition> killerPosition = clickedPiece.killerBlockPositions;
-            for (int i = 0; i < killerPosition.Count; i++)
+        private void HighlightBlocks(List<BoardPosition> positions, bool isKillMove)
+        {
+            for (int i = 0; i < positions.Count; i++)
             {
-                Block block = ServiceLocator.Get<GameplayController>().board[killerPosition[i].row_ID, killerPosition[i].col_ID];
-                block.HighlightNextMoveBlock(true);
+                Block block = ServiceLocator.Get<GameplayController>().board[positions[i].row_ID, positions[i].col_ID];
+                block.HighlightNextMoveBlock(isKillMove);
                 highlightedBlocks.Add(block);
-                nextToNexthighlightedBlocks.Add(block);
-            }
 
-            List<BoardPosition> safeMovementPosition = clickedPiece.safeMovableBlockPositions;
-            for (int i = 0; i < safeMovementPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[safeMovementPosition[i].row_ID, safeMovementPosition[i].col_ID];
-                block.HighlightNextMoveBlock();
-                highlightedBlocks.Add(block);
-            }
-
-            List<BoardPosition> movementPosition = clickedPiece.movableBlockPositions;
-            for (int i = 0; i < movementPosition.Count; i++)
-            {
-                Block block = ServiceLocator.Get<GameplayController>().board[movementPosition[i].row_ID, movementPosition[i].col_ID];
-                block.HighlightNextMoveBlock();
-                highlightedBlocks.Add(block);
+                if (isKillMove)
+                {
+                    nextToNexthighlightedBlocks.Add(block);
+                }
             }
         }
     }

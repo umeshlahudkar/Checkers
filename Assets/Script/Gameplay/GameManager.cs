@@ -125,7 +125,10 @@ public class GameManager : Service<GameManager>
             yield return null;
         }
 
-        boardGenerator.GeneratePieces();
+        // Multiplayer piece ownership is fixed by ActorNumber (Player.cs: actor 1 = Black, actor 2 =
+        // White), so every client builds the identical board locally instead of spawning pieces over
+        // the network.
+        boardGenerator.GeneratePieces(PieceType.Black, PieceType.White);
 
         currentTurn = 1;
         if (PhotonNetwork.IsMasterClient)

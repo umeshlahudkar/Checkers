@@ -89,7 +89,6 @@ GameObject:
   - component: {fileID: 4085975894928045900}
   - component: {fileID: 4457993689184792147}
   - component: {fileID: 2684559871079811949}
-  - component: {fileID: 1007264746458196750}
   m_Layer: 5
   m_Name: Piece
   m_TagString: Untagged
@@ -172,7 +171,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   thisTransform: {fileID: 4085975894928045903}
   button: {fileID: 2684559871079811949}
-  photonView: {fileID: 1007264746458196750}
   whitePieceImage: {fileID: 7712523309567671624}
   blackPieceImage: {fileID: 2886333377084448173}
   crownImage: {fileID: 3171805904955252001}
@@ -237,29 +235,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &1007264746458196750
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4085975894928045902}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObservedComponentsFoldoutOpen: 0
-  Group: 0
-  prefixField: -1
-  Synchronization: 0
-  OwnershipTransfer: 0
-  observableSearch: 0
-  ObservedComponents:
-  - {fileID: 0}
-  sceneViewId: 0
-  InstantiationId: 0
-  isRuntimeInstantiated: 0
 --- !u!1 &5228011234566793555
 GameObject:
   m_ObjectHideFlags: 0
