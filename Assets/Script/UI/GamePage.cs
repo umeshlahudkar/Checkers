@@ -16,23 +16,36 @@ public class GamePage : Page
 
     public void PositionCardsAroundBoard()
     {
-       
         RectTransform opponentCard = player2Card.RectTransform;
         RectTransform ownCard = player1Card.RectTransform;
 
         opponentCard.sizeDelta = new Vector2(boardBorder.rect.width, opponentCard.sizeDelta.y);
         ownCard.sizeDelta = new Vector2(boardBorder.rect.width, ownCard.sizeDelta.y);
-        buttonsParent.sizeDelta = new Vector2(boardBorder.rect.width, ownCard.sizeDelta.y);
+        buttonsParent.sizeDelta = new Vector2(boardBorder.rect.width, buttonsParent.sizeDelta.y);
 
-        return;
+        // The VerticalLayoutGroup on our shared parent has already placed OpponentCard/Board/
+        // OwnCard/Buttons as siblings, each of which may get more cell height than its content
+        // needs. boardBorder sits centered with zero offset inside its own cell, so that cell's
+        // anchoredPosition.y is the board's vertical center in the shared parent space. From
+        // there we place each card's content flush against the board (and against each other),
+        // using only cardSpacing as the gap, regardless of how tall the layout group's cells are.
+        RectTransform boardCell = (RectTransform)boardBorder.parent;
+        float boardCenterY = boardCell.anchoredPosition.y;
 
+        float opponentTargetY = boardCenterY + (boardBorder.rect.height / 2) + cardSpacing + (opponentCard.rect.height / 2);
+        PositionRelativeToBoard(opponentCard, opponentTargetY);
 
-        float height = (boardBorder.rect.height / 2) + cardSpacing + (opponentCard.rect.height / 2);
-        opponentCard.anchoredPosition = new Vector2(0, height);
-        ownCard.anchoredPosition = new Vector2(0, -height);
+        float ownTargetY = boardCenterY - (boardBorder.rect.height / 2) - cardSpacing - (ownCard.rect.height / 2);
+        PositionRelativeToBoard(ownCard, ownTargetY);
 
-        height += (opponentCard.rect.height / 2) + cardSpacing + (buttonsParent.rect.height / 2);
-        buttonsParent.anchoredPosition = new Vector2(0, -height);
+        float buttonsTargetY = ownTargetY - (ownCard.rect.height / 2) - cardSpacing - (buttonsParent.rect.height / 2);
+        PositionRelativeToBoard(buttonsParent, buttonsTargetY);
+    }
+
+    private static void PositionRelativeToBoard(RectTransform content, float targetSharedY)
+    {
+        RectTransform cell = (RectTransform)content.parent;
+        content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetSharedY - cell.anchoredPosition.y);
     }
 
     public PlayerCardUI GetPlayerCard(int playerNumber)
