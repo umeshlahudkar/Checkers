@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using Photon.Pun;
 
 public class GamePage : Page
 {
@@ -16,8 +17,16 @@ public class GamePage : Page
 
     public void PositionCardsAroundBoard()
     {
-        RectTransform opponentCard = player2Card.RectTransform;
-        RectTransform ownCard = player1Card.RectTransform;
+        // player1Card/player2Card are always bound to the same identity (player1 = whoever is
+        // master client, matching GameManager's winner/loser numbering) so turn highlighting,
+        // miss indicators and GameOver stay correct regardless of who's viewing. Which one
+        // physically renders in the bottom ("own") slot vs the top ("opponent") slot is a pure
+        // display choice, decided here so the local viewer's own card is always at the bottom.
+        bool ownIsPlayer1 = ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer
+            || PhotonNetwork.IsMasterClient;
+
+        RectTransform ownCard = (ownIsPlayer1 ? player1Card : player2Card).RectTransform;
+        RectTransform opponentCard = (ownIsPlayer1 ? player2Card : player1Card).RectTransform;
 
         opponentCard.sizeDelta = new Vector2(boardBorder.rect.width, opponentCard.sizeDelta.y);
         ownCard.sizeDelta = new Vector2(boardBorder.rect.width, ownCard.sizeDelta.y);

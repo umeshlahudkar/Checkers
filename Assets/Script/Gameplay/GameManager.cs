@@ -99,6 +99,7 @@ public class GameManager : Service<GameManager>
         ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
         boardGenerator.GenerateBoard();
+        boardGenerator.SetBoardOrientation(false);
         ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
         boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
         ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
@@ -112,6 +113,10 @@ public class GameManager : Service<GameManager>
     private IEnumerator PrepareOnlineMode()
     {
         boardGenerator.GenerateBoard();
+        // Blocks are always laid out with row 0-2 = white, row 5-7 = black (Player.cs: actor 1 =
+        // black, actor 2 = white), so the non-master (white) client needs its board flipped for
+        // its own pieces to render at the bottom, matching its own card's position.
+        boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
         ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
         PhotonNetwork.Instantiate("Prefab/" + humanPlayerPrefab.name, transform.position, Quaternion.identity);
 

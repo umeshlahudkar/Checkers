@@ -85,7 +85,23 @@ public class BoardGenerator : MonoBehaviour
 
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
     }
-   
+
+    // In multiplayer, the board's blocks are laid out with a fixed row convention (rows 0-2 =
+    // white, rows 5-7 = black) regardless of which side the local player is on, so the local
+    // player's own pieces need to render at the bottom by flipping the board 180 degrees.
+    // blockHolderParent's own pivot isn't at the grid's visual center (its +blockSize position
+    // offset, set above, exists specifically to compensate for that), so rotating it directly
+    // would mirror that offset and shift the whole board off-center. Rotating their shared
+    // parent instead - whose origin already coincides with the grid's true center, by
+    // construction of that same offset - avoids the issue entirely, and since neither holder
+    // rotates relative to the other, they stay in sync for the move-animation code that lerps
+    // raw anchoredPosition between a piece and a block.
+    public void SetBoardOrientation(bool isFlipped)
+    {
+        Quaternion rotation = isFlipped ? Quaternion.Euler(0f, 0f, 180f) : Quaternion.identity;
+        blockHolderParent.parent.localRotation = rotation;
+    }
+
     public void GeneratePieces(PieceType player1_pieceType, PieceType player2_pieceType)
     {
         for (int i = 0; i < rows; i++)
