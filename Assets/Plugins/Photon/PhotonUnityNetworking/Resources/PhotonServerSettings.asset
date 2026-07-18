@@ -34,19 +34,16 @@ MonoBehaviour:
   RunInBackground: 1
   StartInOfflineMode: 0
   RpcList:
-  - ClickRpc
-  - Fire
-  - Destroy
-  - DestroyRpc
-  - DestroySpaceship
-  - RespawnSpaceship
   - ChangeTurn
-  - GameOver
-  - SetCrownKing
-  - SetPiece
-  - UpdateGrid
+  - ClickRpc
   - CrownPieceAt
   - DestroyPieceAt
+  - DestroyRpc
+  - DestroySpaceship
+  - Fire
+  - GameOver
+  - RespawnSpaceship
+  - UpdateGrid
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

@@ -211,14 +211,19 @@ namespace Gameplay
             ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(hasPiece, piece);
         }
 
+        // NOTE: these must be public. PUN resolves RPCs by reflecting the concrete component type
+        // (HumanPlayer/BotPlayer) at runtime, and .NET's Type.GetMethods() does NOT surface a
+        // *private* method declared on a base type when called on a derived type - so a private
+        // [PunRPC] on this base Player class is invisible to the dispatcher and fails with
+        // "RPC method not found". Public (or protected) inherited methods are returned normally.
         [PunRPC]
-        private void DestroyPieceAt(int row, int col)
+        public void DestroyPieceAt(int row, int col)
         {
             ServiceLocator.Get<GameplayController>().board[row, col].Piece.Destroy();
         }
 
         [PunRPC]
-        private void CrownPieceAt(int row, int col)
+        public void CrownPieceAt(int row, int col)
         {
             ServiceLocator.Get<GameplayController>().board[row, col].Piece.SetCrownKing();
         }

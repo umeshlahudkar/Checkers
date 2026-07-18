@@ -25,27 +25,29 @@ public class GamePage : Page
 
         // The VerticalLayoutGroup on our shared parent has already placed OpponentCard/Board/
         // OwnCard/Buttons as siblings, each of which may get more cell height than its content
-        // needs. boardBorder sits centered with zero offset inside its own cell, so that cell's
-        // anchoredPosition.y is the board's vertical center in the shared parent space. From
-        // there we place each card's content flush against the board (and against each other),
-        // using only cardSpacing as the gap, regardless of how tall the layout group's cells are.
-        RectTransform boardCell = (RectTransform)boardBorder.parent;
-        float boardCenterY = boardCell.anchoredPosition.y;
+        // needs. It anchors each child to a parent edge (not its center), so anchoredPosition
+        // isn't directly comparable across them - we work in world space instead, where
+        // RectTransform.position is always the true position of the pivot regardless of how
+        // the parent anchors it. From the board's world position we place each card's content
+        // flush against the board (and against each other), using only cardSpacing as the gap.
+        float scaleY = boardBorder.lossyScale.y;
+        float boardWorldY = boardBorder.position.y;
 
-        float opponentTargetY = boardCenterY + (boardBorder.rect.height / 2) + cardSpacing + (opponentCard.rect.height / 2);
-        PositionRelativeToBoard(opponentCard, opponentTargetY);
+        float opponentWorldY = boardWorldY + ((boardBorder.rect.height / 2f) + cardSpacing + (opponentCard.rect.height / 2f)) * scaleY;
+        SetWorldY(opponentCard, opponentWorldY);
 
-        float ownTargetY = boardCenterY - (boardBorder.rect.height / 2) - cardSpacing - (ownCard.rect.height / 2);
-        PositionRelativeToBoard(ownCard, ownTargetY);
+        float ownWorldY = boardWorldY - ((boardBorder.rect.height / 2f) + cardSpacing + (ownCard.rect.height / 2f)) * scaleY;
+        SetWorldY(ownCard, ownWorldY);
 
-        float buttonsTargetY = ownTargetY - (ownCard.rect.height / 2) - cardSpacing - (buttonsParent.rect.height / 2);
-        PositionRelativeToBoard(buttonsParent, buttonsTargetY);
+        float buttonsWorldY = ownWorldY - ((ownCard.rect.height / 2f) + cardSpacing + (buttonsParent.rect.height / 2f)) * scaleY;
+        SetWorldY(buttonsParent, buttonsWorldY);
     }
 
-    private static void PositionRelativeToBoard(RectTransform content, float targetSharedY)
+    private static void SetWorldY(RectTransform content, float worldY)
     {
-        RectTransform cell = (RectTransform)content.parent;
-        content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetSharedY - cell.anchoredPosition.y);
+        Vector3 position = content.position;
+        position.y = worldY;
+        content.position = position;
     }
 
     public PlayerCardUI GetPlayerCard(int playerNumber)
