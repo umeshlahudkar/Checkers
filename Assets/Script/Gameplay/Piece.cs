@@ -47,7 +47,6 @@ public class Piece : MonoBehaviour
             blackPieceImage.gameObject.SetActive(true);
         }
 
-        thisTransform.SetParent(GameObject.Find("Piece Holder").transform);
         thisTransform.position = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.position;
         thisTransform.sizeDelta = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;

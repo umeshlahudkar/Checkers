@@ -26,6 +26,8 @@ public class GameManager : Service<GameManager>
     private readonly int maxTurnMissCount = 3;
     private readonly int matchWinCoinReward = 500;
 
+    private const string GameplayReadyPropertyKey = "GameplayReady";
+
     private string player1DisplayName;
     private string player2DisplayName;
 
@@ -57,13 +59,14 @@ public class GameManager : Service<GameManager>
 
     private void Start()
     {
-        Invoke("InitializeGame", 0.5f);
-
-        //InitializeGame();
+        StartCoroutine(InitializeGame());
     }
 
-    private void InitializeGame()
+    private IEnumerator InitializeGame()
     {
+        yield return null;
+        yield return null;
+
         gameMode = gameDataSO.gameMode;
         gameState = GameState.Playing;
 
@@ -93,16 +96,19 @@ public class GameManager : Service<GameManager>
         player1DisplayName = ownInfo.userName;
         player2DisplayName = opponentInfo.userName;
 
-        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
-        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar,
-                  opponentInfo.userName, opponentInfo.avatar);
-        ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
+        GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
+
+        gamePageManager.OpenPage(GamePageType.GamePage);
+        gamePageManager.GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar, opponentInfo.userName, opponentInfo.avatar);
+        gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
 
         boardGenerator.GenerateBoard();
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
-        ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
 
-        FinishSetupAndStartFirstTurn();
+        gamePageManager.GamePage.PositionCardsAroundBoard();
+
+        GeneratePiecesAndInitUI();
+        StartFirstTurn();
 
         retryButton.SetActive(true);
     }
@@ -120,12 +126,16 @@ public class GameManager : Service<GameManager>
 
     private IEnumerator PrepareOnlineMode()
     {
+        // Clear any stale flag left over from a previous match in this same room (e.g. a
+        // rematch) before starting this round's setup.
+        SetLocalPlayerGameplayReady(false);
+
         boardGenerator.GenerateBoard();
-        // Blocks are always laid out with row 0-2 = white, row 5-7 = black (Player.cs: actor 1 =
-        // black, actor 2 = white), so the non-master (white) client needs its board flipped for
-        // its own pieces to render at the bottom, matching its own card's position.
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
-        ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
+
+        GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
+        gamePageManager.GamePage.PositionCardsAroundBoard();
+
         PhotonNetwork.Instantiate("Prefab/" + humanPlayerPrefab.name, transform.position, Quaternion.identity);
 
         PlayerInfo player1 = PhotonNetwork.IsMasterClient ? gameDataSO.ownPlayer : gameDataSO.opponentPlayer;
@@ -134,38 +144,66 @@ public class GameManager : Service<GameManager>
         player1DisplayName = player1.userName;
         player2DisplayName = player2.userName;
 
-        ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
-        ServiceLocator.Get<GamePageManager>().GamePage.ShowPlayerInfo(player1.userName, player1.avatar,
-            player2.userName, player2.avatar);
-        ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
+        gamePageManager.OpenPage(GamePageType.GamePage);
+        gamePageManager.GamePage.ShowPlayerInfo(player1.userName, player1.avatar, player2.userName, player2.avatar);
+        gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
 
         while(!HasBothPlayerReady())
         {
             yield return null;
         }
 
-        FinishSetupAndStartFirstTurn();
+        GeneratePiecesAndInitUI();
 
+        // Tell the other client this side has finished its local setup (board/pieces generated),
+        // and wait until it confirms the same, before either side starts the first turn. Without
+        // this, whichever client finishes first has no way to know if the other is actually ready -
+        // starting the turn immediately (or over RPC) could reach the slower client before its own
+        // currentTurn/players[] are valid.
+        SetLocalPlayerGameplayReady(true);
+
+        while (!AreBothPlayersGameplayReady())
+        {
+            yield return null;
+        }
+
+        StartFirstTurn();
         retryButton.SetActive(false);
-
-        yield return new WaitForSeconds(1f);
     }
 
-    private void FinishSetupAndStartFirstTurn()
+    private void GeneratePiecesAndInitUI()
     {
         boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
         ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
+    }
 
+    private void StartFirstTurn()
+    {
         currentTurn = 1;
-        if (PhotonNetwork.IsMasterClient)
-        {
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn, 0);
-        }
+        StartTurn();
     }
 
     private bool HasBothPlayerReady()
     {
         return players[0] != null && players[1] != null;
+    }
+
+    private void SetLocalPlayerGameplayReady(bool isReady)
+    {
+        PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { GameplayReadyPropertyKey, isReady } });
+    }
+
+    private bool AreBothPlayersGameplayReady()
+    {
+        foreach (Photon.Realtime.Player player in PhotonNetwork.CurrentRoom.Players.Values)
+        {
+            if (!player.CustomProperties.TryGetValue(GameplayReadyPropertyKey, out object isReady) || !(bool)isReady)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void HandleTurnMissCount()
@@ -209,6 +247,11 @@ public class GameManager : Service<GameManager>
         players[currentTurn - 1].SetTurnMissCount(outgoingPlayerMissCount);
 
         currentTurn = nextTurn;
+        StartTurn();
+    }
+
+    private void StartTurn()
+    {
         timer.ResetTimer();
         ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
 
