@@ -1,7 +1,8 @@
-using UnityEngine;
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
-using ExitGames.Client.Photon;
+using UnityEditor;
+using UnityEngine;
 
 public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
@@ -153,9 +154,22 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
     // loop is suspended), and nothing switches the turn until Photon's disconnect grace period
     // (PhotonNetwork.KeepAliveInBackground, ~60s) expires and auto-promotes the other client. Handing
     // master off immediately on minimize closes that gap instead of waiting on it.
-    private void OnApplicationPause(bool pauseStatus)
+    //private void OnApplicationPause(bool pauseStatus)
+    //{
+    //    if (!pauseStatus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
+    //    {
+    //        return;
+    //    }
+
+    //    if (PhotonNetwork.PlayerListOthers.Length > 0)
+    //    {
+    //        PhotonNetwork.SetMasterClient(PhotonNetwork.PlayerListOthers[0]);
+    //    }
+    //}
+
+    private void OnApplicationFocus(bool focus)
     {
-        if (!pauseStatus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
+        if (focus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
         {
             return;
         }

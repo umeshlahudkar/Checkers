@@ -26,7 +26,12 @@ namespace Gameplay
 
         private void Start()
         {
-            if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
+            // Checked via PhotonNetwork.OfflineMode rather than GameManager.GameMode - the latter
+            // is only set once GameManager's own init coroutine runs, which can happen later than
+            // this Start() (e.g. for a networked instantiate of the *other* player, whose event can
+            // arrive at any time). OfflineMode is already correct before this scene even loads, so
+            // it doesn't race with GameManager's own startup.
+            if(!PhotonNetwork.OfflineMode)
             {
                 playerID = thisPhotonView.OwnerActorNr;
                 pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
