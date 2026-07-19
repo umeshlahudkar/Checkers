@@ -1,7 +1,6 @@
 using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
-using UnityEditor;
 using UnityEngine;
 
 public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallback
