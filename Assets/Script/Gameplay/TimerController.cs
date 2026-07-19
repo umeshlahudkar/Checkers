@@ -1,10 +1,12 @@
+using Photon.Pun;
 using UnityEngine;
 
 public class TimerController : MonoBehaviour
 {
     private PlayerCardUI activeCard;
-    private readonly float turnTime = 30f;
+    private readonly float turnTime = 10f;
     private float currentTime = 0f;
+    private double turnDeadline = 0;
     private bool hasPlayedTickingSound = false;
     private bool isRunning;
 
@@ -15,6 +17,7 @@ public class TimerController : MonoBehaviour
         activeCard = ServiceLocator.Get<GamePageManager>().GamePage.GetPlayerCard(ServiceLocator.Get<GameManager>().CurrentTurn);
 
         currentTime = turnTime;
+        turnDeadline = PhotonNetwork.Time + turnTime;
         hasPlayedTickingSound = false;
         isRunning = true;
 
@@ -36,24 +39,31 @@ public class TimerController : MonoBehaviour
 
     private void Update()
     {
-        if (isRunning && currentTime > 0 && ServiceLocator.Get<GameManager>().GameState == GameState.Playing)
+        if (!isRunning || ServiceLocator.Get<GameManager>().GameState != GameState.Playing)
         {
-            currentTime -= Time.deltaTime;
-            if (currentTime <= 0)
-            {
-                currentTime = 0;
-                ResetTimer();
-                ServiceLocator.Get<GameManager>().HandleTurnMissCount();
-                return;
-            }
+            return;
+        }
 
-            bool isLowTime = activeCard.UpdateTimer(currentTime, turnTime);
+        // Counts down against a synced deadline (PhotonNetwork.Time, which also runs offline off a
+        // local stopwatch) instead of accumulating Time.deltaTime, so a client resuming from being
+        // backgrounded sees the real elapsed time immediately rather than a countdown that silently
+        // paused while away.
+        currentTime = Mathf.Max(0f, (float)(turnDeadline - PhotonNetwork.Time));
 
-            if (!hasPlayedTickingSound && isLowTime)
-            {
-                hasPlayedTickingSound = true;
-                ServiceLocator.Get<AudioManager>().PlayTimeTickingSound();
-            }
+        if (currentTime <= 0)
+        {
+            currentTime = 0;
+            ResetTimer();
+            ServiceLocator.Get<GameManager>().HandleTurnMissCount();
+            return;
+        }
+
+        bool isLowTime = activeCard.UpdateTimer(currentTime, turnTime);
+
+        if (!hasPlayedTickingSound && isLowTime)
+        {
+            hasPlayedTickingSound = true;
+            ServiceLocator.Get<AudioManager>().PlayTimeTickingSound();
         }
     }
 }

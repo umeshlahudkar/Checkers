@@ -42,7 +42,7 @@ namespace Gameplay
             SetTurnMissCount(0);
         }
 
-        private void SetTurnMissCount(int value)
+        public void SetTurnMissCount(int value)
         {
             turnMissCount = value;
             ServiceLocator.Get<GamePageManager>().GamePage.UpdateMissIndicators(playerID, turnMissCount);
@@ -112,7 +112,6 @@ namespace Gameplay
 
         private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
         {
-            SetTurnMissCount(0);
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;
@@ -125,15 +124,7 @@ namespace Gameplay
                 int targetRow = row + (row > selectedPiece.Row_ID ? -1 : 1);
                 int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
 
-                Piece piece = ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].Piece;
-                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
-                {
-                    thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, targetRow, targetCol);
-                }
-                else
-                {
-                    piece.Destroy();
-                }
+                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, targetRow, targetCol);
                 hasDeleted = true;
                 block.IsNextToNextHighlighted = false;
             }
@@ -146,14 +137,7 @@ namespace Gameplay
             if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
                 (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
             {
-                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
-                {
-                    thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
-                }
-                else
-                {
-                    selectedPiece.SetCrownKing();
-                }
+                thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
             }
 
             selectedPiece = block.Piece;
@@ -173,26 +157,14 @@ namespace Gameplay
 
         public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
         {
-            if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
+            int sourceRow = -1;
+            int sourceCol = -1;
+            if (pieceToMove != null)
             {
-                int sourceRow = -1;
-                int sourceCol = -1;
-                if (pieceToMove != null)
-                {
-                    sourceRow = pieceToMove.Row_ID;
-                    sourceCol = pieceToMove.Coloum_ID;
-                }
-                thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, sourceRow, sourceCol);
+                sourceRow = pieceToMove.Row_ID;
+                sourceCol = pieceToMove.Coloum_ID;
             }
-            else
-            {
-                ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID].SetBlockPiece(false, null);
-
-                StartCoroutine(MovePiece(pieceToMove, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]));
-                ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
-                ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(true, pieceToMove);
-            }
-
+            thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, sourceRow, sourceCol);
         }
 
         [PunRPC]

@@ -3,13 +3,13 @@ using Photon.Realtime;
 
 public abstract class MatchModeHandler
 {
-    protected readonly PhotonNetworkManager photonNetworkManager;
+    protected readonly MatchmakingConnectionManager connectionManager;
     protected readonly GameDataSO gameDataSO;
     protected MatchmakingPage matchmakingPage;
 
-    protected MatchModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
+    protected MatchModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
     {
-        this.photonNetworkManager = photonNetworkManager;
+        this.connectionManager = connectionManager;
         this.gameDataSO = gameDataSO;
     }
 

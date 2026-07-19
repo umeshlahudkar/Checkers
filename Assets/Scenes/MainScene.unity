@@ -529,7 +529,7 @@ GameObject:
   - component: {fileID: 1703165748}
   - component: {fileID: 1703165749}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: MatchmakingConnectionManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -561,7 +561,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39373746432002043ad5516bfe92378e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PhotonNetworkManager
+  m_EditorClassIdentifier: Assembly-CSharp::MatchmakingConnectionManager
   gameDataSO: {fileID: 11400000, guid: 5eb203feeb4a0fc4a9fbf9d7545aaea5, type: 2}
 --- !u!1001 &200000000000000010
 PrefabInstance:

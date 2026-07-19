@@ -13,8 +13,8 @@ public class OnlineModeHandler : MatchModeHandler
     private float matchmakingElapsed;
     private int lastDisplayedSeconds;
 
-    public OnlineModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
-        : base(photonNetworkManager, gameDataSO)
+    public OnlineModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
+        : base(connectionManager, gameDataSO)
     {
     }
 
@@ -29,16 +29,16 @@ public class OnlineModeHandler : MatchModeHandler
 
         StartMatchmakingTimer();
 
-        if(photonNetworkManager.IsConnectedAndReady)
+        if(connectionManager.IsConnectedAndReady)
         {
-            if(!photonNetworkManager.JoinRandomRoom())
+            if(!connectionManager.JoinRandomRoom())
             {
-                photonNetworkManager.CreateRoom();
+                connectionManager.CreateRoom();
             }
         }
         else
         {
-            photonNetworkManager.Connect();
+            connectionManager.Connect();
         }
     }
 
@@ -46,7 +46,7 @@ public class OnlineModeHandler : MatchModeHandler
     {
         isCancelled = true;
         StopMatchmakingTimer();
-        photonNetworkManager.LeaveRoom();
+        connectionManager.LeaveRoom();
         ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 
@@ -84,7 +84,7 @@ public class OnlineModeHandler : MatchModeHandler
             return;
         }
 
-        if(!photonNetworkManager.JoinRandomRoom())
+        if(!connectionManager.JoinRandomRoom())
         {
             Debug.LogError("[OnlineModeHandler] JoinRandomRoom could not be processed");
             StopMatchmakingTimer();
@@ -127,7 +127,7 @@ public class OnlineModeHandler : MatchModeHandler
             return;
         }
 
-        photonNetworkManager.CreateRoom();
+        connectionManager.CreateRoom();
     }
 
     public override void OnCreatedRoom()
@@ -162,24 +162,24 @@ public class OnlineModeHandler : MatchModeHandler
 
     private void TryStartGameplay()
     {
-        if(isCancelled || !photonNetworkManager.IsRoomFull)
+        if(isCancelled || !connectionManager.IsRoomFull)
         {
             return;
         }
 
         StopMatchmakingTimer();
 
-        gameDataSO.ownPlayer = photonNetworkManager.GetOwnPlayerInfo();
-        gameDataSO.opponentPlayer = photonNetworkManager.GetOpponentPlayerInfo();
+        gameDataSO.ownPlayer = connectionManager.GetOwnPlayerInfo();
+        gameDataSO.opponentPlayer = connectionManager.GetOpponentPlayerInfo();
 
         matchmakingPage.ShowOpponentFound(gameDataSO.opponentPlayer.userName, gameDataSO.opponentPlayer.avatar);
 
-        photonNetworkManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
+        connectionManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
     }
 
     private void OnMatchmakingTimeout()
     {
-        if(isCancelled || photonNetworkManager.IsRoomFull)
+        if(isCancelled || connectionManager.IsRoomFull)
         {
             return;
         }
@@ -189,7 +189,7 @@ public class OnlineModeHandler : MatchModeHandler
         // Starting a VsBot match sets gameDataSO.opponentPlayer to "Computer" (with the correct
         // piece type) via PvcModeHandler; overwrite the name/avatar afterwards so the player
         // believes they matched with a real opponent, but keep the piece type it assigned.
-        photonNetworkManager.StartMatch(GameModeType.VsBot);
+        connectionManager.StartMatch(GameModeType.VsBot);
 
         PlayerInfo disguisedOpponent = CreateDisguisedOpponent(gameDataSO.opponentPlayer.pieceType);
         gameDataSO.opponentPlayer = disguisedOpponent;

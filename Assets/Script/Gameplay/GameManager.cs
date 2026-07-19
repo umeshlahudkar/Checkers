@@ -69,26 +69,24 @@ public class GameManager : Service<GameManager>
         {
             StartCoroutine(PrepareOnlineMode());
         }
-        else if (gameMode == GameModeType.VsPlayer)
-        {
-            SetupLocalMatch(humanPlayerPrefab, humanPlayerPrefab);
-        }
         else
         {
-            SetupLocalMatch(humanPlayerPrefab, botPlayerPrefab);
+            Gameplay.Player opponentPrefab = (gameMode == GameModeType.VsBot) ? (Gameplay.Player)botPlayerPrefab : humanPlayerPrefab;
+            SetupLocalMatch(opponentPrefab);
         }
     }
 
-    private void SetupLocalMatch(Gameplay.Player ownPlayerPrefab, Gameplay.Player opponentPlayerPrefab)
+    // Local matches (VsPlayer/VsBot) run through the same PhotonView/RPC-driven gameplay flow as
+    // Multiplayer - they just spawn both sides on this one device (PhotonNetwork.OfflineMode is
+    // switched on before this scene loads, see OfflineMatchModeHandlerBase) instead of waiting for a
+    // second device to join over the network.
+    private void SetupLocalMatch(Gameplay.Player opponentPlayerPrefab)
     {
         PlayerInfo ownInfo = gameDataSO.ownPlayer;
         PlayerInfo opponentInfo = gameDataSO.opponentPlayer;
 
-        players[0] = Instantiate(ownPlayerPrefab, transform.position, Quaternion.identity);
-        players[0].SetPlayer(1, ownInfo.pieceType);
-
-        players[1] = Instantiate(opponentPlayerPrefab, transform.position, Quaternion.identity);
-        players[1].SetPlayer(2, opponentInfo.pieceType);
+        SpawnLocalPlayer(1, humanPlayerPrefab, ownInfo.pieceType);
+        SpawnLocalPlayer(2, opponentPlayerPrefab, opponentInfo.pieceType);
 
         player1DisplayName = ownInfo.userName;
         player2DisplayName = opponentInfo.userName;
@@ -99,15 +97,23 @@ public class GameManager : Service<GameManager>
         ServiceLocator.Get<GamePageManager>().GamePage.InitTurnIndicators(maxTurnMissCount);
 
         boardGenerator.GenerateBoard();
-        boardGenerator.SetBoardOrientation(false);
+        boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
         ServiceLocator.Get<GamePageManager>().GamePage.PositionCardsAroundBoard();
-        boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
-        ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
 
-        currentTurn = 2;
-        SwitchTurn();
+        FinishSetupAndStartFirstTurn();
 
         retryButton.SetActive(true);
+    }
+
+    // Identity can't be auto-derived from the PhotonView's OwnerActorNr the way real multiplayer
+    // does (PhotonNetwork.OfflineMode only ever has a single actor, so both objects would resolve
+    // to the same owner), so it's assigned explicitly right after spawning.
+    private void SpawnLocalPlayer(int playerNumber, Gameplay.Player prefab, PieceType pieceType)
+    {
+        GameObject spawned = PhotonNetwork.Instantiate("Prefab/" + prefab.name, transform.position, Quaternion.identity);
+        Gameplay.Player player = spawned.GetComponent<Gameplay.Player>();
+        player.SetPlayer(playerNumber, pieceType);
+        ListPlayer(player);
     }
 
     private IEnumerator PrepareOnlineMode()
@@ -136,21 +142,23 @@ public class GameManager : Service<GameManager>
             yield return null;
         }
 
-        // Multiplayer piece ownership is fixed by ActorNumber (Player.cs: actor 1 = Black, actor 2 =
-        // White), so every client builds the identical board locally instead of spawning pieces over
-        // the network.
-        boardGenerator.GeneratePieces(PieceType.Black, PieceType.White);
+        FinishSetupAndStartFirstTurn();
+
+        retryButton.SetActive(false);
+
+        yield return new WaitForSeconds(1f);
+    }
+
+    private void FinishSetupAndStartFirstTurn()
+    {
+        boardGenerator.GeneratePieces(players[0].PieceType, players[1].PieceType);
         ServiceLocator.Get<GamePageManager>().GamePage.InitPiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
 
         currentTurn = 1;
         if (PhotonNetwork.IsMasterClient)
         {
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn);
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, currentTurn, 0);
         }
-
-        retryButton.SetActive(false);
-
-        yield return new WaitForSeconds(1f);
     }
 
     private bool HasBothPlayerReady()
@@ -160,65 +168,44 @@ public class GameManager : Service<GameManager>
 
     public void HandleTurnMissCount()
     {
-        if(gameMode == GameModeType.Multiplayer && players[currentTurn - 1].PhotonView.IsMine)
+        // Only the master client is allowed to call time on a turn. The active player's own device
+        // can be backgrounded (mobile OS suspends its Update loop), so it can't be trusted to police
+        // its own clock; the master's device is the one guaranteed to still be ticking. Offline
+        // matches are always their own master, so this applies there too without any extra check.
+        if (!PhotonNetwork.IsMasterClient)
         {
-            players[currentTurn - 1].UpdateTurnMissCount();
-            if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
-            {
-                int winner = currentTurn == 1 ? 2 : 1;
-                gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "out of time");
-            }
-            else
-            {
-                SwitchTurn();
-            }
+            return;
         }
-        else if(gameMode != GameModeType.Multiplayer)
+
+        int missCount = players[currentTurn - 1].TurnMissCount + 1;
+
+        if (missCount >= maxTurnMissCount)
         {
-            players[currentTurn - 1].UpdateTurnMissCount();
-            if (players[currentTurn - 1].TurnMissCount >= maxTurnMissCount)
-            {
-                int winner = currentTurn == 1 ? 2 : 1;
-                GameOver(winner, "out of time");
-            }
-            else
-            {
-                SwitchTurn();
-            }
+            int winner = currentTurn == 1 ? 2 : 1;
+            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "out of time");
+        }
+        else
+        {
+            int nextTurn = currentTurn == 1 ? 2 : 1;
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount);
         }
     }
 
     public void SwitchTurn()
     {
-        if(gameMode == GameModeType.Multiplayer)
-        {
-            int nextTurn = currentTurn == 1 ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn);
-        }
-        else
-        {
-            players[currentTurn - 1].ResetPlayer();
-            timer.ResetTimer();
-
-            currentTurn = (currentTurn == 1) ? 2 : 1;
-            pieceType = players[currentTurn - 1].PieceType;
-            ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
-
-            if (!players[currentTurn - 1].CanPlay())
-            {
-                int winner = (currentTurn == 1) ? 2 : 1;
-                GameOver(winner, "no legal moves left");
-                return;
-            }
-
-            timer.StartTimer();
-        }
+        // Miss count is cumulative for the whole match - a completed move doesn't clear it, so the
+        // outgoing player's count is carried over unchanged here (only a timeout in
+        // HandleTurnMissCount ever increments it).
+        int nextTurn = currentTurn == 1 ? 2 : 1;
+        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount);
     }
 
     [PunRPC]
-    public void ChangeTurn(int nextTurn)
+    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount)
     {
         players[currentTurn - 1].ResetPlayer();
+        players[currentTurn - 1].SetTurnMissCount(outgoingPlayerMissCount);
+
         currentTurn = nextTurn;
         timer.ResetTimer();
         ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
@@ -314,7 +301,9 @@ public class GameManager : Service<GameManager>
 
     private void ResetGameplay()
     {
-        if( gameMode == GameModeType.Multiplayer && PhotonNetwork.IsMasterClient)
+        // Every mode now spawns players via PhotonNetwork.Instantiate (see SpawnLocalPlayer), so a
+        // rematch has to release those network objects here regardless of mode, not just online.
+        if (PhotonNetwork.IsMasterClient)
         {
             PhotonNetwork.DestroyAll();
         }

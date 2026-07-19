@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class PvcModeHandler : OfflineMatchModeHandlerBase
 {
-    public PvcModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
-        : base(photonNetworkManager, gameDataSO)
+    public PvcModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
+        : base(connectionManager, gameDataSO)
     {
     }
 

@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class PvpModeHandler : OfflineMatchModeHandlerBase
 {
-    public PvpModeHandler(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
-        : base(photonNetworkManager, gameDataSO)
+    public PvpModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
+        : base(connectionManager, gameDataSO)
     {
     }
 

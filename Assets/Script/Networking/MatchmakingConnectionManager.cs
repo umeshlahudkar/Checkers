@@ -6,7 +6,7 @@ using Photon.Realtime;
 using ExitGames.Client.Photon;
 using Unity.Mathematics;
 
-public class PhotonNetworkManager : MonoBehaviourPunCallbacks
+public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] private GameDataSO gameDataSO;
 
@@ -21,7 +21,7 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-        if (ServiceLocator.TryGet<PhotonNetworkManager>(out PhotonNetworkManager existing) && existing != this)
+        if (ServiceLocator.TryGet<MatchmakingConnectionManager>(out MatchmakingConnectionManager existing) && existing != this)
         {
             Destroy(gameObject);
             return;
@@ -52,9 +52,9 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     private void OnDestroy()
     {
-        if (ServiceLocator.TryGet<PhotonNetworkManager>(out PhotonNetworkManager current) && current == this)
+        if (ServiceLocator.TryGet<MatchmakingConnectionManager>(out MatchmakingConnectionManager current) && current == this)
         {
-            ServiceLocator.Unregister<PhotonNetworkManager>();
+            ServiceLocator.Unregister<MatchmakingConnectionManager>();
         }
     }
 
@@ -179,91 +179,91 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnConnected()
     {
-        Debug.Log("[PhotonNetworkManager] OnConnected");
+        Debug.Log("[MatchmakingConnectionManager] OnConnected");
         activeHandler?.OnConnected();
     }
 
     public override void OnConnectedToMaster()
     {
-        Debug.Log($"[PhotonNetworkManager] OnConnectedToMaster - inLobby: {PhotonNetwork.InLobby}");
+        Debug.Log($"[MatchmakingConnectionManager] OnConnectedToMaster - inLobby: {PhotonNetwork.InLobby}");
         activeHandler?.OnConnectedToMaster();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        Debug.Log($"[PhotonNetworkManager] OnDisconnected - cause: {cause}");
+        Debug.Log($"[MatchmakingConnectionManager] OnDisconnected - cause: {cause}");
         activeHandler?.OnDisconnected(cause);
     }
 
     public override void OnRegionListReceived(RegionHandler regionHandler)
     {
-        Debug.Log("[PhotonNetworkManager] OnRegionListReceived");
+        Debug.Log("[MatchmakingConnectionManager] OnRegionListReceived");
         activeHandler?.OnRegionListReceived(regionHandler);
     }
 
     public override void OnCustomAuthenticationResponse(Dictionary<string, object> data)
     {
-        Debug.Log("[PhotonNetworkManager] OnCustomAuthenticationResponse");
+        Debug.Log("[MatchmakingConnectionManager] OnCustomAuthenticationResponse");
         activeHandler?.OnCustomAuthenticationResponse(data);
     }
 
     public override void OnCustomAuthenticationFailed(string debugMessage)
     {
-        Debug.Log($"[PhotonNetworkManager] OnCustomAuthenticationFailed - message: {debugMessage}");
+        Debug.Log($"[MatchmakingConnectionManager] OnCustomAuthenticationFailed - message: {debugMessage}");
         activeHandler?.OnCustomAuthenticationFailed(debugMessage);
     }
 
     public override void OnFriendListUpdate(List<FriendInfo> friendList)
     {
-        Debug.Log("[PhotonNetworkManager] OnFriendListUpdate");
+        Debug.Log("[MatchmakingConnectionManager] OnFriendListUpdate");
         activeHandler?.OnFriendListUpdate(friendList);
     }
 
     public override void OnJoinedLobby()
     {
-        Debug.Log("[PhotonNetworkManager] OnJoinedLobby");
+        Debug.Log("[MatchmakingConnectionManager] OnJoinedLobby");
         activeHandler?.SetProfile();
     }
 
     public override void OnLeftLobby()
     {
-        Debug.Log("[PhotonNetworkManager] OnLeftLobby");
+        Debug.Log("[MatchmakingConnectionManager] OnLeftLobby");
         activeHandler?.OnLeftLobby();
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
-        Debug.Log($"[PhotonNetworkManager] OnRoomListUpdate - count: {roomList.Count}");
+        Debug.Log($"[MatchmakingConnectionManager] OnRoomListUpdate - count: {roomList.Count}");
         activeHandler?.OnRoomListUpdate(roomList);
     }
 
     public override void OnLobbyStatisticsUpdate(List<TypedLobbyInfo> lobbyStatistics)
     {
-        Debug.Log("[PhotonNetworkManager] OnLobbyStatisticsUpdate");
+        Debug.Log("[MatchmakingConnectionManager] OnLobbyStatisticsUpdate");
         activeHandler?.OnLobbyStatisticsUpdate(lobbyStatistics);
     }
 
     public override void OnCreatedRoom()
     {
-        Debug.Log($"[PhotonNetworkManager] OnCreatedRoom - room: {PhotonNetwork.CurrentRoom?.Name}");
+        Debug.Log($"[MatchmakingConnectionManager] OnCreatedRoom - room: {PhotonNetwork.CurrentRoom?.Name}");
         activeHandler?.OnCreatedRoom();
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        Debug.Log($"[PhotonNetworkManager] OnJoinRoomFailed - code: {returnCode}, message: {message}");
+        Debug.Log($"[MatchmakingConnectionManager] OnJoinRoomFailed - code: {returnCode}, message: {message}");
         activeHandler?.OnJoinRoomFailed(returnCode, message);
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
-        Debug.Log($"[PhotonNetworkManager] OnJoinRandomFailed - code: {returnCode}, message: {message}");
+        Debug.Log($"[MatchmakingConnectionManager] OnJoinRandomFailed - code: {returnCode}, message: {message}");
         activeHandler?.OnJoinRandomFailed(returnCode, message);
     }
 
     public override void OnJoinedRoom()
     {
-        Debug.Log($"[PhotonNetworkManager] OnJoinedRoom - room: {PhotonNetwork.CurrentRoom?.Name}, isMasterClient: {PhotonNetwork.IsMasterClient}");
+        Debug.Log($"[MatchmakingConnectionManager] OnJoinedRoom - room: {PhotonNetwork.CurrentRoom?.Name}, isMasterClient: {PhotonNetwork.IsMasterClient}");
 
         PhotonNetwork.AutomaticallySyncScene = true;
 
@@ -272,44 +272,44 @@ public class PhotonNetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        Debug.Log($"[PhotonNetworkManager] OnCreateRoomFailed - code: {returnCode}, message: {message}");
+        Debug.Log($"[MatchmakingConnectionManager] OnCreateRoomFailed - code: {returnCode}, message: {message}");
 
         activeHandler?.OnCreateRoomFailed();
     }
 
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        Debug.Log($"[PhotonNetworkManager] OnPlayerEnteredRoom - player: {newPlayer.NickName}, playerCount: {PhotonNetwork.CurrentRoom.PlayerCount}");
+        Debug.Log($"[MatchmakingConnectionManager] OnPlayerEnteredRoom - player: {newPlayer.NickName}, playerCount: {PhotonNetwork.CurrentRoom.PlayerCount}");
         activeHandler?.OnPlayerEnteredRoom(newPlayer);
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        Debug.Log($"[PhotonNetworkManager] OnPlayerLeftRoom - player: {otherPlayer.NickName}");
+        Debug.Log($"[MatchmakingConnectionManager] OnPlayerLeftRoom - player: {otherPlayer.NickName}");
         activeHandler?.OnPlayerLeftRoom(otherPlayer);
     }
 
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
     {
-        Debug.Log("[PhotonNetworkManager] OnRoomPropertiesUpdate");
+        Debug.Log("[MatchmakingConnectionManager] OnRoomPropertiesUpdate");
         activeHandler?.OnRoomPropertiesUpdate(propertiesThatChanged);
     }
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
-        Debug.Log($"[PhotonNetworkManager] OnPlayerPropertiesUpdate - player: {targetPlayer.NickName}");
+        Debug.Log($"[MatchmakingConnectionManager] OnPlayerPropertiesUpdate - player: {targetPlayer.NickName}");
         activeHandler?.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
     }
 
     public override void OnMasterClientSwitched(Player newMasterClient)
     {
-        Debug.Log($"[PhotonNetworkManager] OnMasterClientSwitched - newMasterClient: {newMasterClient.NickName}");
+        Debug.Log($"[MatchmakingConnectionManager] OnMasterClientSwitched - newMasterClient: {newMasterClient.NickName}");
         activeHandler?.OnMasterClientSwitched(newMasterClient);
     }
 
     public override void OnLeftRoom()
     {
-        Debug.Log("[PhotonNetworkManager] OnLeftRoom");
+        Debug.Log("[MatchmakingConnectionManager] OnLeftRoom");
         activeHandler?.OnLeft();
     }
 }

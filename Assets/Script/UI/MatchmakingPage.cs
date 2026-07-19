@@ -84,6 +84,6 @@ public class MatchmakingPage : Page
     public void OnBackButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<PhotonNetworkManager>().CancelMatch();
+        ServiceLocator.Get<MatchmakingConnectionManager>().CancelMatch();
     }
 }

@@ -1,11 +1,12 @@
+using Photon.Pun;
 using Photon.Realtime;
 
 public class OfflineMatchModeHandlerBase : MatchModeHandler
 {
     public override GameModeType Mode => GameModeType.VsPlayer;
 
-    protected OfflineMatchModeHandlerBase(PhotonNetworkManager photonNetworkManager, GameDataSO gameDataSO)
-        : base(photonNetworkManager, gameDataSO)
+    protected OfflineMatchModeHandlerBase(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
+        : base(connectionManager, gameDataSO)
     {
     }
 
@@ -14,17 +15,32 @@ public class OfflineMatchModeHandlerBase : MatchModeHandler
         gameDataSO.gameMode = Mode;
         SetupPlayerInfo();
 
-        if(photonNetworkManager.IsConnected)
+        if(connectionManager.IsConnected)
         {
-            photonNetworkManager.Disconnect();
+            connectionManager.Disconnect();
         }
         else
         {
-            StartGameplayScene();
+            EnterOfflineRoom();
         }
     }
 
     public override void OnDisconnected(DisconnectCause cause)
+    {
+        EnterOfflineRoom();
+    }
+
+    // GameplayScene now always relies on PhotonView/RPC (see GameManager.SpawnLocalPlayer), even for
+    // local matches, so it needs a real (offline) room to spawn into before it loads. CreateRoom's
+    // OnCreatedRoom/OnJoinedRoom fire synchronously in OfflineMode, so StartGameplayScene runs
+    // immediately via OnJoinedRoom below.
+    private void EnterOfflineRoom()
+    {
+        PhotonNetwork.OfflineMode = true;
+        connectionManager.CreateRoom();
+    }
+
+    public override void OnJoinedRoom()
     {
         StartGameplayScene();
     }

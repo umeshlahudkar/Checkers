@@ -3,7 +3,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
 
-public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
+public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallback
 {
     private readonly float rematchConfirmationWiatTime = 10f;
     private float confirmationElapcedTime = 0;
@@ -146,6 +146,23 @@ public class EventManager : MonoBehaviourPunCallbacks, IOnEventCallback
         if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
         {
             StartCoroutine(ServiceLocator.Get<GameManager>().LoadMainMenu());
+        }
+    }
+
+    // If the master client is the one backgrounded, it can't police the turn timer (its own Update
+    // loop is suspended), and nothing switches the turn until Photon's disconnect grace period
+    // (PhotonNetwork.KeepAliveInBackground, ~60s) expires and auto-promotes the other client. Handing
+    // master off immediately on minimize closes that gap instead of waiting on it.
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (!pauseStatus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.PlayerListOthers.Length > 0)
+        {
+            PhotonNetwork.SetMasterClient(PhotonNetwork.PlayerListOthers[0]);
         }
     }
 
