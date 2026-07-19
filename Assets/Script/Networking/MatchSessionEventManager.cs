@@ -69,11 +69,11 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
 
             case EventType.Rematch:
                 confirmationAcknoElapcedTime = 0;
-                ServiceLocator.Get<CoinManager>().DeductCoin(250, null, () =>
-                {
-                    ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-                    ServiceLocator.Get<GameManager>().StartRematch();
-                });
+                //ServiceLocator.Get<CoinManager>().DeductCoin(250, null, () =>
+                //{
+                //    ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+                //    ServiceLocator.Get<GameManager>().StartRematch();
+                //});
                 break;
         }
     }
@@ -135,7 +135,7 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
         if(canOpenGameOverScreen)
         {
             ServiceLocator.Get<GameManager>().SetGameOver();
-            ServiceLocator.Get<CoinManager>().AddCoin(500);
+            //ServiceLocator.Get<CoinManager>().AddCoin(500);
             ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
             ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
         }

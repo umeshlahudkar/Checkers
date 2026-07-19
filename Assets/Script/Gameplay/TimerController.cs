@@ -4,7 +4,7 @@ using UnityEngine;
 public class TimerController : MonoBehaviour
 {
     private PlayerCardUI activeCard;
-    private readonly float turnTime = 10f;
+    private readonly float turnTime = 15f;
     private float currentTime = 0f;
     private double turnDeadline = 0;
     private bool hasPlayedTickingSound = false;

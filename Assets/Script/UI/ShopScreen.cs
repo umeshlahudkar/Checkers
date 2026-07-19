@@ -25,10 +25,10 @@ public class ShopScreen : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         getCoinButton.interactable = false;
-        ServiceLocator.Get<CoinManager>().AddCoin(coinAmount, coinImg, ()=>
-        {
-            Close();
-        });
+        //ServiceLocator.Get<CoinManager>().AddCoin(coinAmount, coinImg, ()=>
+        //{
+        //    Close();
+        //});
     }
 
     public void OnCloseButtonClick()

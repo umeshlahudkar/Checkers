@@ -46,7 +46,9 @@ public class OnlineModeHandler : MatchModeHandler
     {
         isCancelled = true;
         StopMatchmakingTimer();
-        connectionManager.LeaveRoom();
+        // Disconnect entirely (not just leave the room) - canceling means the player isn't
+        // matchmaking anymore, so there's no reason to keep an idle Photon connection open.
+        connectionManager.Disconnect();
         ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 

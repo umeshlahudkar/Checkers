@@ -1,6 +1,7 @@
+using Photon.Pun;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class ResultPage : Page
 {
@@ -69,6 +70,7 @@ public class ResultPage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
+        PhotonNetwork.Disconnect();
         ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
     }
 }

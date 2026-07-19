@@ -57,7 +57,9 @@ public class GameManager : Service<GameManager>
 
     private void Start()
     {
-        InitializeGame();
+        Invoke("InitializeGame", 0.5f);
+
+        //InitializeGame();
     }
 
     private void InitializeGame()
@@ -331,13 +333,22 @@ public class GameManager : Service<GameManager>
         if (gameMode == GameModeType.Multiplayer && PhotonNetwork.IsConnected)
         {
             IsReadyToLeaveGameplay = true;
+
+            // Mark the match as ending before disconnecting - Disconnect() (unlike LeaveRoom())
+            // fires OnDisconnected, and MatchSessionEventManager.OnDisconnected would otherwise
+            // kick off its own redundant LoadMainMenu() alongside the one started below.
+            SetGameOver();
+
             if (PhotonNetwork.IsMasterClient)
             {
                 PhotonNetwork.DestroyAll();
             }
 
+            // Disconnect entirely rather than just leaving the room - once the player is back at
+            // the menu there's no reason to keep holding a Photon connection open (idle CCU) until
+            // they actively choose to matchmake again.
             PhotonNetwork.AutomaticallySyncScene = false;
-            PhotonNetwork.LeaveRoom();
+            PhotonNetwork.Disconnect();
             ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
             ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
