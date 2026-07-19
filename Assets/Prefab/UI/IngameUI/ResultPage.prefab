@@ -237,7 +237,7 @@ GameObject:
   - component: {fileID: 900000000000122}
   - component: {fileID: 900000000000123}
   m_Layer: 5
-  m_Name: IconFill
+  m_Name: AvatarImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -280,10 +280,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.42745098, b: 0.3529412, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -292,7 +292,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 7c11dc73ba8889441b4797c4c98e1673, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -1336,7 +1336,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ringOutline: {fileID: 900000000000113}
-  iconFill: {fileID: 900000000000123}
+  avatarImage: {fileID: 900000000000123}
   resultLabelText: {fileID: 900000000000143}
   titleText: {fileID: 900000000000153}
   subtitleText: {fileID: 900000000000163}
@@ -1344,7 +1344,6 @@ MonoBehaviour:
   coinRewardText: {fileID: 900000000000203}
   victoryColor: {r: 1, g: 0.42745098, b: 0.3529412, a: 1}
   defeatColor: {r: 0.6627451, g: 0.6235294, b: 0.6901961, a: 1}
-  defeatIconFillColor: {r: 0.9647059, g: 0.9411765, b: 0.9176471, a: 1}
 --- !u!1 &7165179464045732952
 GameObject:
   m_ObjectHideFlags: 0

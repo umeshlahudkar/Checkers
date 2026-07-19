@@ -6,7 +6,7 @@ public class ResultPage : Page
 {
     [Header("Badge")]
     [SerializeField] private Image ringOutline;
-    [SerializeField] private Image iconFill;
+    [SerializeField] private Image avatarImage;
 
     [Header("Texts")]
     [SerializeField] private TextMeshProUGUI resultLabelText;
@@ -20,7 +20,6 @@ public class ResultPage : Page
     [Header("Colors")]
     [SerializeField] private Color victoryColor = new(1f, 0.42745098f, 0.3529412f);
     [SerializeField] private Color defeatColor = new(0.6627451f, 0.6235294f, 0.6901961f);
-    [SerializeField] private Color defeatIconFillColor = new(0.9647059f, 0.9411765f, 0.9176471f);
 
     public void ShowVictory(string opponentName, int piecesLeft, int coinsWon)
     {
@@ -48,7 +47,7 @@ public class ResultPage : Page
         subtitleText.text = subtitle;
 
         ringOutline.color = isWin ? victoryColor : defeatColor;
-        iconFill.color = isWin ? victoryColor : defeatIconFillColor;
+        avatarImage.sprite = ServiceLocator.Get<ProfileManager>().GetProfileAvtar();
     }
 
     private void SetCoinReward(int coinsWon)
