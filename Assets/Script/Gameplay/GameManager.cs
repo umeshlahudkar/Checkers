@@ -18,6 +18,7 @@ public class GameManager : Service<GameManager>
 
     private PieceType pieceType;
     private int currentTurn;
+    private int movesWithoutProgress;
 
     private GameState gameState = GameState.Waiting;
     private GameModeType gameMode;
@@ -233,27 +234,41 @@ public class GameManager : Service<GameManager>
         }
         else
         {
+            // A timed-out turn made no move at all, so it neither advances nor resets the
+            // no-progress count - it's carried over unchanged, same as the miss count above.
             int nextTurn = currentTurn == 1 ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount);
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount, movesWithoutProgress);
         }
     }
 
-    public void SwitchTurn()
+    // progressMade is true if the move just played included a capture or a promotion - anything
+    // else (a plain shuffle) counts toward the no-progress draw so a repeating back-and-forth can't
+    // run forever.
+    public void SwitchTurn(bool progressMade)
     {
+        movesWithoutProgress = progressMade ? 0 : movesWithoutProgress + 1;
+
+        if (movesWithoutProgress >= ruleSet.NoProgressMoveLimit)
+        {
+            gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "no progress for too long");
+            return;
+        }
+
         // Miss count is cumulative for the whole match - a completed move doesn't clear it, so the
         // outgoing player's count is carried over unchanged here (only a timeout in
         // HandleTurnMissCount ever increments it).
         int nextTurn = currentTurn == 1 ? 2 : 1;
-        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount);
+        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount, movesWithoutProgress);
     }
 
     [PunRPC]
-    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount)
+    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount, int syncedMovesWithoutProgress)
     {
         players[currentTurn - 1].ResetPlayer();
         players[currentTurn - 1].SetTurnMissCount(outgoingPlayerMissCount);
 
         currentTurn = nextTurn;
+        movesWithoutProgress = syncedMovesWithoutProgress;
         StartTurn();
     }
 
@@ -304,6 +319,15 @@ public class GameManager : Service<GameManager>
         }
     }
 
+    [PunRPC]
+    public void Draw(string reason)
+    {
+        SetGameOver();
+
+        ServiceLocator.Get<GamePageManager>().ResultPage.ShowDraw(reason);
+        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
+    }
+
     private int GetRemainingPieceCount(int playerNumber)
     {
         return playerNumber == 2
@@ -333,6 +357,7 @@ public class GameManager : Service<GameManager>
     {
         pieceType = PieceType.None;
         currentTurn = -1;
+        movesWithoutProgress = 0;
         gameState = GameState.Waiting;
         IsReadyToLeaveGameplay = false;
     }

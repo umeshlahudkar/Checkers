@@ -18,3 +18,4 @@ MonoBehaviour:
   flyingKings: 0
   menCaptureBackward: 0
   mustCaptureMaximum: 0
+  noProgressMoveLimit: 40

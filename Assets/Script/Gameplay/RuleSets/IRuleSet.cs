@@ -17,4 +17,10 @@ public interface IRuleSet
     bool MustCaptureMaximum { get; }
 
     bool IsPromotionRow(int row, int playerID);
+
+    // Number of consecutive turns (across both players) without a capture or promotion before the
+    // match is called a draw - prevents a shuffle that makes no progress from running forever. A
+    // simplified, single-threshold stand-in for the real tournament rule (which shortens the limit
+    // for certain reduced endgame material) - that nuance is out of scope here.
+    int NoProgressMoveLimit { get; }
 }

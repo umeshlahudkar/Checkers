@@ -40,6 +40,12 @@ public class ResultPage : Page
         coinRewardRow.SetActive(false);
     }
 
+    public void ShowDraw(string reason)
+    {
+        Setup(false, "DRAW", "It's a draw", reason);
+        coinRewardRow.SetActive(false);
+    }
+
     private void Setup(bool isWin, string label, string title, string subtitle)
     {
         resultLabelText.text = label;

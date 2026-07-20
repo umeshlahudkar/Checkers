@@ -137,8 +137,8 @@ namespace Gameplay
 
             yield return new WaitForSeconds(0.5f);
 
-
-            if (!selectedPiece.IsCrownedKing && ServiceLocator.Get<GameManager>().RuleSet.IsPromotionRow(selectedPiece.Row_ID, selectedPiece.Player_ID))
+            bool justPromoted = !selectedPiece.IsCrownedKing && ServiceLocator.Get<GameManager>().RuleSet.IsPromotionRow(selectedPiece.Row_ID, selectedPiece.Player_ID);
+            if (justPromoted)
             {
                 thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
             }
@@ -151,7 +151,7 @@ namespace Gameplay
             }
             else
             {
-                ServiceLocator.Get<GameManager>().SwitchTurn();
+                ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);
                 ResetNextToNextHighlightedBlock();
             }
         }

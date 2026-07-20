@@ -11,6 +11,8 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     [SerializeField] private bool menCaptureBackward;
     [SerializeField] private bool mustCaptureMaximum;
 
+    [SerializeField] private int noProgressMoveLimit = 80;
+
     public int Rows => rows;
     public int Columns => columns;
     public int PieceRowsPerSide => pieceRowsPerSide;
@@ -18,6 +20,8 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     public bool FlyingKings => flyingKings;
     public bool MenCaptureBackward => menCaptureBackward;
     public bool MustCaptureMaximum => mustCaptureMaximum;
+
+    public int NoProgressMoveLimit => noProgressMoveLimit;
 
     public bool IsPromotionRow(int row, int playerID)
     {
