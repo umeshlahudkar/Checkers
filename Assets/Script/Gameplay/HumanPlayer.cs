@@ -40,7 +40,7 @@ namespace Gameplay
 
             if (ServiceLocator.Get<MoveGenerator>().CanPieceMove(clickedPiece))
             {
-                selectedPiece = clickedPiece;
+                SelectPieceForNewMove(clickedPiece);
 
                 Block block = ServiceLocator.Get<GameplayController>().board[clickedPiece.Row_ID, clickedPiece.Coloum_ID];
                 block.HighlightPieceBlock();

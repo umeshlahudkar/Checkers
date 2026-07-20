@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using Photon.Pun;
@@ -14,6 +16,43 @@ public class GamePage : Page
     [Header("Layout")]
     [SerializeField] private RectTransform boardBorder;
     [SerializeField] private float cardSpacing = 20f;
+
+    [Header("Gratification Text")]
+    [SerializeField] private RectTransform floatingTextParent;
+    [SerializeField] private FloatingText floatingTextPrefab;
+
+    private readonly Queue<(string text, Color color)> floatingTextQueue = new();
+    private bool isShowingFloatingText;
+
+    // Always spawned centered on screen (floatingTextParent is a fixed, board-independent anchor),
+    // not tied to any specific board square. Queued rather than shown immediately - a crowning and
+    // a multi-capture can land on the exact same move, and firing both at once would stack two
+    // callouts on top of each other at the same spot.
+    public void ShowFloatingText(string text, Color color)
+    {
+        floatingTextQueue.Enqueue((text, color));
+
+        if (!isShowingFloatingText)
+        {
+            StartCoroutine(ProcessFloatingTextQueue());
+        }
+    }
+
+    private IEnumerator ProcessFloatingTextQueue()
+    {
+        isShowingFloatingText = true;
+
+        while (floatingTextQueue.Count > 0)
+        {
+            (string text, Color color) next = floatingTextQueue.Dequeue();
+            FloatingText instance = Instantiate(floatingTextPrefab, floatingTextParent);
+            instance.Play(next.text, next.color);
+
+            yield return new WaitForSeconds(FloatingText.TotalDuration);
+        }
+
+        isShowingFloatingText = false;
+    }
 
     public void PositionCardsAroundBoard()
     {

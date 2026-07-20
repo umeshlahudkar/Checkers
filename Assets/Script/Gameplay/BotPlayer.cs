@@ -206,7 +206,7 @@ namespace Gameplay
 
         private void MakeMove(Piece piece, CaptureSequence sequence)
         {
-            selectedPiece = piece;
+            SelectPieceForNewMove(piece);
             BoardPosition landing = sequence.Landings[0];
             Block block = ServiceLocator.Get<GameplayController>().board[landing.row_ID, landing.col_ID];
 
@@ -219,7 +219,7 @@ namespace Gameplay
 
         private void MakeMove(Piece piece, BoardPosition position)
         {
-            selectedPiece = piece;
+            SelectPieceForNewMove(piece);
             Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
 
             OnHighlightedTargetBlockClick(block);

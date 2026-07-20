@@ -19,6 +19,13 @@ namespace Gameplay
         protected readonly List<Piece> movablePieces = new();
         protected Piece selectedPiece;
 
+        // Counts captures across an entire move (including every hop of a capture chain), so a
+        // multi-capture can be celebrated with a "DOUBLE KILL!"-style callout. Reset only when a
+        // fresh piece is picked up (see SelectPieceForNewMove), not between individual hops.
+        private int chainCaptureCount;
+
+        private static readonly Color KillStreakTextColor = new(1f, 0.3f, 0.3f);
+
         public PieceType PieceType { get { return pieceType; } }
         public int Player_ID { get { return playerID; } }
         public int TurnMissCount { get { return turnMissCount; } }
@@ -111,6 +118,12 @@ namespace Gameplay
         {
         }
 
+        protected void SelectPieceForNewMove(Piece piece)
+        {
+            selectedPiece = piece;
+            chainCaptureCount = 0;
+        }
+
         public void OnHighlightedTargetBlockClick(Block block)
         {
             StartCoroutine(HandlePieceMovementAndPieceDelete(block));
@@ -131,6 +144,7 @@ namespace Gameplay
 
                 thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, captured.row_ID, captured.col_ID);
                 hasDeleted = true;
+                chainCaptureCount++;
                 block.IsNextToNextHighlighted = false;
             }
 
@@ -152,9 +166,30 @@ namespace Gameplay
             }
             else
             {
+                if (chainCaptureCount >= 2)
+                {
+                    thisPhotonView.RPC(nameof(ShowGratificationText), RpcTarget.All, GetKillStreakText(chainCaptureCount));
+                }
+
                 ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);
                 ResetNextToNextHighlightedBlock();
             }
+        }
+
+        private static string GetKillStreakText(int captureCount)
+        {
+            return captureCount switch
+            {
+                2 => "DOUBLE KILL!",
+                3 => "TRIPLE KILL!",
+                _ => "MULTI KILL!"
+            };
+        }
+
+        [PunRPC]
+        public void ShowGratificationText(string text)
+        {
+            ServiceLocator.Get<GameManager>().ShowFloatingText(text, KillStreakTextColor);
         }
 
         protected abstract void ContinueAfterKill(Piece selectedPiece);

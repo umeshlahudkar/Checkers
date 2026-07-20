@@ -56,11 +56,14 @@ public class Piece : MonoBehaviour
         }
     }
 
+    private static readonly Color KingTextColor = new(1f, 0.84f, 0f);
+
     public void SetCrownKing()
     {
         isCrownedKing = true;
         crownImage.gameObject.SetActive(true);
         ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
+        ServiceLocator.Get<GameManager>().ShowFloatingText("CROWNED KING!", KingTextColor);
     }
 
     public void Destroy()

@@ -50,6 +50,11 @@ public class GameManager : Service<GameManager>
     private IRuleSet ruleSet;
     public IRuleSet RuleSet { get { return ruleSet; } }
 
+    public void ShowFloatingText(string text, Color color)
+    {
+        ServiceLocator.Get<GamePageManager>().GamePage.ShowFloatingText(text, color);
+    }
+
     public int CurrentTurn { get { return currentTurn; } }
 
     public PieceType PieceType { get { return pieceType; } }
@@ -345,6 +350,12 @@ public class GameManager : Service<GameManager>
     private void ForceLose()
     {
         GameOver(2, "debug loss");
+    }
+
+    [ContextMenu("Test Floating Text")]
+    private void TestFloatingText()
+    {
+        ShowFloatingText("DOUBLE KILL!", new Color(1f, 0.3f, 0.3f));
     }
 
     public void SetGameOver()
