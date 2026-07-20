@@ -20,14 +20,8 @@ public class Piece : MonoBehaviour
 
 
     [Header("Piece AI")]
-    [HideInInspector] public List<BoardPosition> movableBlockPositions = new();
-    [HideInInspector] public List<BoardPosition> safeMovableBlockPositions = new();
-
-    [HideInInspector] public List<BoardPosition> killerBlockPositions = new();
-    [HideInInspector] public List<BoardPosition> safeKillerBlockPositions = new();
-
-    [HideInInspector] public List<BoardPosition> doubleKillerBlockPositions = new();
-    [HideInInspector] public List<BoardPosition> safeDoubleKillerBlockPositions = new();
+    [HideInInspector] public List<BoardPosition> movablePositions = new();
+    [HideInInspector] public List<CaptureSequence> captureSequences = new();
 
 
     public void SetPiece(int _playerID, int _row, int _colum, int _pieceType)
@@ -130,14 +124,8 @@ public class Piece : MonoBehaviour
 
     public void ResetAllList()
     {
-        movableBlockPositions.Clear();
-        safeMovableBlockPositions.Clear();
-
-        killerBlockPositions.Clear();
-        safeKillerBlockPositions.Clear();
-
-        doubleKillerBlockPositions.Clear();
-        safeDoubleKillerBlockPositions.Clear();
+        movablePositions.Clear();
+        captureSequences.Clear();
     }
 }
 

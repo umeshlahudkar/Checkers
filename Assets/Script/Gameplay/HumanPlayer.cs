@@ -9,9 +9,19 @@ namespace Gameplay
             HighlightMovablePieceBlock();
         }
 
+        // Deliberately doesn't reuse OnHighlightedPieceClick - once already mid-chain with this
+        // piece, only further captures may be offered (never a quiet move, which would let the
+        // player illegally bail out of a still-mandatory continuation).
         protected override void ContinueAfterKill(Piece selectedPiece)
         {
-            OnHighlightedPieceClick(selectedPiece);
+            selectedPiece.ResetAllList();
+            selectedPiece.captureSequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece);
+
+            Block block = ServiceLocator.Get<GameplayController>().board[selectedPiece.Row_ID, selectedPiece.Coloum_ID];
+            block.HighlightPieceBlock();
+            highlightedBlocks.Add(block);
+
+            HighlightCaptureSequences(selectedPiece.captureSequences);
         }
 
         private void HighlightMovablePieceBlock()
@@ -28,7 +38,7 @@ namespace Gameplay
         {
             ResetHighlightedBlocks();
 
-            if (ServiceLocator.Get<GameplayController>().CanPieceMove(clickedPiece))
+            if (ServiceLocator.Get<MoveGenerator>().CanPieceMove(clickedPiece))
             {
                 selectedPiece = clickedPiece;
 
@@ -37,7 +47,7 @@ namespace Gameplay
                 highlightedBlocks.Add(block);
 
                 clickedPiece.ResetAllList();
-                ServiceLocator.Get<GameplayController>().SetPiecePosition(clickedPiece);
+                ServiceLocator.Get<MoveGenerator>().SetPiecePosition(clickedPiece);
 
                 HighlightMovementBlocks(clickedPiece);
             }
@@ -49,10 +59,23 @@ namespace Gameplay
 
         private void HighlightMovementBlocks(Piece clickedPiece)
         {
-            HighlightBlocks(clickedPiece.safeKillerBlockPositions, isKillMove: true);
-            HighlightBlocks(clickedPiece.killerBlockPositions, isKillMove: true);
-            HighlightBlocks(clickedPiece.safeMovableBlockPositions, isKillMove: false);
-            HighlightBlocks(clickedPiece.movableBlockPositions, isKillMove: false);
+            HighlightCaptureSequences(clickedPiece.captureSequences);
+            HighlightBlocks(clickedPiece.movablePositions, isKillMove: false);
+        }
+
+        private void HighlightCaptureSequences(List<CaptureSequence> sequences)
+        {
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                CaptureSequence sequence = sequences[i];
+                BoardPosition landing = sequence.Landings[0];
+
+                Block block = ServiceLocator.Get<GameplayController>().board[landing.row_ID, landing.col_ID];
+                block.HighlightNextMoveBlock(true);
+                block.CapturedPosition = sequence.Captured[0];
+                highlightedBlocks.Add(block);
+                nextToNexthighlightedBlocks.Add(block);
+            }
         }
 
         private void HighlightBlocks(List<BoardPosition> positions, bool isKillMove)

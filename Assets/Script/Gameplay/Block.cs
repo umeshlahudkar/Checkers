@@ -22,6 +22,11 @@ public class Block : MonoBehaviour
     private bool isTargetBlockHighlighted;
     private bool isNextTargetBlockHighlighted;
 
+    // The position of the piece a click on this (highlighted-as-a-capture) block would capture.
+    // Can't be derived geometrically from this block's own position for a flying king, which may
+    // capture from any distance along the diagonal, so it's set explicitly at highlight time.
+    private BoardPosition capturedPosition;
+
     private float startTime = 0f;
     private float animationDuration = 1f;
     private bool animFlag;
@@ -183,6 +188,12 @@ public class Block : MonoBehaviour
     {
         get { return isNextTargetBlockHighlighted; }
         set { isNextTargetBlockHighlighted = value; }
+    }
+
+    public BoardPosition CapturedPosition
+    {
+        get { return capturedPosition; }
+        set { capturedPosition = value; }
     }
 
     public int Row_ID { get { return rowID; } }

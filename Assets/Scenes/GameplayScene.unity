@@ -247,6 +247,7 @@ GameObject:
   m_Component:
   - component: {fileID: 264248823}
   - component: {fileID: 264248824}
+  - component: {fileID: 264248825}
   m_Layer: 0
   m_Name: Gameplay Controller
   m_TagString: Untagged
@@ -279,10 +280,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cddd9f7b9376e244b8943c697bdd72b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   whitePieces: []
   blackPieces: []
+--- !u!114 &264248825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 264248822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 831d2e001f974e642a86e524646480ac, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &347150543
 GameObject:
   m_ObjectHideFlags: 0

@@ -61,7 +61,7 @@ namespace Gameplay
 
         public bool CanPlay()
         {
-            if(ServiceLocator.Get<GameplayController>().CanMove(playerID))
+            if(ServiceLocator.Get<MoveGenerator>().CanMove(playerID))
             {
                 PlayTurn();
                 return true;
@@ -73,7 +73,7 @@ namespace Gameplay
         private void PlayTurn()
         {
             movablePieces.Clear();
-            ServiceLocator.Get<GameplayController>().CheckMovablePieces(playerID, movablePieces);
+            ServiceLocator.Get<MoveGenerator>().CheckMovablePieces(playerID, movablePieces);
 
             if (movablePieces.Count > 0)
             {
@@ -123,13 +123,12 @@ namespace Gameplay
 
             if (block.IsNextToNextHighlighted)
             {
-                int row = block.Row_ID;
-                int coloum = block.Coloum_ID;
+                // Read the captured piece's position from the block rather than deriving it
+                // geometrically from the landing square - a flying king can capture from any
+                // distance along the diagonal, so the two aren't a fixed offset apart.
+                BoardPosition captured = block.CapturedPosition;
 
-                int targetRow = row + (row > selectedPiece.Row_ID ? -1 : 1);
-                int targetCol = coloum + (coloum > selectedPiece.Coloum_ID ? -1 : 1);
-
-                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, targetRow, targetCol);
+                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, captured.row_ID, captured.col_ID);
                 hasDeleted = true;
                 block.IsNextToNextHighlighted = false;
             }
@@ -139,15 +138,14 @@ namespace Gameplay
             yield return new WaitForSeconds(0.5f);
 
 
-            if (!selectedPiece.IsCrownedKing && ((selectedPiece.Player_ID == 2 && selectedPiece.Row_ID == 7) ||
-                (selectedPiece.Player_ID == 1 && selectedPiece.Row_ID == 0)))
+            if (!selectedPiece.IsCrownedKing && ServiceLocator.Get<GameManager>().RuleSet.IsPromotionRow(selectedPiece.Row_ID, selectedPiece.Player_ID))
             {
                 thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
             }
 
             selectedPiece = block.Piece;
 
-            if (hasDeleted && ServiceLocator.Get<GameplayController>().CanPieceKill(selectedPiece))
+            if (hasDeleted && ServiceLocator.Get<MoveGenerator>().CanPieceKill(selectedPiece))
             {
                 ContinueAfterKill(selectedPiece);
             }

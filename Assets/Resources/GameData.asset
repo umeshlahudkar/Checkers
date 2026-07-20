@@ -22,3 +22,4 @@ MonoBehaviour:
     avatar: {fileID: 21300000, guid: b48ca84c3ceec0541a9ef3c03ae083b1, type: 3}
     pieceType: 1
   botDifficulty: 2
+  ruleSet: {fileID: 11400000, guid: 4ef17791a1cbba23ecb8bbedf8d9fb8b, type: 2}

@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -24,18 +23,29 @@ namespace Gameplay
         protected override void ContinueAfterKill(Piece selectedPiece)
         {
             selectedPiece.ResetAllList();
-            ServiceLocator.Get<GameplayController>().SetAdjacentKillPosition(selectedPiece);
+            List<CaptureSequence> sequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece);
 
-            List<BoardPosition> positions = selectedPiece.safeKillerBlockPositions.Count > 0
-                ? selectedPiece.safeKillerBlockPositions
-                : selectedPiece.killerBlockPositions;
-
-            BoardPosition position = positions[0];
+            CaptureSequence chosen = ChooseSafestOrFirst(selectedPiece, sequences);
+            BoardPosition position = chosen.Landings[0];
 
             Block b = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
             b.IsNextToNextHighlighted = true;
+            b.CapturedPosition = chosen.Captured[0];
             OnHighlightedTargetBlockClick(b);
             ResetNextToNextHighlightedBlock();
+        }
+
+        private CaptureSequence ChooseSafestOrFirst(Piece piece, List<CaptureSequence> sequences)
+        {
+            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                if (moveGenerator.IsSequenceSafe(piece, sequences[i]))
+                {
+                    return sequences[i];
+                }
+            }
+            return sequences[0];
         }
 
         private void SetMovablePosition()
@@ -44,7 +54,7 @@ namespace Gameplay
             {
                 Piece piece = movablePieces[i];
                 piece.ResetAllList();
-                ServiceLocator.Get<GameplayController>().SetPiecePosition(piece);
+                ServiceLocator.Get<MoveGenerator>().SetPiecePosition(piece);
             }
         }
 
@@ -66,92 +76,151 @@ namespace Gameplay
             }
         }
 
-        // Hard: full priority order - a safe double-kill beats an unsafe one, which beats a safe
-        // single kill, and so on down to a plain (unsafe) move. Optimal play.
+        // Hard: the longest available capture always wins (regardless of safety), and only among
+        // captures/moves of that same priority does a safe option beat an unsafe one. Optimal play.
         private void PlayHard()
         {
-            if (TryBestOf(p => p.safeDoubleKillerBlockPositions, isKillMove: true)) { return; }
-            if (TryBestOf(p => p.doubleKillerBlockPositions, isKillMove: true)) { return; }
-            if (TryBestOf(p => p.safeKillerBlockPositions, isKillMove: true)) { return; }
-            if (TryBestOf(p => p.killerBlockPositions, isKillMove: true)) { return; }
-            if (TryBestOf(p => p.safeMovableBlockPositions, isKillMove: false)) { return; }
-            TryBestOf(p => p.movableBlockPositions, isKillMove: false);
+            if (TryBestCapture(preferSafe: true)) { return; }
+            if (TryBestMove(preferSafe: true)) { return; }
+            TryBestMove(preferSafe: false);
         }
 
-        // Medium: still takes a kill over a move (and a double-kill over a single one), but is
-        // indifferent to whether the resulting position is safe - it doesn't look further ahead.
+        // Medium: still takes the longest available capture over a move, but is indifferent to
+        // whether the resulting position is safe - it doesn't look further ahead.
         private void PlayMedium()
         {
-            if (TryBestOf(p => Combine(p.safeDoubleKillerBlockPositions, p.doubleKillerBlockPositions), isKillMove: true)) { return; }
-            if (TryBestOf(p => Combine(p.safeKillerBlockPositions, p.killerBlockPositions), isKillMove: true)) { return; }
-            TryBestOf(p => Combine(p.safeMovableBlockPositions, p.movableBlockPositions), isKillMove: false);
+            if (TryBestCapture(preferSafe: null)) { return; }
+            TryBestMove(preferSafe: null);
         }
 
-        // Easy: no priority at all - every legal destination across every piece is an equally
-        // likely pick, so it can walk past a free kill without taking it.
+        // Easy: no priority at all - every legal destination across every piece (captures of any
+        // length included) is an equally likely pick, so it can walk past a free capture without
+        // taking it.
         private void PlayEasy()
         {
-            List<(Piece piece, BoardPosition position, bool isKillMove)> options = new();
+            List<(Piece piece, CaptureSequence sequence)> captureOptions = new();
+            List<(Piece piece, BoardPosition position)> moveOptions = new();
 
             for (int i = 0; i < movablePieces.Count; i++)
             {
                 Piece piece = movablePieces[i];
-                AddOptions(options, piece, piece.safeDoubleKillerBlockPositions, isKillMove: true);
-                AddOptions(options, piece, piece.doubleKillerBlockPositions, isKillMove: true);
-                AddOptions(options, piece, piece.safeKillerBlockPositions, isKillMove: true);
-                AddOptions(options, piece, piece.killerBlockPositions, isKillMove: true);
-                AddOptions(options, piece, piece.safeMovableBlockPositions, isKillMove: false);
-                AddOptions(options, piece, piece.movableBlockPositions, isKillMove: false);
+                for (int j = 0; j < piece.captureSequences.Count; j++)
+                {
+                    captureOptions.Add((piece, piece.captureSequences[j]));
+                }
+                for (int j = 0; j < piece.movablePositions.Count; j++)
+                {
+                    moveOptions.Add((piece, piece.movablePositions[j]));
+                }
             }
 
-            if (options.Count == 0) { return; }
+            int totalOptions = captureOptions.Count + moveOptions.Count;
+            if (totalOptions == 0) { return; }
 
-            (Piece piece, BoardPosition position, bool isKillMove) choice = options[UnityEngine.Random.Range(0, options.Count)];
-            MakeMove(choice.piece, choice.position, choice.isKillMove);
-        }
-
-        private static void AddOptions(List<(Piece piece, BoardPosition position, bool isKillMove)> options, Piece piece, List<BoardPosition> positions, bool isKillMove)
-        {
-            for (int i = 0; i < positions.Count; i++)
+            int choiceIndex = UnityEngine.Random.Range(0, totalOptions);
+            if (choiceIndex < captureOptions.Count)
             {
-                options.Add((piece, positions[i], isKillMove));
+                (Piece piece, CaptureSequence sequence) choice = captureOptions[choiceIndex];
+                MakeMove(choice.piece, choice.sequence);
+            }
+            else
+            {
+                (Piece piece, BoardPosition position) choice = moveOptions[choiceIndex - captureOptions.Count];
+                MakeMove(choice.piece, choice.position);
             }
         }
 
-        private static List<BoardPosition> Combine(List<BoardPosition> a, List<BoardPosition> b)
+        // Finds the longest capture available across all movable pieces, then (unless preferSafe is
+        // null) prefers one that leaves the piece safe afterward, falling back to any at that same
+        // longest length if none are safe.
+        private bool TryBestCapture(bool? preferSafe)
         {
-            if (a.Count == 0) { return b; }
-            if (b.Count == 0) { return a; }
+            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
 
-            List<BoardPosition> combined = new(a);
-            combined.AddRange(b);
-            return combined;
-        }
+            int maxLength = 0;
+            for (int i = 0; i < movablePieces.Count; i++)
+            {
+                List<CaptureSequence> sequences = movablePieces[i].captureSequences;
+                for (int j = 0; j < sequences.Count; j++)
+                {
+                    if (sequences[j].Length > maxLength)
+                    {
+                        maxLength = sequences[j].Length;
+                    }
+                }
+            }
 
-        private bool TryBestOf(Func<Piece, List<BoardPosition>> getPositions, bool isKillMove)
-        {
+            if (maxLength == 0) { return false; }
+
+            (Piece piece, CaptureSequence sequence)? fallback = null;
+
             for (int i = 0; i < movablePieces.Count; i++)
             {
                 Piece piece = movablePieces[i];
-                List<BoardPosition> positions = getPositions(piece);
-                if (positions.Count == 0) { continue; }
+                List<CaptureSequence> sequences = piece.captureSequences;
+                for (int j = 0; j < sequences.Count; j++)
+                {
+                    CaptureSequence sequence = sequences[j];
+                    if (sequence.Length != maxLength) { continue; }
 
-                MakeMove(piece, positions[0], isKillMove);
+                    if (!preferSafe.HasValue || moveGenerator.IsSequenceSafe(piece, sequence) == preferSafe.Value)
+                    {
+                        MakeMove(piece, sequence);
+                        return true;
+                    }
+
+                    fallback ??= (piece, sequence);
+                }
+            }
+
+            if (fallback.HasValue)
+            {
+                MakeMove(fallback.Value.piece, fallback.Value.sequence);
                 return true;
             }
             return false;
         }
 
-        private void MakeMove(Piece piece, BoardPosition position, bool isKillMove)
+        private bool TryBestMove(bool? preferSafe)
+        {
+            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
+
+            for (int i = 0; i < movablePieces.Count; i++)
+            {
+                Piece piece = movablePieces[i];
+                for (int j = 0; j < piece.movablePositions.Count; j++)
+                {
+                    BoardPosition position = piece.movablePositions[j];
+
+                    if (preferSafe.HasValue && moveGenerator.IsSafeToMove(piece, position.row_ID, position.col_ID) != preferSafe.Value)
+                    {
+                        continue;
+                    }
+
+                    MakeMove(piece, position);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void MakeMove(Piece piece, CaptureSequence sequence)
+        {
+            selectedPiece = piece;
+            BoardPosition landing = sequence.Landings[0];
+            Block block = ServiceLocator.Get<GameplayController>().board[landing.row_ID, landing.col_ID];
+
+            block.IsNextToNextHighlighted = true;
+            block.CapturedPosition = sequence.Captured[0];
+            nextToNexthighlightedBlocks.Add(block);
+
+            OnHighlightedTargetBlockClick(block);
+        }
+
+        private void MakeMove(Piece piece, BoardPosition position)
         {
             selectedPiece = piece;
             Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
-
-            if (isKillMove)
-            {
-                block.IsNextToNextHighlighted = true;
-                nextToNexthighlightedBlocks.Add(block);
-            }
 
             OnHighlightedTargetBlockClick(block);
         }

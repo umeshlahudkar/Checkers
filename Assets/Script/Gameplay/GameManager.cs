@@ -46,6 +46,9 @@ public class GameManager : Service<GameManager>
         get { return gameDataSO.botDifficulty; }
     }
 
+    private IRuleSet ruleSet;
+    public IRuleSet RuleSet { get { return ruleSet; } }
+
     public int CurrentTurn { get { return currentTurn; } }
 
     public PieceType PieceType { get { return pieceType; } }
@@ -69,6 +72,10 @@ public class GameManager : Service<GameManager>
 
         gameMode = gameDataSO.gameMode;
         gameState = GameState.Playing;
+
+        ruleSet = gameDataSO.ruleSet;
+        ServiceLocator.Get<GameplayController>().InitBoard(ruleSet);
+        ServiceLocator.Get<MoveGenerator>().Initialize(ruleSet);
 
         if (gameMode == GameModeType.Multiplayer)
         {
@@ -102,7 +109,7 @@ public class GameManager : Service<GameManager>
         gamePageManager.GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar, opponentInfo.userName, opponentInfo.avatar);
         gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
 
-        boardGenerator.GenerateBoard();
+        boardGenerator.GenerateBoard(ruleSet);
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
 
         gamePageManager.GamePage.PositionCardsAroundBoard();
@@ -130,7 +137,7 @@ public class GameManager : Service<GameManager>
         // rematch) before starting this round's setup.
         SetLocalPlayerGameplayReady(false);
 
-        boardGenerator.GenerateBoard();
+        boardGenerator.GenerateBoard(ruleSet);
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
 
         GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
@@ -360,7 +367,7 @@ public class GameManager : Service<GameManager>
     public void StartRematch()
     {
         ResetGameplay();
-        InitializeGame();
+        StartCoroutine(InitializeGame());
         //StartCoroutine(Rematch());
     }
 

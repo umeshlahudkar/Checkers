@@ -5,9 +5,9 @@ using UnityEngine.UI;
 public class BoardGenerator : MonoBehaviour
 {
     [Header("Board Data")]
-    [SerializeField] private int rows;
-    [SerializeField] private int colums;
     [SerializeField] private float blockSize;
+
+    private IRuleSet ruleSet;
 
     [Header("Board Block")]
     [SerializeField] private Block blockPrefab;
@@ -32,8 +32,12 @@ public class BoardGenerator : MonoBehaviour
     [Header("Board Canvas")]
     [SerializeField] private RectTransform layout;
 
-    public void GenerateBoard()
+    public void GenerateBoard(IRuleSet ruleSet)
     {
+        this.ruleSet = ruleSet;
+        int rows = ruleSet.Rows;
+        int colums = ruleSet.Columns;
+
         Canvas.ForceUpdateCanvases(); // flushes pending canvas updates
         LayoutRebuilder.ForceRebuildLayoutImmediate(layout); // rootLayoutRect = the RectTransform with your VerticalLayoutGroup
 
@@ -43,7 +47,7 @@ public class BoardGenerator : MonoBehaviour
         float screenWidth = canvasRect.rect.width;
         float totalWidth = screenWidth * 0.90f;
 
-        blockSize = (totalWidth / 8);
+        blockSize = (totalWidth / colums);
 
         float startX = -((blockSize * colums) / 2 + (blockSize / 2));
         float startY = ((blockSize * rows) / 2) - (blockSize / 2);
@@ -104,21 +108,25 @@ public class BoardGenerator : MonoBehaviour
 
     public void GeneratePieces(PieceType player1_pieceType, PieceType player2_pieceType)
     {
+        int rows = ruleSet.Rows;
+        int colums = ruleSet.Columns;
+        int pieceRowsPerSide = ruleSet.PieceRowsPerSide;
+
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < colums; j++)
             {
                 if ((i + j) % 2 != 0)
                 {
-                    if (i < 3)
+                    if (i < pieceRowsPerSide)
                     {
                         Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetPiece(2, i, j, (int)player2_pieceType);
                         ServiceLocator.Get<GameplayController>().whitePieces.Add(piece);
-                        
+
                     }
 
-                    if (i > 4)
+                    if (i >= rows - pieceRowsPerSide)
                     {
                         Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
                         piece.SetPiece(1, i, j, (int)player1_pieceType);
