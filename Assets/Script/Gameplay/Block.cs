@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,9 +10,9 @@ public class Block : MonoBehaviour
 
     [SerializeField] private Image blockImage;
     [SerializeField] private Image highlightImage;
-    [SerializeField] private Image highlightHoleImage;
+    //[SerializeField] private Image highlightHoleImage;
     [SerializeField] private Image targetImage;
-    [SerializeField] private Image targetHoleImage;
+    //[SerializeField] private Image targetHoleImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
@@ -27,17 +28,13 @@ public class Block : MonoBehaviour
     // capture from any distance along the diagonal, so it's set explicitly at highlight time.
     private BoardPosition capturedPosition;
 
-    private float startTime = 0f;
-    private float animationDuration = 1f;
-    private bool animFlag;
+    private readonly float pulseDuration = 1f;
 
-    [Header("Highlight Anim Data")]
-    private float maxAlpha = 1f;
-    private float minAlpha = 0.5f;
+    private readonly float maxAlpha = 1f;
+    private readonly float minAlpha = 0.5f;
 
-    [Header("Target Image Anim Data")]
-    private float maxScale = 0.8f;
-    private float minScale = 0.5f;
+    private readonly float maxScale = 1f;
+    private readonly float minScale = 0.6f;
 
     public void SetBlock(int row, int colum, Sprite sprite)
     {
@@ -60,65 +57,6 @@ public class Block : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if(highlightImage.enabled)
-        {
-            PlayHighlightImageAnim();
-        }
-
-        if (targetImage.enabled)
-        {
-            PlayTargetImageAnim();
-        }
-    }
-
-    private void PlayHighlightImageAnim()
-    {
-        float t = (Time.time - startTime) / animationDuration;
-        float newAlpha;
-
-        if (animFlag)
-        {
-            newAlpha = Mathf.Lerp(maxAlpha, minAlpha, t);
-        }
-        else
-        {
-            newAlpha = Mathf.Lerp(minAlpha, maxAlpha, t);
-        }
-
-        SetHighlightImageAlpha(newAlpha);
-
-        if (t >= animationDuration)
-        {
-            animFlag = !animFlag;
-            startTime = Time.time;
-        }
-    }
-
-    private void PlayTargetImageAnim()
-    {
-        float t = (Time.time - startTime) / animationDuration;
-        float newScale;
-
-        if (animFlag)
-        {
-            newScale = Mathf.Lerp(maxScale, minScale, t);
-        }
-        else
-        {
-            newScale = Mathf.Lerp(minScale, maxScale, t);
-        }
-
-        targetImage.rectTransform.localScale = new Vector3(newScale, newScale, newScale);
-
-        if (t >= animationDuration)
-        {
-            animFlag = !animFlag;
-            startTime = Time.time;
-        }
-    }
-
     private void SetHighlightImageAlpha(float alpha)
     {
         Color currentColor = highlightImage.color;
@@ -128,41 +66,23 @@ public class Block : MonoBehaviour
 
     public void HighlightPieceBlock()
     {
-        startTime = Time.time;
-        animFlag = false;
-
+        highlightImage.DOKill();
         SetHighlightImageAlpha(minAlpha);
         highlightImage.gameObject.SetActive(true);
 
-        highlightHoleImage.sprite = blockImage.sprite;
-        highlightHoleImage.color = blockImage.color;
-        highlightHoleImage.gameObject.SetActive(true);
+        highlightImage.DOFade(maxAlpha, pulseDuration).SetLoops(-1, LoopType.Yoyo);
     }
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
     {
-        startTime = Time.time;
-        animFlag = false;
-
         isTargetBlockHighlighted = true;
         isNextTargetBlockHighlighted = nextToNextHighlighted;
         targetImage.gameObject.SetActive(true);
         button.interactable = true;
 
-        if (nextToNextHighlighted)
-        {
-            targetImage.rectTransform.anchorMin = new Vector2(0.32f, 0.32f);
-            targetImage.rectTransform.anchorMax = new Vector2(0.68f, 0.68f);
-            targetHoleImage.gameObject.SetActive(false);
-        }
-        else
-        {
-            targetImage.rectTransform.anchorMin = new Vector2(0.2f, 0.2f);
-            targetImage.rectTransform.anchorMax = new Vector2(0.8f, 0.8f);
-            targetHoleImage.sprite = blockImage.sprite;
-            targetHoleImage.color = blockImage.color;
-            targetHoleImage.gameObject.SetActive(true);
-        }
+        targetImage.rectTransform.DOKill();
+        targetImage.rectTransform.localScale = Vector3.one * minScale;
+        targetImage.rectTransform.DOScale(maxScale, pulseDuration).SetLoops(-1, LoopType.Yoyo);
     }
 
     public void ResetBlock()
@@ -170,10 +90,11 @@ public class Block : MonoBehaviour
         button.interactable = false;
         isTargetBlockHighlighted = false;
 
+        highlightImage.DOKill();
+        targetImage.rectTransform.DOKill();
+
         highlightImage.gameObject.SetActive(false);
-        highlightHoleImage.gameObject.SetActive(false);
         targetImage.gameObject.SetActive(false);
-        targetHoleImage.gameObject.SetActive(false);
     }
 
     public void OnClick()
