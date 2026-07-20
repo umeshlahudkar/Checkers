@@ -56,7 +56,7 @@ public class Piece : MonoBehaviour
         }
     }
 
-    private static readonly Color KingTextColor = new(1f, 0.84f, 0f);
+    private static readonly Color KingTextColor = new(1f, 0.42745098f, 0.3529412f); // FF6D5A
 
     public void SetCrownKing()
     {
