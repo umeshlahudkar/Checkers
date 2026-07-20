@@ -90,7 +90,7 @@ public class GameManager : Service<GameManager>
         else
         {
             Gameplay.Player opponentPrefab = (gameMode == GameModeType.VsBot) ? (Gameplay.Player)botPlayerPrefab : humanPlayerPrefab;
-            SetupLocalMatch(opponentPrefab);
+            StartCoroutine(SetupLocalMatch(opponentPrefab));
         }
     }
 
@@ -98,7 +98,7 @@ public class GameManager : Service<GameManager>
     // Multiplayer - they just spawn both sides on this one device (PhotonNetwork.OfflineMode is
     // switched on before this scene loads, see OfflineMatchModeHandlerBase) instead of waiting for a
     // second device to join over the network.
-    private void SetupLocalMatch(Gameplay.Player opponentPlayerPrefab)
+    private IEnumerator SetupLocalMatch(Gameplay.Player opponentPlayerPrefab)
     {
         PlayerInfo ownInfo = gameDataSO.ownPlayer;
         PlayerInfo opponentInfo = gameDataSO.opponentPlayer;
@@ -121,6 +121,7 @@ public class GameManager : Service<GameManager>
         gamePageManager.GamePage.PositionCardsAroundBoard();
 
         GeneratePiecesAndInitUI();
+        yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesAppearAnimation());
         StartFirstTurn();
 
         retryButton.SetActive(true);
@@ -179,6 +180,8 @@ public class GameManager : Service<GameManager>
         {
             yield return null;
         }
+
+        yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesAppearAnimation());
 
         StartFirstTurn();
         retryButton.SetActive(false);
@@ -295,7 +298,12 @@ public class GameManager : Service<GameManager>
     [PunRPC]
     public void GameOver(int winnerPlayerNumber, string reason)
     {
-        SetGameOver();
+        StartCoroutine(PlayGameOverSequence(winnerPlayerNumber, reason));
+    }
+
+    private IEnumerator PlayGameOverSequence(int winnerPlayerNumber, string reason)
+    {
+        yield return StartCoroutine(PrepareGameOverVisuals());
 
         bool isLocalWin;
         if (gameMode == GameModeType.Multiplayer)
@@ -327,10 +335,38 @@ public class GameManager : Service<GameManager>
     [PunRPC]
     public void Draw(string reason)
     {
-        SetGameOver();
+        StartCoroutine(PlayDrawSequence(reason));
+    }
+
+    private IEnumerator PlayDrawSequence(string reason)
+    {
+        yield return StartCoroutine(PrepareGameOverVisuals());
 
         ServiceLocator.Get<GamePageManager>().ResultPage.ShowDraw(reason);
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
+    }
+
+    // Shared by every end-of-match path (a decisive winner, a no-progress draw, or the opponent
+    // forfeiting by leaving) - mark the match over, clear any leftover highlight (e.g. a timed-out
+    // player's turn-start highlighting was never dismissed by a click), then let all remaining
+    // pieces play their disappear animation before the caller shows the result screen.
+    public IEnumerator PrepareGameOverVisuals()
+    {
+        SetGameOver();
+
+        // Stops the active card's low-time blink (a Draw or a forfeit can land while it's mid-blink -
+        // ChangeTurn's own ResetTimer() call never runs on those paths since there's no next turn).
+        timer.ResetTimer();
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            if (players[i] != null)
+            {
+                players[i].ResetPlayer();
+            }
+        }
+
+        yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesDisappearAnimation());
     }
 
     private int GetRemainingPieceCount(int playerNumber)

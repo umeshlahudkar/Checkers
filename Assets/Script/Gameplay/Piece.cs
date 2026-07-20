@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -89,6 +90,24 @@ public class Piece : MonoBehaviour
         ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
 
         Destroy(gameObject);
+    }
+
+    public const float AppearDuration = 0.3f;
+    public const float DisappearDuration = 0.25f;
+
+    // Pops in from nothing (used when a match starts) - scale starts at 0 so there's something to
+    // animate from regardless of when in the piece's lifecycle this is called.
+    public void PlayAppearAnimation(float delay)
+    {
+        thisTransform.localScale = Vector3.zero;
+        thisTransform.DOScale(1f, AppearDuration).SetDelay(delay).SetEase(Ease.OutBack);
+    }
+
+    // Shrinks away (used when a match ends) - purely visual, doesn't touch board/list state, so
+    // GameManager can read remaining piece counts for the result screen after this plays.
+    public void PlayDisappearAnimation(float delay)
+    {
+        thisTransform.DOScale(0f, DisappearDuration).SetDelay(delay).SetEase(Ease.InBack);
     }
 
     public bool IsCrownedKing

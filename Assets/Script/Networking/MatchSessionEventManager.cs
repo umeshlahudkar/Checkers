@@ -1,3 +1,4 @@
+using System.Collections;
 using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
@@ -134,11 +135,17 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
 
         if(canOpenGameOverScreen)
         {
-            ServiceLocator.Get<GameManager>().SetGameOver();
-            //ServiceLocator.Get<CoinManager>().AddCoin(500);
-            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
-            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
+            StartCoroutine(PlayForfeitSequence());
         }
+    }
+
+    private IEnumerator PlayForfeitSequence()
+    {
+        yield return StartCoroutine(ServiceLocator.Get<GameManager>().PrepareGameOverVisuals());
+
+        //ServiceLocator.Get<CoinManager>().AddCoin(500);
+        ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
+        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
     }
 
     public override void OnDisconnected(DisconnectCause cause)
