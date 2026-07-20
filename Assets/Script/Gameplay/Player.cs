@@ -1,6 +1,7 @@
 using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 namespace Gameplay
@@ -180,7 +181,7 @@ namespace Gameplay
                 piece = ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].Piece;
                 ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].SetBlockPiece(false, null);
 
-                StartCoroutine(MovePiece(piece, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]));
+                MovePiece(piece, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]);
                 ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
             }
             ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(hasPiece, piece);
@@ -208,24 +209,14 @@ namespace Gameplay
             return (Mathf.Abs(b1.Row_ID - b2.Row_ID) == 1 && Mathf.Abs(b1.Coloum_ID - b2.Coloum_ID) == 1);
         }
 
-        private IEnumerator MovePiece(Piece pieceToMove, Block targetBlock)
+        private void MovePiece(Piece pieceToMove, Block targetBlock)
         {
             Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
-            float duration = AreAdjecent(pieceBlock, targetBlock) ? 0.2f : 0.32f;
-            float elapcedTime = 0;
+            float duration = AreAdjecent(pieceBlock, targetBlock) ? 0.24f : 0.36f;
 
-            Vector2 initialPos = pieceToMove.ThisTransform.anchoredPosition;
-            Vector2 targetPos = targetBlock.ThisTransform.anchoredPosition;
-
-            while (elapcedTime < duration)
-            {
-                elapcedTime += Time.deltaTime;
-                float t = Mathf.Clamp01(elapcedTime / duration);
-                float easedT = 1f - Mathf.Pow(1f - t, 3f);
-                pieceToMove.ThisTransform.anchoredPosition = Vector2.Lerp(initialPos, targetPos, easedT);
-                yield return null;
-            }
-            pieceToMove.ThisTransform.anchoredPosition = targetPos;
+            // Ease.OutBack overshoots slightly past the target before settling back into place - a
+            // small bounce instead of a flat slide-and-stop.
+            pieceToMove.ThisTransform.DOAnchorPos(targetBlock.ThisTransform.anchoredPosition, duration).SetEase(Ease.OutBack);
         }
     }
 }
