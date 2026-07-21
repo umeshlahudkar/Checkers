@@ -67,12 +67,14 @@ public class Piece : MonoBehaviour
         ServiceLocator.Get<GameManager>().ShowFloatingText("CROWNED KING!", KingTextColor);
     }
 
+    // Board/list/UI bookkeeping happens immediately (move generation and the pieces-left count need
+    // this piece gone right away, not after an animation delay) - only the actual GameObject
+    // destruction is deferred, so the capture reads visually as the piece being knocked out rather
+    // than just vanishing.
     public void Destroy()
     {
         ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(false, null);
-        blackPieceImage.gameObject.SetActive(false);
-        whitePieceImage.gameObject.SetActive(false);
-        crownImage.gameObject.SetActive(false);
+        button.interactable = false;
 
         ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
 
@@ -89,7 +91,7 @@ public class Piece : MonoBehaviour
 
         ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
 
-        Destroy(gameObject);
+        PlayDisappearAnimation(0f, () => Destroy(gameObject));
     }
 
     public const float AppearDuration = 0.3f;
@@ -103,11 +105,22 @@ public class Piece : MonoBehaviour
         thisTransform.DOScale(1f, AppearDuration).SetDelay(delay).SetEase(Ease.OutBack);
     }
 
-    // Shrinks away (used when a match ends) - purely visual, doesn't touch board/list state, so
-    // GameManager can read remaining piece counts for the result screen after this plays.
-    public void PlayDisappearAnimation(float delay)
+    // Shrinks away (used both when a match ends, and per-piece on capture). Purely visual - callers
+    // that need to read remaining piece counts (e.g. the game-over result screen) do their own
+    // board/list bookkeeping before calling this, so it's safe to run independently of that.
+    public void PlayDisappearAnimation(float delay, System.Action onComplete = null)
     {
-        thisTransform.DOScale(0f, DisappearDuration).SetDelay(delay).SetEase(Ease.InBack);
+        thisTransform.DOScale(0f, DisappearDuration).SetDelay(delay).SetEase(Ease.InBack)
+            .OnComplete(() => onComplete?.Invoke());
+    }
+
+    // A quick wiggle - used both as an idle nudge toward pieces the player can move, and as
+    // feedback when they click a piece that isn't a legal one to pick up this turn. DOKill first so
+    // a repeated nudge (or a click landing mid-shake) doesn't stack a second shake on top.
+    public void PlayShakeAnimation()
+    {
+        thisTransform.DOKill();
+        thisTransform.DOShakeAnchorPos(0.4f, new Vector2(12f, 4f), vibrato: 20, randomness: 90, fadeOut: true);
     }
 
     public bool IsCrownedKing

@@ -249,6 +249,10 @@ namespace Gameplay
             Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
             float duration = AreAdjecent(pieceBlock, targetBlock) ? 0.24f : 0.36f;
 
+            // Kills any leftover shake (idle nudge / invalid-click feedback) so it can't fight over
+            // anchoredPosition with the move that's about to start.
+            pieceToMove.ThisTransform.DOKill();
+
             // Ease.OutBack overshoots slightly past the target before settling back into place - a
             // small bounce instead of a flat slide-and-stop.
             pieceToMove.ThisTransform.DOAnchorPos(targetBlock.ThisTransform.anchoredPosition, duration).SetEase(Ease.OutBack);

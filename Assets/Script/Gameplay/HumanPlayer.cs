@@ -53,6 +53,7 @@ namespace Gameplay
             }
             else
             {
+                clickedPiece.PlayShakeAnimation();
                 HighlightMovablePieceBlock();
             }
         }
