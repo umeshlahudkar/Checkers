@@ -162,6 +162,10 @@ public class Piece : MonoBehaviour
         {
             ServiceLocator.Get<GameManager>().GetPlayer(playerID).OnHighlightedPieceClick(this);
         }
+        else
+        {
+            PlayShakeAnimation();
+        }
     }
 
     public void ResetAllList()
