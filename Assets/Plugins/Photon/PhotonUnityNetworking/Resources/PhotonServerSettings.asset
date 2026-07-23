@@ -46,6 +46,7 @@ MonoBehaviour:
   - UpdateGrid
   - Draw
   - ShowGratificationText
+  - ShowLastMove
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

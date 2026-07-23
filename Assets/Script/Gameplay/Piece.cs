@@ -61,10 +61,17 @@ public class Piece : MonoBehaviour
 
     public void SetCrownKing()
     {
-        isCrownedKing = true;
-        crownImage.gameObject.SetActive(true);
+        SetKingState(true);
         ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
         ServiceLocator.Get<GameManager>().ShowFloatingText("CROWNED KING!", KingTextColor);
+    }
+
+    // Silent version of SetCrownKing, with no sound/floating-text fanfare - used when restoring a
+    // king (or a non-king) from an Undo snapshot, where nothing was "just promoted".
+    public void SetKingState(bool isKing)
+    {
+        isCrownedKing = isKing;
+        crownImage.gameObject.SetActive(isKing);
     }
 
     // Board/list/UI bookkeeping happens immediately (move generation and the pieces-left count need

@@ -120,19 +120,83 @@ public class BoardGenerator : MonoBehaviour
                 {
                     if (i < pieceRowsPerSide)
                     {
-                        Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetPiece(2, i, j, (int)player2_pieceType);
-                        ServiceLocator.Get<GameplayController>().whitePieces.Add(piece);
-
+                        SpawnPiece(2, i, j, player2_pieceType);
                     }
 
                     if (i >= rows - pieceRowsPerSide)
                     {
-                        Piece piece = Instantiate(piecePrefab, ServiceLocator.Get<GameplayController>().board[i, j].transform.position, Quaternion.identity, pieceHolderParent);
-                        piece.SetPiece(1, i, j, (int)player1_pieceType);
-                        ServiceLocator.Get<GameplayController>().blackPieces.Add(piece);
+                        SpawnPiece(1, i, j, player1_pieceType);
                     }
                 }
+            }
+        }
+    }
+
+    private Piece SpawnPiece(int playerID, int row, int col, PieceType pieceType)
+    {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+
+        Piece piece = Instantiate(piecePrefab, gameplayController.board[row, col].transform.position, Quaternion.identity, pieceHolderParent);
+        piece.SetPiece(playerID, row, col, (int)pieceType);
+
+        if (playerID == 2)
+        {
+            gameplayController.whitePieces.Add(piece);
+        }
+        else
+        {
+            gameplayController.blackPieces.Add(piece);
+        }
+
+        return piece;
+    }
+
+    // Destroys every current piece immediately (no capture animation - this is a rewind, not a
+    // kill) and clears the board's occupancy, so RestorePieceLayout can rebuild from a clean slate.
+    private void ClearAllPieces()
+    {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+
+        for (int i = 0; i < gameplayController.whitePieces.Count; i++)
+        {
+            Destroy(gameplayController.whitePieces[i].gameObject);
+        }
+        for (int i = 0; i < gameplayController.blackPieces.Count; i++)
+        {
+            Destroy(gameplayController.blackPieces[i].gameObject);
+        }
+        gameplayController.whitePieces.Clear();
+        gameplayController.blackPieces.Clear();
+
+        for (int i = 0; i < ruleSet.Rows; i++)
+        {
+            for (int j = 0; j < ruleSet.Columns; j++)
+            {
+                gameplayController.board[i, j].SetBlockPiece(false, null);
+            }
+        }
+    }
+
+    // Used by Undo to rebuild the entire piece layout from a snapshot taken at the start of an
+    // earlier turn - see GameManager's history stack. Rebuilding from scratch (rather than trying to
+    // reverse individual moves/captures/promotions in place) sidesteps a captured piece's GameObject
+    // being truly gone after its disappear animation, and isCrownedKing having no un-set path.
+    public void RestorePieceLayout(PieceSnapshot[,] layout)
+    {
+        ClearAllPieces();
+
+        int rows = layout.GetLength(0);
+        int cols = layout.GetLength(1);
+
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                PieceSnapshot cell = layout[i, j];
+                if (!cell.present) { continue; }
+
+                Piece piece = SpawnPiece(cell.playerID, i, j, cell.pieceType);
+                piece.SetKingState(cell.isCrownedKing);
             }
         }
     }

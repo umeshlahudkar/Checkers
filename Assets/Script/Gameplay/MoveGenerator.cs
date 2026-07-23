@@ -433,4 +433,101 @@ public class MoveGenerator : Service<MoveGenerator>
     {
         return row >= 0 && row < ruleSet.Rows && col >= 0 && col < ruleSet.Columns;
     }
+
+    // Populates movablePositions/captureSequences for every piece in the list - a prerequisite for
+    // TryGetBestCapture/TryGetBestMove, which rank pre-computed options rather than deriving them.
+    public void PopulateMoveData(List<Piece> movablePieces)
+    {
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece piece = movablePieces[i];
+            piece.ResetAllList();
+            SetPiecePosition(piece);
+        }
+    }
+
+    // Finds the longest capture available across all movable pieces, then (unless preferSafe is
+    // null) prefers one that leaves the piece safe afterward, falling back to any at that same
+    // longest length if none are safe. Shared by BotPlayer (Hard/Medium difficulty) and the Hint
+    // feature, which always wants this same "objectively best" ranking regardless of bot difficulty.
+    public bool TryGetBestCapture(List<Piece> movablePieces, bool? preferSafe, out Piece piece, out CaptureSequence sequence)
+    {
+        int maxLength = 0;
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            List<CaptureSequence> sequences = movablePieces[i].captureSequences;
+            for (int j = 0; j < sequences.Count; j++)
+            {
+                if (sequences[j].Length > maxLength)
+                {
+                    maxLength = sequences[j].Length;
+                }
+            }
+        }
+
+        if (maxLength == 0)
+        {
+            piece = null;
+            sequence = null;
+            return false;
+        }
+
+        (Piece piece, CaptureSequence sequence)? fallback = null;
+
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece candidatePiece = movablePieces[i];
+            List<CaptureSequence> sequences = candidatePiece.captureSequences;
+            for (int j = 0; j < sequences.Count; j++)
+            {
+                CaptureSequence candidateSequence = sequences[j];
+                if (candidateSequence.Length != maxLength) { continue; }
+
+                if (!preferSafe.HasValue || IsSequenceSafe(candidatePiece, candidateSequence) == preferSafe.Value)
+                {
+                    piece = candidatePiece;
+                    sequence = candidateSequence;
+                    return true;
+                }
+
+                fallback ??= (candidatePiece, candidateSequence);
+            }
+        }
+
+        if (fallback.HasValue)
+        {
+            piece = fallback.Value.piece;
+            sequence = fallback.Value.sequence;
+            return true;
+        }
+
+        piece = null;
+        sequence = null;
+        return false;
+    }
+
+    public bool TryGetBestMove(List<Piece> movablePieces, bool? preferSafe, out Piece piece, out BoardPosition position)
+    {
+        for (int i = 0; i < movablePieces.Count; i++)
+        {
+            Piece candidatePiece = movablePieces[i];
+            for (int j = 0; j < candidatePiece.movablePositions.Count; j++)
+            {
+                BoardPosition candidatePosition = candidatePiece.movablePositions[j];
+
+                if (preferSafe.HasValue && IsSafeToMove(candidatePiece, candidatePosition.row_ID, candidatePosition.col_ID) != preferSafe.Value)
+                {
+                    continue;
+                }
+
+                piece = candidatePiece;
+                position = candidatePosition;
+                return true;
+            }
+        }
+
+        piece = null;
+        position = default;
+        return false;
+    }
 }

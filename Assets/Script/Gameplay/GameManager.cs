@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Photon.Pun;
@@ -31,6 +32,11 @@ public class GameManager : Service<GameManager>
 
     private string player1DisplayName;
     private string player2DisplayName;
+
+    // Board state at the start of every turn, offline modes only (see PushHistorySnapshot) - powers
+    // Undo. The last entry is always "now" (the turn in progress, not yet played); Undo trims back
+    // to an earlier entry rather than trying to reverse individual moves/captures/promotions.
+    private readonly List<BoardSnapshot> historyStack = new();
 
     public GameState GameState
     {
@@ -196,6 +202,7 @@ public class GameManager : Service<GameManager>
     private void StartFirstTurn()
     {
         currentTurn = 1;
+        PushHistorySnapshot();
         StartTurn();
     }
 
@@ -277,7 +284,98 @@ public class GameManager : Service<GameManager>
 
         currentTurn = nextTurn;
         movesWithoutProgress = syncedMovesWithoutProgress;
+        PushHistorySnapshot();
         StartTurn();
+    }
+
+    // Only offline modes track history - Undo isn't offered in Multiplayer, so there's no point
+    // paying the per-turn snapshot cost there.
+    private void PushHistorySnapshot()
+    {
+        if (gameMode == GameModeType.Multiplayer) { return; }
+
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        int rows = ruleSet.Rows;
+        int cols = ruleSet.Columns;
+
+        PieceSnapshot[,] cells = new PieceSnapshot[rows, cols];
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                Block block = gameplayController.board[i, j];
+                if (!block.IsPiecePresent) { continue; }
+
+                Piece piece = block.Piece;
+                cells[i, j] = new PieceSnapshot
+                {
+                    present = true,
+                    playerID = piece.Player_ID,
+                    pieceType = piece.PieceType,
+                    isCrownedKing = piece.IsCrownedKing
+                };
+            }
+        }
+
+        historyStack.Add(new BoardSnapshot
+        {
+            currentTurn = currentTurn,
+            movesWithoutProgress = movesWithoutProgress,
+            player1MissCount = players[0].TurnMissCount,
+            player2MissCount = players[1].TurnMissCount,
+            cells = cells
+        });
+    }
+
+    // Index into historyStack of the snapshot Undo should restore to, or -1 if there isn't one.
+    // Always skips the last entry ("now", not yet played), then keeps skipping further back past
+    // any entries whose turn belonged to a BotPlayer - so in VsBot, one Undo click rewinds both the
+    // bot's reply and the human's own move before it; in VsPlayer (both sides human) it only ever
+    // skips the one "now" entry, so it rewinds a single move.
+    private int ComputeUndoTargetIndex()
+    {
+        if (gameMode == GameModeType.Multiplayer) { return -1; }
+
+        int index = historyStack.Count - 2;
+        while (index >= 0 && players[historyStack[index].currentTurn - 1] is Gameplay.BotPlayer)
+        {
+            index--;
+        }
+        return index;
+    }
+
+    public bool CanUndo()
+    {
+        return ComputeUndoTargetIndex() >= 0;
+    }
+
+    public void UndoLastMove()
+    {
+        int targetIndex = ComputeUndoTargetIndex();
+        if (targetIndex < 0) { return; }
+
+        historyStack.RemoveRange(targetIndex + 1, historyStack.Count - targetIndex - 1);
+        RestoreSnapshot(historyStack[targetIndex]);
+        StartTurn();
+    }
+
+    private void RestoreSnapshot(BoardSnapshot snapshot)
+    {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        gameplayController.ClearLastMoveHighlight();
+        gameplayController.ClearHintHighlight();
+
+        players[0].ResetPlayer();
+        players[1].ResetPlayer();
+
+        boardGenerator.RestorePieceLayout(snapshot.cells);
+
+        currentTurn = snapshot.currentTurn;
+        movesWithoutProgress = snapshot.movesWithoutProgress;
+        players[0].SetTurnMissCount(snapshot.player1MissCount);
+        players[1].SetTurnMissCount(snapshot.player2MissCount);
+
+        ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(GetRemainingPieceCount(1), GetRemainingPieceCount(2));
     }
 
     private void StartTurn()
@@ -432,6 +530,7 @@ public class GameManager : Service<GameManager>
             PhotonNetwork.DestroyAll();
         }
         ResetGameManager();
+        historyStack.Clear();
         ServiceLocator.Get<GameplayController>().ResetGameplay();
         ServiceLocator.Get<GamePageManager>().OpenPage(GamePageType.GamePage);
     }
@@ -498,4 +597,23 @@ public enum GameState
     Waiting,
     Playing,
     Ending
+}
+
+// A single board cell's contents at the moment a BoardSnapshot was taken - default value (all
+// fields false/0/None) correctly represents an empty cell.
+public struct PieceSnapshot
+{
+    public bool present;
+    public int playerID;
+    public PieceType pieceType;
+    public bool isCrownedKing;
+}
+
+public class BoardSnapshot
+{
+    public int currentTurn;
+    public int movesWithoutProgress;
+    public int player1MissCount;
+    public int player2MissCount;
+    public PieceSnapshot[,] cells;
 }

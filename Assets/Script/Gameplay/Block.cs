@@ -14,6 +14,7 @@ public class Block : MonoBehaviour
     [SerializeField] private Image targetImage;
     //[SerializeField] private Image targetHoleImage;
     [SerializeField] private Image lastMoveImage;
+    [SerializeField] private Image hintImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
@@ -94,6 +95,16 @@ public class Block : MonoBehaviour
     public void ResetLastMoveHighlight()
     {
         lastMoveImage.gameObject.SetActive(false);
+    }
+
+    public void ShowHint()
+    {
+        hintImage.gameObject.SetActive(true);
+    }
+
+    public void ClearHint()
+    {
+        hintImage.gameObject.SetActive(false);
     }
 
     public void ResetBlock()

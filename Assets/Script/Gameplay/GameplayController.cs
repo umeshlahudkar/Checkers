@@ -12,6 +12,8 @@ public class GameplayController : Service<GameplayController>
     private readonly List<Block> lastMoveHighlightedBlocks = new();
     private Tween pendingLastMoveTween;
 
+    private readonly List<Block> hintHighlightedBlocks = new();
+
     private IRuleSet ruleSet;
 
     private const float PieceAnimStagger = 0.04f;
@@ -75,6 +77,7 @@ public class GameplayController : Service<GameplayController>
         whitePieces.Clear();
         blackPieces.Clear();
         ClearLastMoveHighlight();
+        ClearHintHighlight();
     }
 
     // Tracks the opponent's currently-moving piece: the square it's leaving lights up first, then
@@ -110,5 +113,29 @@ public class GameplayController : Service<GameplayController>
             lastMoveHighlightedBlocks[i].ResetLastMoveHighlight();
         }
         lastMoveHighlightedBlocks.Clear();
+    }
+
+    // Suggested move from the Hint feature (Player.GetMoveDuration's turn-highlight sibling) - both
+    // squares light up immediately and stay lit (no animation, no timed swap) until cleared.
+    public void ShowHintHighlight(int fromRow, int fromCol, int toRow, int toCol)
+    {
+        ClearHintHighlight();
+
+        Block fromBlock = board[fromRow, fromCol];
+        fromBlock.ShowHint();
+        hintHighlightedBlocks.Add(fromBlock);
+
+        Block toBlock = board[toRow, toCol];
+        toBlock.ShowHint();
+        hintHighlightedBlocks.Add(toBlock);
+    }
+
+    public void ClearHintHighlight()
+    {
+        for (int i = 0; i < hintHighlightedBlocks.Count; i++)
+        {
+            hintHighlightedBlocks[i].ClearHint();
+        }
+        hintHighlightedBlocks.Clear();
     }
 }

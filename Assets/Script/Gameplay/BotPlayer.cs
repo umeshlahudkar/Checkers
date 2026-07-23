@@ -50,12 +50,7 @@ namespace Gameplay
 
         private void SetMovablePosition()
         {
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                piece.ResetAllList();
-                ServiceLocator.Get<MoveGenerator>().SetPiecePosition(piece);
-            }
+            ServiceLocator.Get<MoveGenerator>().PopulateMoveData(movablePieces);
         }
 
         private void CheckPieceMove()
@@ -130,52 +125,14 @@ namespace Gameplay
             }
         }
 
-        // Finds the longest capture available across all movable pieces, then (unless preferSafe is
-        // null) prefers one that leaves the piece safe afterward, falling back to any at that same
-        // longest length if none are safe.
+        // Ranking logic (longest-capture-prefers-safe, else best safe move, else any move) lives in
+        // MoveGenerator.TryGetBestCapture/TryGetBestMove - shared with the Hint feature, which wants
+        // this exact same "objectively best" priority regardless of the match's bot difficulty.
         private bool TryBestCapture(bool? preferSafe)
         {
-            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
-
-            int maxLength = 0;
-            for (int i = 0; i < movablePieces.Count; i++)
+            if (ServiceLocator.Get<MoveGenerator>().TryGetBestCapture(movablePieces, preferSafe, out Piece piece, out CaptureSequence sequence))
             {
-                List<CaptureSequence> sequences = movablePieces[i].captureSequences;
-                for (int j = 0; j < sequences.Count; j++)
-                {
-                    if (sequences[j].Length > maxLength)
-                    {
-                        maxLength = sequences[j].Length;
-                    }
-                }
-            }
-
-            if (maxLength == 0) { return false; }
-
-            (Piece piece, CaptureSequence sequence)? fallback = null;
-
-            for (int i = 0; i < movablePieces.Count; i++)
-            {
-                Piece piece = movablePieces[i];
-                List<CaptureSequence> sequences = piece.captureSequences;
-                for (int j = 0; j < sequences.Count; j++)
-                {
-                    CaptureSequence sequence = sequences[j];
-                    if (sequence.Length != maxLength) { continue; }
-
-                    if (!preferSafe.HasValue || moveGenerator.IsSequenceSafe(piece, sequence) == preferSafe.Value)
-                    {
-                        MakeMove(piece, sequence);
-                        return true;
-                    }
-
-                    fallback ??= (piece, sequence);
-                }
-            }
-
-            if (fallback.HasValue)
-            {
-                MakeMove(fallback.Value.piece, fallback.Value.sequence);
+                MakeMove(piece, sequence);
                 return true;
             }
             return false;
@@ -183,23 +140,10 @@ namespace Gameplay
 
         private bool TryBestMove(bool? preferSafe)
         {
-            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
-
-            for (int i = 0; i < movablePieces.Count; i++)
+            if (ServiceLocator.Get<MoveGenerator>().TryGetBestMove(movablePieces, preferSafe, out Piece piece, out BoardPosition position))
             {
-                Piece piece = movablePieces[i];
-                for (int j = 0; j < piece.movablePositions.Count; j++)
-                {
-                    BoardPosition position = piece.movablePositions[j];
-
-                    if (preferSafe.HasValue && moveGenerator.IsSafeToMove(piece, position.row_ID, position.col_ID) != preferSafe.Value)
-                    {
-                        continue;
-                    }
-
-                    MakeMove(piece, position);
-                    return true;
-                }
+                MakeMove(piece, position);
+                return true;
             }
             return false;
         }

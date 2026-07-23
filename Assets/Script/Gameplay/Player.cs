@@ -146,6 +146,8 @@ namespace Gameplay
 
         private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
         {
+            ServiceLocator.Get<GameplayController>().ClearHintHighlight();
+            ServiceLocator.Get<GamePageManager>().GamePage.SetHintUndoInteractable(false);
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;

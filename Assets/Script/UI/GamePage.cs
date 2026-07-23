@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 
@@ -12,6 +13,10 @@ public class GamePage : Page
 
     [Header("Buttons")]
     [SerializeField] private RectTransform buttonsParent;
+
+    [Header("Hint/Undo (offline modes only)")]
+    [SerializeField] private Button hintButton;
+    [SerializeField] private Button undoButton;
 
     [Header("Layout")]
     [SerializeField] private RectTransform boardBorder;
@@ -136,6 +141,7 @@ public class GamePage : Page
     {
         player1Card.SetTurnActive(playerNumber == 1);
         player2Card.SetTurnActive(playerNumber == 2);
+        RefreshHintUndoButtons();
     }
 
     public void OnRetryButtonClick()
@@ -151,4 +157,56 @@ public class GamePage : Page
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.QuitPage);
     }
 
+    public void OnHintButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+
+        GameManager gameManager = ServiceLocator.Get<GameManager>();
+        if (gameManager.GetPlayer(gameManager.CurrentTurn) is Gameplay.HumanPlayer humanPlayer)
+        {
+            humanPlayer.ShowHint();
+        }
+    }
+
+    public void OnUndoButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        // UndoLastMove ends by calling GameManager.StartTurn -> SetActiveTurn, which refreshes
+        // these buttons' visibility/interactable state for the restored turn - no extra call needed.
+        ServiceLocator.Get<GameManager>().UndoLastMove();
+    }
+
+    // Hidden entirely outside offline modes (or once the match is over); otherwise shown, with
+    // interactable reflecting whether it's currently a HumanPlayer's turn to act (undoButton also
+    // requires GameManager.CanUndo()). Called at every turn boundary via SetActiveTurn, including
+    // right after an Undo.
+    public void RefreshHintUndoButtons()
+    {
+        // Buttons are wired in the Editor separately from this script (see plan) - no-op until then
+        // instead of throwing, since this runs every turn.
+        if (hintButton == null || undoButton == null) { return; }
+
+        GameManager gameManager = ServiceLocator.Get<GameManager>();
+        bool offlineAndPlaying = gameManager.GameMode != GameModeType.Multiplayer && gameManager.GameState == GameState.Playing;
+
+        hintButton.gameObject.SetActive(offlineAndPlaying);
+        undoButton.gameObject.SetActive(offlineAndPlaying);
+
+        if (!offlineAndPlaying) { return; }
+
+        bool isHumanTurn = gameManager.GetPlayer(gameManager.CurrentTurn) is Gameplay.HumanPlayer;
+
+        hintButton.interactable = isHumanTurn;
+        undoButton.interactable = isHumanTurn && gameManager.CanUndo();
+    }
+
+    // Immediately silences both buttons the moment a move commits (Player.HandlePieceMovementAndPieceDelete),
+    // so a click can't land mid-animation - RefreshHintUndoButtons re-enables them at the next turn boundary.
+    public void SetHintUndoInteractable(bool interactable)
+    {
+        if (hintButton == null || undoButton == null) { return; }
+
+        hintButton.interactable = interactable;
+        undoButton.interactable = interactable;
+    }
 }
