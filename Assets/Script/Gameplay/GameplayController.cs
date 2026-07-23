@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class GameplayController : Service<GameplayController>
@@ -7,6 +8,9 @@ public class GameplayController : Service<GameplayController>
     public Block[,] board;
     public List<Piece> whitePieces = new();
     public List<Piece> blackPieces = new();
+
+    private readonly List<Block> lastMoveHighlightedBlocks = new();
+    private Tween pendingLastMoveTween;
 
     private IRuleSet ruleSet;
 
@@ -70,5 +74,41 @@ public class GameplayController : Service<GameplayController>
         }
         whitePieces.Clear();
         blackPieces.Clear();
+        ClearLastMoveHighlight();
+    }
+
+    // Tracks the opponent's currently-moving piece: the square it's leaving lights up first, then
+    // once moveDuration has passed (matching the piece's own slide animation, see
+    // Player.GetMoveDuration) the square it landed on lights up too - both stay highlighted
+    // together. Each hop of a capture chain calls this again, which clears the previous hop's pair
+    // before lighting up this hop's, so only the current hop's from/to squares are ever shown.
+    public void ShowLastMoveInProgress(int fromRow, int fromCol, int toRow, int toCol, float moveDuration)
+    {
+        ClearLastMoveHighlight();
+
+        Block fromBlock = board[fromRow, fromCol];
+        fromBlock.HighlightAsLastMove();
+        lastMoveHighlightedBlocks.Add(fromBlock);
+
+        pendingLastMoveTween = DOVirtual.DelayedCall(moveDuration, () =>
+        {
+            pendingLastMoveTween = null;
+
+            Block toBlock = board[toRow, toCol];
+            toBlock.HighlightAsLastMove();
+            lastMoveHighlightedBlocks.Add(toBlock);
+        });
+    }
+
+    public void ClearLastMoveHighlight()
+    {
+        pendingLastMoveTween?.Kill();
+        pendingLastMoveTween = null;
+
+        for (int i = 0; i < lastMoveHighlightedBlocks.Count; i++)
+        {
+            lastMoveHighlightedBlocks[i].ResetLastMoveHighlight();
+        }
+        lastMoveHighlightedBlocks.Clear();
     }
 }

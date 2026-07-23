@@ -13,6 +13,7 @@ public class Block : MonoBehaviour
     //[SerializeField] private Image highlightHoleImage;
     [SerializeField] private Image targetImage;
     //[SerializeField] private Image targetHoleImage;
+    [SerializeField] private Image lastMoveImage;
 
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
@@ -83,6 +84,16 @@ public class Block : MonoBehaviour
         targetImage.rectTransform.DOKill();
         targetImage.rectTransform.localScale = Vector3.one * minScale;
         targetImage.rectTransform.DOScale(maxScale, pulseDuration).SetLoops(-1, LoopType.Yoyo);
+    }
+
+    public void HighlightAsLastMove()
+    {
+        lastMoveImage.gameObject.SetActive(true);
+    }
+
+    public void ResetLastMoveHighlight()
+    {
+        lastMoveImage.gameObject.SetActive(false);
     }
 
     public void ResetBlock()

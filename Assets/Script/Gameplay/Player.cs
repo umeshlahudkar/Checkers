@@ -32,6 +32,21 @@ namespace Gameplay
 
         public PhotonView PhotonView { get { return thisPhotonView; } }
 
+        // Whether this Player object represents the local viewing client, as opposed to the
+        // opponent. Player numbering alone only tells the two apart in offline modes (VsBot/VsPlayer
+        // always spawn player 1 as the local side, see GameManager.SetupLocalMatch) - in Multiplayer,
+        // numbering flips with master-client role, so PhotonView.IsMine is the only reliable check
+        // there (mirrors the same branch in GameManager.PlayGameOverSequence).
+        public bool IsLocalPlayer
+        {
+            get
+            {
+                return ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer
+                    ? thisPhotonView.IsMine
+                    : playerID == 1;
+            }
+        }
+
         private void Start()
         {
             // Checked via PhotonNetwork.OfflineMode rather than GameManager.GameMode - the latter
@@ -213,11 +228,29 @@ namespace Gameplay
             bool hasPiece = sourceRow != -1;
             if (hasPiece)
             {
-                piece = ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].Piece;
-                ServiceLocator.Get<GameplayController>().board[sourceRow, sourceCol].SetBlockPiece(false, null);
+                GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+                Block sourceBlock = gameplayController.board[sourceRow, sourceCol];
+                Block targetBlock = gameplayController.board[targetRow, targetCol];
 
-                MovePiece(piece, ServiceLocator.Get<GameplayController>().board[targetRow, targetCol]);
+                piece = sourceBlock.Piece;
+                sourceBlock.SetBlockPiece(false, null);
+
+                MovePiece(piece, targetBlock);
                 ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
+
+                // Highlights only the opponent's move, and only for as long as the piece is actually
+                // in flight: green on the square it's leaving while it slides, then swapped to the
+                // square it lands on once the move finishes (see
+                // GameplayController.ShowLastMoveInProgress). A move by our own side clears it instead
+                // - it's no longer "the opponent's last move" once we've moved.
+                if (IsLocalPlayer)
+                {
+                    gameplayController.ClearLastMoveHighlight();
+                }
+                else
+                {
+                    gameplayController.ShowLastMoveInProgress(sourceRow, sourceCol, targetRow, targetCol, GetMoveDuration(sourceBlock, targetBlock));
+                }
             }
             ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(hasPiece, piece);
         }
@@ -244,10 +277,15 @@ namespace Gameplay
             return (Mathf.Abs(b1.Row_ID - b2.Row_ID) == 1 && Mathf.Abs(b1.Coloum_ID - b2.Coloum_ID) == 1);
         }
 
+        private float GetMoveDuration(Block fromBlock, Block toBlock)
+        {
+            return AreAdjecent(fromBlock, toBlock) ? 0.24f : 0.36f;
+        }
+
         private void MovePiece(Piece pieceToMove, Block targetBlock)
         {
             Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
-            float duration = AreAdjecent(pieceBlock, targetBlock) ? 0.24f : 0.36f;
+            float duration = GetMoveDuration(pieceBlock, targetBlock);
 
             // Kills any leftover shake (idle nudge / invalid-click feedback) so it can't fight over
             // anchoredPosition with the move that's about to start.
