@@ -163,7 +163,7 @@ namespace Gameplay
                 block.IsNextToNextHighlighted = false;
             }
 
-            UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece);
+            UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece, hasDeleted);
 
             yield return new WaitForSeconds(0.5f);
 
@@ -209,7 +209,7 @@ namespace Gameplay
 
         protected abstract void ContinueAfterKill(Piece selectedPiece);
 
-        public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove)
+        public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove, bool isCapture)
         {
             int sourceRow = -1;
             int sourceCol = -1;
@@ -218,11 +218,11 @@ namespace Gameplay
                 sourceRow = pieceToMove.Row_ID;
                 sourceCol = pieceToMove.Coloum_ID;
             }
-            thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, sourceRow, sourceCol);
+            thisPhotonView.RPC(nameof(UpdateGrid), RpcTarget.All, targetRow, targetCol, sourceRow, sourceCol, isCapture);
         }
 
         [PunRPC]
-        public void UpdateGrid(int targetRow, int targetCol, int sourceRow, int sourceCol)
+        public void UpdateGrid(int targetRow, int targetCol, int sourceRow, int sourceCol, bool isCapture)
         {
             Piece piece = null;
             bool hasPiece = sourceRow != -1;
@@ -235,7 +235,7 @@ namespace Gameplay
                 piece = sourceBlock.Piece;
                 sourceBlock.SetBlockPiece(false, null);
 
-                MovePiece(piece, targetBlock);
+                MovePiece(piece, targetBlock, isCapture);
                 ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
 
                 // Highlights only the opponent's move, and only for as long as the piece is actually
@@ -260,10 +260,18 @@ namespace Gameplay
         // *private* method declared on a base type when called on a derived type - so a private
         // [PunRPC] on this base Player class is invisible to the dispatcher and fails with
         // "RPC method not found". Public (or protected) inherited methods are returned normally.
+        // Captured piece's sibling index at the moment it's destroyed, stashed for MovePiece's
+        // sibling-order check right after (see there for why). Piece.Destroy() only clears the
+        // board's reference to it and starts its fade-out - the transform itself (and its sibling
+        // index) still exists until the fade completes, so reading it here is safe.
+        private int lastCapturedPieceSiblingIndex = -1;
+
         [PunRPC]
         public void DestroyPieceAt(int row, int col)
         {
-            ServiceLocator.Get<GameplayController>().board[row, col].Piece.Destroy();
+            Piece capturedPiece = ServiceLocator.Get<GameplayController>().board[row, col].Piece;
+            lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
+            capturedPiece.Destroy();
         }
 
         [PunRPC]
@@ -282,7 +290,7 @@ namespace Gameplay
             return AreAdjecent(fromBlock, toBlock) ? 0.24f : 0.36f;
         }
 
-        private void MovePiece(Piece pieceToMove, Block targetBlock)
+        private void MovePiece(Piece pieceToMove, Block targetBlock, bool isCapture)
         {
             Block pieceBlock = ServiceLocator.Get<GameplayController>().board[pieceToMove.Row_ID, pieceToMove.Coloum_ID];
             float duration = GetMoveDuration(pieceBlock, targetBlock);
@@ -290,6 +298,19 @@ namespace Gameplay
             // Kills any leftover shake (idle nudge / invalid-click feedback) so it can't fight over
             // anchoredPosition with the move that's about to start.
             pieceToMove.ThisTransform.DOKill();
+
+            // Bring the moving piece above the piece it's jumping over, if it isn't already. Sibling
+            // order is otherwise frozen at spawn time (all of player2/White's pieces are instantiated
+            // before player1/Black's - see BoardGenerator.GeneratePieces), which is why a capture only
+            // looked right when Black happened to be the one capturing. Only needed on a capture hop -
+            // a plain move's path is never occupied by another piece (that would make it a capture,
+            // not a plain move), so there's nothing to render above. Comparing against the specific
+            // captured piece's index (rather than just moving to absolute-last) skips the reorder
+            // whenever the mover already draws above it, even if some unrelated piece is currently last.
+            if (isCapture && pieceToMove.ThisTransform.GetSiblingIndex() < lastCapturedPieceSiblingIndex)
+            {
+                pieceToMove.ThisTransform.SetAsLastSibling();
+            }
 
             // Ease.OutBack overshoots slightly past the target before settling back into place - a
             // small bounce instead of a flat slide-and-stop.
