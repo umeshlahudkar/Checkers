@@ -83,23 +83,34 @@ public class GameplayController : Service<GameplayController>
     // Tracks the opponent's currently-moving piece: the square it's leaving lights up first, then
     // once moveDuration has passed (matching the piece's own slide animation, see
     // Player.GetMoveDuration) the square it landed on lights up too - both stay highlighted
-    // together. Each hop of a capture chain calls this again, which clears the previous hop's pair
-    // before lighting up this hop's, so only the current hop's from/to squares are ever shown.
+    // together, and every hop of a capture chain adds to this same set rather than replacing it,
+    // so a multi-capture ends up with every square it touched highlighted, not just its last hop.
+    // Deliberately never clears here - that only needs to happen once a *different* turn's move
+    // starts, and since turns strictly alternate, our own next move already unconditionally clears
+    // (see the IsLocalPlayer branch in Player.UpdateGrid) before the opponent's following turn can
+    // call this again.
     public void ShowLastMoveInProgress(int fromRow, int fromCol, int toRow, int toCol, float moveDuration)
     {
-        ClearLastMoveHighlight();
+        pendingLastMoveTween?.Kill();
+        pendingLastMoveTween = null;
 
         Block fromBlock = board[fromRow, fromCol];
-        fromBlock.HighlightAsLastMove();
-        lastMoveHighlightedBlocks.Add(fromBlock);
+        if (!lastMoveHighlightedBlocks.Contains(fromBlock))
+        {
+            fromBlock.HighlightAsLastMove();
+            lastMoveHighlightedBlocks.Add(fromBlock);
+        }
 
         pendingLastMoveTween = DOVirtual.DelayedCall(moveDuration, () =>
         {
             pendingLastMoveTween = null;
 
             Block toBlock = board[toRow, toCol];
-            toBlock.HighlightAsLastMove();
-            lastMoveHighlightedBlocks.Add(toBlock);
+            if (!lastMoveHighlightedBlocks.Contains(toBlock))
+            {
+                toBlock.HighlightAsLastMove();
+                lastMoveHighlightedBlocks.Add(toBlock);
+            }
         });
     }
 
