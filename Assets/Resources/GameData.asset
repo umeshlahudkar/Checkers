@@ -23,3 +23,4 @@ MonoBehaviour:
     pieceType: 1
   botDifficulty: 2
   ruleSet: {fileID: 11400000, guid: 4ef17791a1cbba23ecb8bbedf8d9fb8b, type: 2}
+  botAISettings: {fileID: 11400000, guid: 6cc08d43c02b4065b9e7b9f2190fed1c, type: 2}

@@ -10,10 +10,6 @@ using UnityEngine;
 // the task completes.
 public static class BotMinimax
 {
-    // Depth used for BotPlayer's Hard difficulty and for HumanPlayer's Hint, which is documented
-    // to suggest the same "objectively best" move Hard would play regardless of match difficulty.
-    public const int HardDepth = 4;
-
     public struct AIMove
     {
         public Piece Piece;
@@ -28,6 +24,7 @@ public static class BotMinimax
     {
         GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
         IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
+        BotAISettingsSO settings = ServiceLocator.Get<GameManager>().BotAISettings;
 
         AIRules rules = new()
         {
@@ -36,6 +33,21 @@ public static class BotMinimax
             FlyingKings = ruleSet.FlyingKings,
             MenCaptureBackward = ruleSet.MenCaptureBackward,
             MustCaptureMaximum = ruleSet.MustCaptureMaximum
+        };
+
+        // Snapshotted into a plain struct here (main thread) rather than read from the
+        // ScriptableObject during the search - UnityEngine.Object access isn't thread-safe.
+        AIWeights weights = new()
+        {
+            ManScore = settings.manScore,
+            KingScore = settings.kingScore,
+            NearPromotionDistance = settings.nearPromotionDistance,
+            NearPromotionBonus = settings.nearPromotionBonus,
+            ProtectedBonus = settings.protectedBonus,
+            VulnerablePenalty = settings.vulnerablePenalty,
+            CenterMargin = settings.centerMargin,
+            CenterBonus = settings.centerBonus,
+            MobilityWeight = settings.mobilityWeight
         };
 
         AICell[,] snapshot = new AICell[rules.Rows, rules.Columns];
@@ -52,7 +64,7 @@ public static class BotMinimax
             }
         }
 
-        return Task.Run(() => GetBestMove(snapshot, rules, playerID, depth));
+        return Task.Run(() => GetBestMove(snapshot, rules, weights, playerID, depth));
     }
 
     // Translates a completed search's plain-int result back into a real Piece/CaptureSequence/
@@ -83,7 +95,7 @@ public static class BotMinimax
         return new AIMove { Piece = piece, Position = new BoardPosition(move.Position.Row, move.Position.Col) };
     }
 
-    private static AIMoveOption? GetBestMove(AICell[,] cells, AIRules rules, int playerID, int depth)
+    private static AIMoveOption? GetBestMove(AICell[,] cells, AIRules rules, AIWeights weights, int playerID, int depth)
     {
         List<AIMoveOption> moves = BoardState.GetLegalMoves(cells, playerID, rules);
         if (moves.Count == 0) { return null; }
@@ -96,7 +108,7 @@ public static class BotMinimax
         for (int i = 0; i < moves.Count; i++)
         {
             AIUndoInfo undo = BoardState.ApplyMove(cells, moves[i], rules);
-            int score = Search(cells, rules, opponent, playerID, depth - 1, alpha, int.MaxValue);
+            int score = Search(cells, rules, weights, opponent, playerID, depth - 1, alpha, int.MaxValue);
             BoardState.UndoMove(cells, undo);
 
             if (score > bestScore)
@@ -112,11 +124,11 @@ public static class BotMinimax
 
     // Alpha-beta pruned minimax - same result plain minimax would return (same best move, same
     // score), just skips branches that can't change it.
-    private static int Search(AICell[,] cells, AIRules rules, int playerToMove, int aiPlayerID, int depth, int alpha, int beta)
+    private static int Search(AICell[,] cells, AIRules rules, AIWeights weights, int playerToMove, int aiPlayerID, int depth, int alpha, int beta)
     {
         if (depth == 0)
         {
-            return EvaluateBoard(cells, rules, aiPlayerID);
+            return EvaluateBoard(cells, rules, weights, aiPlayerID);
         }
 
         List<AIMoveOption> moves = BoardState.GetLegalMoves(cells, playerToMove, rules);
@@ -133,7 +145,7 @@ public static class BotMinimax
         for (int i = 0; i < moves.Count; i++)
         {
             AIUndoInfo undo = BoardState.ApplyMove(cells, moves[i], rules);
-            int score = Search(cells, rules, opponent, aiPlayerID, depth - 1, alpha, beta);
+            int score = Search(cells, rules, weights, opponent, aiPlayerID, depth - 1, alpha, beta);
             BoardState.UndoMove(cells, undo);
 
             if (maximizing)
@@ -154,7 +166,7 @@ public static class BotMinimax
     }
 
     // myScore - opponentScore for the board in its current (possibly simulated) state.
-    private static int EvaluateBoard(AICell[,] cells, AIRules rules, int aiPlayerID)
+    private static int EvaluateBoard(AICell[,] cells, AIRules rules, AIWeights weights, int aiPlayerID)
     {
         int opponentPlayerID = aiPlayerID == 1 ? 2 : 1;
         int myScore = 0;
@@ -167,43 +179,44 @@ public static class BotMinimax
                 AICell cell = cells[r, c];
                 if (cell.PlayerID == 0) { continue; }
 
-                int pieceScore = EvaluatePiece(cells, rules, r, c, cell);
+                int pieceScore = EvaluatePiece(cells, rules, weights, r, c, cell);
                 if (cell.PlayerID == aiPlayerID) { myScore += pieceScore; } else { opponentScore += pieceScore; }
             }
         }
 
-        myScore += BoardState.GetLegalMoves(cells, aiPlayerID, rules).Count * 2;
-        opponentScore += BoardState.GetLegalMoves(cells, opponentPlayerID, rules).Count * 2;
+        myScore += BoardState.GetLegalMoves(cells, aiPlayerID, rules).Count * weights.MobilityWeight;
+        opponentScore += BoardState.GetLegalMoves(cells, opponentPlayerID, rules).Count * weights.MobilityWeight;
 
         return myScore - opponentScore;
     }
 
-    private static int EvaluatePiece(AICell[,] cells, AIRules rules, int row, int col, AICell cell)
+    private static int EvaluatePiece(AICell[,] cells, AIRules rules, AIWeights weights, int row, int col, AICell cell)
     {
-        int score = cell.IsKing ? 180 : 100;
+        int score = cell.IsKing ? weights.KingScore : weights.ManScore;
 
         if (!cell.IsKing)
         {
             int promotionRow = cell.PlayerID == 2 ? rules.Rows - 1 : 0;
-            if (Mathf.Abs(row - promotionRow) <= 2)
+            if (Mathf.Abs(row - promotionRow) <= weights.NearPromotionDistance)
             {
-                score += 30; // near promotion
+                score += weights.NearPromotionBonus;
             }
         }
 
         if (BoardState.IsSafe(cells, row, col, rules))
         {
-            score += 15; // protected
+            score += weights.ProtectedBonus;
         }
         else
         {
-            score -= 40; // vulnerable
+            score -= weights.VulnerablePenalty;
         }
 
-        bool inCenter = row >= 2 && row <= rules.Rows - 3 && col >= 2 && col <= rules.Columns - 3;
+        bool inCenter = row >= weights.CenterMargin && row <= rules.Rows - 1 - weights.CenterMargin
+            && col >= weights.CenterMargin && col <= rules.Columns - 1 - weights.CenterMargin;
         if (inCenter)
         {
-            score += 10;
+            score += weights.CenterBonus;
         }
 
         return score;

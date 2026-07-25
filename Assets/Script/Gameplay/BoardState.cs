@@ -19,6 +19,22 @@ public struct AIRules
     public bool MustCaptureMaximum;
 }
 
+// Plain-data copy of BotAISettingsSO's evaluation weights - snapshotted on the main thread (see
+// BotMinimax.StartSearch) rather than read directly from the ScriptableObject during the search,
+// since UnityEngine.Object access isn't safe off the main thread.
+public struct AIWeights
+{
+    public int ManScore;
+    public int KingScore;
+    public int NearPromotionDistance;
+    public int NearPromotionBonus;
+    public int ProtectedBonus;
+    public int VulnerablePenalty;
+    public int CenterMargin;
+    public int CenterBonus;
+    public int MobilityWeight;
+}
+
 public struct AIPosition
 {
     public int Row;

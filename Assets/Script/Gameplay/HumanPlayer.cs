@@ -39,7 +39,7 @@ namespace Gameplay
 
         // Suggests the same "objectively best" move BotPlayer's Hard difficulty would play,
         // regardless of this match's actual bot difficulty - runs the same minimax search (see
-        // BotMinimax.HardDepth) on a background thread, same as BotPlayer's own turn. Only
+        // BotAISettingsSO.hardDepth) on a background thread, same as BotPlayer's own turn. Only
         // meaningful at the start of a turn, before a piece is selected (see
         // GamePage.RefreshHintUndoButtons, which gates the button to that same window).
         public void ShowHint()
@@ -53,7 +53,8 @@ namespace Gameplay
             // running - RefreshHintUndoButtons (called below) re-enables it once we're done.
             ServiceLocator.Get<GamePageManager>().GamePage.SetHintUndoInteractable(false);
 
-            Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, BotMinimax.HardDepth);
+            int depth = ServiceLocator.Get<GameManager>().BotAISettings.hardDepth;
+            Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, depth);
             while (!task.IsCompleted)
             {
                 yield return null;

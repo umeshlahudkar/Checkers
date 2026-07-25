@@ -53,6 +53,11 @@ public class GameManager : Service<GameManager>
         get { return gameDataSO.botDifficulty; }
     }
 
+    public BotAISettingsSO BotAISettings
+    {
+        get { return gameDataSO.botAISettings; }
+    }
+
     private IRuleSet ruleSet;
     public IRuleSet RuleSet { get { return ruleSet; } }
 

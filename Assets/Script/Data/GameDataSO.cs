@@ -9,4 +9,5 @@ public class GameDataSO : ScriptableObject
     public PlayerInfo opponentPlayer;
     public BotDifficulty botDifficulty = BotDifficulty.Easy;
     public RuleSetSO ruleSet;
+    public BotAISettingsSO botAISettings;
 }

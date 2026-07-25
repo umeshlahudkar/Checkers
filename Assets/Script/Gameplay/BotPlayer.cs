@@ -18,11 +18,12 @@ namespace Gameplay
         {
             yield return waitForSeconds;
 
+            BotAISettingsSO settings = ServiceLocator.Get<GameManager>().BotAISettings;
             int depth = ServiceLocator.Get<GameManager>().BotDifficulty switch
             {
-                BotDifficulty.Hard => BotMinimax.HardDepth,
-                BotDifficulty.Medium => 2,
-                _ => 1,
+                BotDifficulty.Hard => settings.hardDepth,
+                BotDifficulty.Medium => settings.mediumDepth,
+                _ => settings.easyDepth,
             };
 
             // The search runs on a background thread (see BotMinimax.StartSearch) - poll instead of
