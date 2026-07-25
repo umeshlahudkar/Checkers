@@ -120,6 +120,14 @@ public class GamePage : Page
         player2Card.InitTurnIndicators(maxMissCount);
     }
 
+    // Turn timer is a Multiplayer-only concern (see GameManager.StartTurn) - offline matches
+    // (VsBot/VsPlayer) hide the countdown entirely rather than showing one that never runs.
+    public void SetTimerVisible(bool visible)
+    {
+        player1Card.SetTimerVisible(visible);
+        player2Card.SetTimerVisible(visible);
+    }
+
     public void InitPiecesLeft(int player1Total, int player2Total)
     {
         player1Card.InitPiecesLeft(player1Total);

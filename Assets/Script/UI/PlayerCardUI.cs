@@ -79,6 +79,11 @@ public class PlayerCardUI : MonoBehaviour
         }
     }
 
+    public void SetTimerVisible(bool visible)
+    {
+        timerText.gameObject.SetActive(visible);
+    }
+
     public bool UpdateTimer(float currentTime, float turnTime)
     {
         SetTimerText(currentTime);

@@ -124,7 +124,8 @@ public class GameManager : Service<GameManager>
 
         gamePageManager.OpenPage(GamePageType.GamePage);
         gamePageManager.GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar, opponentInfo.userName, opponentInfo.avatar);
-        gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
+        gamePageManager.GamePage.InitTurnIndicators(0);
+        gamePageManager.GamePage.SetTimerVisible(false);
 
         boardGenerator.GenerateBoard(ruleSet);
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
@@ -172,6 +173,7 @@ public class GameManager : Service<GameManager>
         gamePageManager.OpenPage(GamePageType.GamePage);
         gamePageManager.GamePage.ShowPlayerInfo(player1.userName, player1.avatar, player2.userName, player2.avatar);
         gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
+        gamePageManager.GamePage.SetTimerVisible(true);
 
         while(!HasBothPlayerReady())
         {
@@ -403,7 +405,14 @@ public class GameManager : Service<GameManager>
             return;
         }
 
-        timer.StartTimer();
+        // Turn timer / miss-count enforcement is a Multiplayer-only concern - offline matches
+        // (VsBot/VsPlayer) let a player take as long as they like, so the timer simply never runs
+        // there and HandleTurnMissCount (which only fires from its countdown reaching zero) never
+        // triggers either.
+        if (gameMode == GameModeType.Multiplayer)
+        {
+            timer.StartTimer();
+        }
     }
 
     [PunRPC]
