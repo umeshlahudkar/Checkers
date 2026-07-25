@@ -53,6 +53,11 @@ namespace Gameplay
             // running - RefreshHintUndoButtons (called below) re-enables it once we're done.
             ServiceLocator.Get<GamePageManager>().GamePage.SetHintUndoInteractable(false);
 
+            // Hint takes over the display - clear every movable piece's pulsing highlight so only
+            // the suggested piece/destination stand out once the search comes back.
+            ResetHighlightedBlocks();
+            int myGeneration = SelectionGeneration;
+
             int depth = ServiceLocator.Get<GameManager>().BotAISettings.hardDepth;
             Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, depth);
             while (!task.IsCompleted)
@@ -68,13 +73,47 @@ namespace Gameplay
                 yield break;
             }
 
+            // The player may have clicked a different piece (or the turn may have moved on, e.g. a
+            // timeout) while this search was still running in the background - applying the hint at
+            // that point would stomp on whatever's now shown, so bail without touching anything.
+            if (!IsMyTurn || SelectionGeneration != myGeneration) { yield break; }
+
             BotMinimax.AIMove? bestMove = BotMinimax.ResolveMove(task.Result);
-            if (!bestMove.HasValue) { yield break; }
+            if (!bestMove.HasValue)
+            {
+                HighlightMovablePieceBlock();
+                yield break;
+            }
 
             BotMinimax.AIMove move = bestMove.Value;
             BoardPosition landing = move.Sequence != null ? move.Sequence.Landings[0] : move.Position;
 
-            ServiceLocator.Get<GameplayController>().ShowHintHighlight(move.Piece.Row_ID, move.Piece.Coloum_ID, landing.row_ID, landing.col_ID);
+            GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+
+            // The suggested piece gets the normal piece-highlight (same as any selectable/selected
+            // piece) - only the destination gets the distinct hint styling.
+            Block fromBlock = gameplayController.board[move.Piece.Row_ID, move.Piece.Coloum_ID];
+            fromBlock.HighlightPieceBlock();
+            highlightedBlocks.Add(fromBlock);
+
+            gameplayController.ShowHintHighlight(landing.row_ID, landing.col_ID);
+
+            // Also make the suggested destination directly clickable, wired exactly like a normal
+            // move highlight (HighlightCaptureSequences/HighlightBlocks below) - selecting the piece
+            // up front so a click there plays out through the same pipeline a manual pick would,
+            // multi-hop capture chains included.
+            SelectPieceForNewMove(move.Piece);
+
+            Block targetBlock = gameplayController.board[landing.row_ID, landing.col_ID];
+            bool isCapture = move.Sequence != null;
+            targetBlock.MakeHintTargetClickable(isCapture);
+            highlightedBlocks.Add(targetBlock);
+
+            if (isCapture)
+            {
+                targetBlock.CapturedPosition = move.Sequence.Captured[0];
+                nextToNexthighlightedBlocks.Add(targetBlock);
+            }
         }
 
         public override void OnHighlightedPieceClick(Piece clickedPiece)

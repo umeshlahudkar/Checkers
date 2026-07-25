@@ -257,7 +257,7 @@ public class GameManager : Service<GameManager>
             // A timed-out turn made no move at all, so it neither advances nor resets the
             // no-progress count - it's carried over unchanged, same as the miss count above.
             int nextTurn = currentTurn == 1 ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount, movesWithoutProgress);
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount, movesWithoutProgress, true);
         }
     }
 
@@ -278,14 +278,23 @@ public class GameManager : Service<GameManager>
         // outgoing player's count is carried over unchanged here (only a timeout in
         // HandleTurnMissCount ever increments it).
         int nextTurn = currentTurn == 1 ? 2 : 1;
-        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount, movesWithoutProgress);
+        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount, movesWithoutProgress, false);
     }
 
     [PunRPC]
-    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount, int syncedMovesWithoutProgress)
+    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount, int syncedMovesWithoutProgress, bool wasMissedTurn)
     {
         players[currentTurn - 1].ResetPlayer();
         players[currentTurn - 1].SetTurnMissCount(outgoingPlayerMissCount);
+
+        // A completed move already clears/carries the last-move highlight itself (see
+        // Player.UpdateGrid) - only a timed-out turn (no move played at all) needs this, since
+        // otherwise the previous move's highlight would linger across a turn nobody acted on.
+        if (wasMissedTurn)
+        {
+            ServiceLocator.Get<GameplayController>().ClearLastMoveHighlight();
+            ServiceLocator.Get<GameplayController>().ClearHintHighlight();
+        }
 
         currentTurn = nextTurn;
         movesWithoutProgress = syncedMovesWithoutProgress;

@@ -147,19 +147,17 @@ public class GameplayController : Service<GameplayController>
         lastMoveHighlightedBlocks.Clear();
     }
 
-    // Suggested move from the Hint feature (Player.GetMoveDuration's turn-highlight sibling) - both
-    // squares light up immediately and stay lit (no animation, no timed swap) until cleared.
-    public void ShowHintHighlight(int fromRow, int fromCol, int toRow, int toCol)
+    // Suggested destination from the Hint feature - the suggested piece itself gets the normal
+    // piece-highlight instead (see HumanPlayer.ShowHintRoutine), so only the destination square
+    // gets this distinct hint styling. Lights up immediately and stays lit (no animation, no timed
+    // swap) until cleared.
+    public void ShowHintHighlight(int row, int col)
     {
         ClearHintHighlight();
 
-        Block fromBlock = board[fromRow, fromCol];
-        fromBlock.ShowHint();
-        hintHighlightedBlocks.Add(fromBlock);
-
-        Block toBlock = board[toRow, toCol];
-        toBlock.ShowHint();
-        hintHighlightedBlocks.Add(toBlock);
+        Block block = board[row, col];
+        block.ShowHint();
+        hintHighlightedBlocks.Add(block);
     }
 
     public void ClearHintHighlight()

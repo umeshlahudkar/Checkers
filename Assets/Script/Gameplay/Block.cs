@@ -62,14 +62,27 @@ public class Block : MonoBehaviour
 
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
     {
-        isTargetBlockHighlighted = true;
-        isNextTargetBlockHighlighted = nextToNextHighlighted;
+        MakeClickableTarget(nextToNextHighlighted);
         targetImage.gameObject.SetActive(true);
-        button.interactable = true;
 
         targetImage.rectTransform.DOKill();
         targetImage.rectTransform.localScale = Vector3.one * minScale;
         targetImage.rectTransform.DOScale(maxScale, pulseDuration).SetLoops(-1, LoopType.Yoyo);
+    }
+
+    // Same clickability as HighlightNextMoveBlock, without the pulsing target reticle - used for the
+    // Hint feature's destination square, which already gets its own distinct visual (ShowHint) and
+    // shouldn't also show the normal target reticle on top of it.
+    public void MakeHintTargetClickable(bool nextToNextHighlighted = false)
+    {
+        MakeClickableTarget(nextToNextHighlighted);
+    }
+
+    private void MakeClickableTarget(bool nextToNextHighlighted)
+    {
+        isTargetBlockHighlighted = true;
+        isNextTargetBlockHighlighted = nextToNextHighlighted;
+        button.interactable = true;
     }
 
     public void HighlightAsLastMove()

@@ -40,6 +40,10 @@ namespace Gameplay
                 yield break;
             }
 
+            // The turn can move on while this search was still running in the background (e.g. a
+            // timeout) - applying a stale move at that point would act out of turn.
+            if (!IsMyTurn) { yield break; }
+
             BotMinimax.AIMove? bestMove = BotMinimax.ResolveMove(task.Result);
             if (!bestMove.HasValue) { yield break; }
 

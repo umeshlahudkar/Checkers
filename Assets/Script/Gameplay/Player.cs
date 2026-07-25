@@ -32,6 +32,18 @@ namespace Gameplay
 
         public PhotonView PhotonView { get { return thisPhotonView; } }
 
+        // Whether it's still actually this player's turn - checked after an async search (bot move
+        // search, hint search) resolves, in case a timeout or some other flow already moved the turn
+        // on while the search was still running in the background.
+        protected bool IsMyTurn => ServiceLocator.Get<GameManager>().CurrentTurn == playerID;
+
+        // Bumped by ResetHighlightedBlocks - every time the board's highlight state gets cleared for
+        // a fresh selection (a manual piece click, a new hint request, ...). An async flow that reads
+        // this before starting and compares it again once it resolves can tell whether anything else
+        // changed the selection in the meantime, and bail instead of stomping on it.
+        private int selectionGeneration;
+        protected int SelectionGeneration => selectionGeneration;
+
         // Whether this Player object represents the local viewing client, as opposed to the
         // opponent. Player numbering alone only tells the two apart in offline modes (VsBot/VsPlayer
         // always spawn player 1 as the local side, see GameManager.SetupLocalMatch) - in Multiplayer,
@@ -113,6 +125,8 @@ namespace Gameplay
 
         protected void ResetHighlightedBlocks()
         {
+            selectionGeneration++;
+
             for (int i = 0; i < highlightedBlocks.Count; i++)
             {
                 highlightedBlocks[i].ResetBlock();
