@@ -32,6 +32,11 @@ public class BoardGenerator : MonoBehaviour
     [Header("Board Canvas")]
     [SerializeField] private RectTransform layout;
 
+    public Sprite GetPieceSprite(PieceType pieceType)
+    {
+        return pieceType == PieceType.White ? whitePieceSprite : blackPieceSprite;
+    }
+
     public void GenerateBoard(IRuleSet ruleSet)
     {
         this.ruleSet = ruleSet;

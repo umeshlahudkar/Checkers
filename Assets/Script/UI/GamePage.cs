@@ -108,10 +108,10 @@ public class GamePage : Page
         return (playerNumber == 1) ? player1Card : player2Card;
     }
 
-    public void ShowPlayerInfo(string player1_name, Sprite player1_Avtar, string player2_name, Sprite player2_Avtar)
+    public void ShowPlayerInfo(string player1_name, Sprite player1_Avtar, Sprite player1PieceSprite, string player2_name, Sprite player2_Avtar, Sprite player2PieceSprite)
     {
-        player1Card.SetPlayerInfo(player1_name, player1_Avtar);
-        player2Card.SetPlayerInfo(player2_name, player2_Avtar);
+        player1Card.SetPlayerInfo(player1_name, player1_Avtar, player1PieceSprite);
+        player2Card.SetPlayerInfo(player2_name, player2_Avtar, player2PieceSprite);
     }
 
     public void InitTurnIndicators(int maxMissCount)
@@ -138,6 +138,11 @@ public class GamePage : Page
     {
         player1Card.SetPiecesLeft(player1PiecesLeft);
         player2Card.SetPiecesLeft(player2PiecesLeft);
+    }
+
+    public void PlayPieceCapturedAnimation(int playerNumber)
+    {
+        GetPlayerCard(playerNumber).PlayPieceCapturedAnimation();
     }
 
     public void UpdateMissIndicators(int playerNumber, int missCount)

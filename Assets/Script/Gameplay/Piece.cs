@@ -97,6 +97,7 @@ public class Piece : MonoBehaviour
         }
 
         ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
+        ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
 
         PlayDisappearAnimation(0f, () => Destroy(gameObject));
     }

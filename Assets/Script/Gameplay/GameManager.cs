@@ -123,7 +123,9 @@ public class GameManager : Service<GameManager>
         GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
 
         gamePageManager.OpenPage(GamePageType.GamePage);
-        gamePageManager.GamePage.ShowPlayerInfo(ownInfo.userName, ownInfo.avatar, opponentInfo.userName, opponentInfo.avatar);
+        gamePageManager.GamePage.ShowPlayerInfo(
+            ownInfo.userName, ownInfo.avatar, boardGenerator.GetPieceSprite(ownInfo.pieceType),
+            opponentInfo.userName, opponentInfo.avatar, boardGenerator.GetPieceSprite(opponentInfo.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(0);
         gamePageManager.GamePage.SetTimerVisible(false);
 
@@ -171,7 +173,9 @@ public class GameManager : Service<GameManager>
         player2DisplayName = player2.userName;
 
         gamePageManager.OpenPage(GamePageType.GamePage);
-        gamePageManager.GamePage.ShowPlayerInfo(player1.userName, player1.avatar, player2.userName, player2.avatar);
+        gamePageManager.GamePage.ShowPlayerInfo(
+            player1.userName, player1.avatar, boardGenerator.GetPieceSprite(player1.pieceType),
+            player2.userName, player2.avatar, boardGenerator.GetPieceSprite(player2.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
         gamePageManager.GamePage.SetTimerVisible(true);
 

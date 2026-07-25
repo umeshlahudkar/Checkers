@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -13,6 +14,7 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI piecesLeftText;
     [SerializeField] private GameObject border;
     [SerializeField] private Image bg;
+    [SerializeField] private Image pieceIcon;
     [SerializeField] private Transform turnIndicatorParent;
     [SerializeField] private GameObject turnIndicatorTemplate;
 
@@ -33,10 +35,11 @@ public class PlayerCardUI : MonoBehaviour
         bgDefaultColor = bg.color;
     }
 
-    public void SetPlayerInfo(string playerName, Sprite avatar)
+    public void SetPlayerInfo(string playerName, Sprite avatar, Sprite pieceSprite)
     {
         nameText.text = playerName;
         avatarImage.sprite = avatar;
+        pieceIcon.sprite = pieceSprite;
     }
 
     public void SetTurnActive(bool isActive)
@@ -52,7 +55,16 @@ public class PlayerCardUI : MonoBehaviour
 
     public void SetPiecesLeft(int count)
     {
-        piecesLeftText.text = $"Pieces : {count}/{totalPieces}";
+        piecesLeftText.text = $": {count}/{totalPieces}";
+    }
+
+    // A punch-scale pop on the piece icon, played whenever this player loses a piece to a capture
+    // (see Piece.Destroy) - draws the eye to the card whose count just dropped.
+    public void PlayPieceCapturedAnimation()
+    {
+        pieceIcon.rectTransform.DOKill();
+        pieceIcon.rectTransform.localScale = Vector3.one;
+        pieceIcon.rectTransform.DOPunchScale(Vector3.one * 0.3f, 0.4f, vibrato: 8, elasticity: 0.6f);
     }
 
     public void InitTurnIndicators(int maxMissCount)
