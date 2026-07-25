@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Gameplay
 {
@@ -34,40 +37,43 @@ namespace Gameplay
             }
         }
 
-        // Suggests the same "objectively best" move BotPlayer's Hard difficulty would play
-        // (MoveGenerator.TryGetBestCapture/TryGetBestMove), regardless of this match's actual bot
-        // difficulty - longest capture preferring a safe outcome, else the best safe quiet move,
-        // else any move. Only meaningful at the start of a turn, before a piece is selected (see
+        // Suggests the same "objectively best" move BotPlayer's Hard difficulty would play,
+        // regardless of this match's actual bot difficulty - runs the same minimax search (see
+        // BotMinimax.HardDepth) on a background thread, same as BotPlayer's own turn. Only
+        // meaningful at the start of a turn, before a piece is selected (see
         // GamePage.RefreshHintUndoButtons, which gates the button to that same window).
         public void ShowHint()
         {
-            MoveGenerator moveGenerator = ServiceLocator.Get<MoveGenerator>();
-            moveGenerator.PopulateMoveData(movablePieces);
+            StartCoroutine(ShowHintRoutine());
+        }
 
-            int fromRow, fromCol, toRow, toCol;
+        private IEnumerator ShowHintRoutine()
+        {
+            // Prevent a second click from starting an overlapping search while this one's still
+            // running - RefreshHintUndoButtons (called below) re-enables it once we're done.
+            ServiceLocator.Get<GamePageManager>().GamePage.SetHintUndoInteractable(false);
 
-            if (moveGenerator.TryGetBestCapture(movablePieces, preferSafe: true, out Piece capturePiece, out CaptureSequence sequence))
+            Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, BotMinimax.HardDepth);
+            while (!task.IsCompleted)
             {
-                fromRow = capturePiece.Row_ID;
-                fromCol = capturePiece.Coloum_ID;
-                BoardPosition landing = sequence.Landings[0];
-                toRow = landing.row_ID;
-                toCol = landing.col_ID;
-            }
-            else if (moveGenerator.TryGetBestMove(movablePieces, preferSafe: true, out Piece movePiece, out BoardPosition position)
-                || moveGenerator.TryGetBestMove(movablePieces, preferSafe: false, out movePiece, out position))
-            {
-                fromRow = movePiece.Row_ID;
-                fromCol = movePiece.Coloum_ID;
-                toRow = position.row_ID;
-                toCol = position.col_ID;
-            }
-            else
-            {
-                return;
+                yield return null;
             }
 
-            ServiceLocator.Get<GameplayController>().ShowHintHighlight(fromRow, fromCol, toRow, toCol);
+            ServiceLocator.Get<GamePageManager>().GamePage.RefreshHintUndoButtons();
+
+            if (task.IsFaulted)
+            {
+                Debug.LogException(task.Exception);
+                yield break;
+            }
+
+            BotMinimax.AIMove? bestMove = BotMinimax.ResolveMove(task.Result);
+            if (!bestMove.HasValue) { yield break; }
+
+            BotMinimax.AIMove move = bestMove.Value;
+            BoardPosition landing = move.Sequence != null ? move.Sequence.Landings[0] : move.Position;
+
+            ServiceLocator.Get<GameplayController>().ShowHintHighlight(move.Piece.Row_ID, move.Piece.Coloum_ID, landing.row_ID, landing.col_ID);
         }
 
         public override void OnHighlightedPieceClick(Piece clickedPiece)

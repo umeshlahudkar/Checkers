@@ -303,10 +303,9 @@ public class GameManager : Service<GameManager>
         {
             for (int j = 0; j < cols; j++)
             {
-                Block block = gameplayController.board[i, j];
-                if (!block.IsPiecePresent) { continue; }
+                Piece piece = gameplayController.pieces[i, j];
+                if (piece == null) { continue; }
 
-                Piece piece = block.Piece;
                 cells[i, j] = new PieceSnapshot
                 {
                     present = true,

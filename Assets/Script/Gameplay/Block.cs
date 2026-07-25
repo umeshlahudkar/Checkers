@@ -19,9 +19,6 @@ public class Block : MonoBehaviour
     [SerializeField] private int columID;
     [SerializeField] private int rowID;
 
-    [SerializeField] private bool isPiecePresent;
-    private Piece piece;
-
     private bool isTargetBlockHighlighted;
     private bool isNextTargetBlockHighlighted;
 
@@ -45,18 +42,6 @@ public class Block : MonoBehaviour
         blockImage.sprite = sprite;
         isTargetBlockHighlighted = false;
         button.interactable = false;
-    }
-
-    public void SetBlockPiece(bool piecePresent, Piece piece)
-    {
-        isPiecePresent = piecePresent;
-        this.piece = piece;
-
-        if(this.piece != null)
-        {
-            this.piece.Row_ID = rowID;
-            this.piece.Coloum_ID = columID;
-        }
     }
 
     private void SetHighlightImageAlpha(float alpha)
@@ -141,18 +126,6 @@ public class Block : MonoBehaviour
 
     public int Row_ID { get { return rowID; } }
     public int Coloum_ID { get { return columID; } }
-
-    public bool IsPiecePresent
-    { 
-        get { return isPiecePresent; }
-        set { isPiecePresent = value; }
-    }
-
-    public Piece Piece 
-    { 
-        get { return piece; }
-        set { piece = value; }
-    }
 
     public RectTransform ThisTransform { get { return thisTransform; } }
 }

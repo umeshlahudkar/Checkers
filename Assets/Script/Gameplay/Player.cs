@@ -175,7 +175,7 @@ namespace Gameplay
                 thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
             }
 
-            selectedPiece = block.Piece;
+            selectedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
 
             if (hasDeleted && ServiceLocator.Get<MoveGenerator>().CanPieceKill(selectedPiece))
             {
@@ -234,8 +234,8 @@ namespace Gameplay
                 Block sourceBlock = gameplayController.board[sourceRow, sourceCol];
                 Block targetBlock = gameplayController.board[targetRow, targetCol];
 
-                piece = sourceBlock.Piece;
-                sourceBlock.SetBlockPiece(false, null);
+                piece = gameplayController.pieces[sourceRow, sourceCol];
+                gameplayController.SetSquare(sourceRow, sourceCol, null);
 
                 MovePiece(piece, targetBlock, isCapture);
                 ServiceLocator.Get<AudioManager>().PlayPieceMoveSound();
@@ -254,7 +254,7 @@ namespace Gameplay
                     gameplayController.ShowLastMoveInProgress(sourceRow, sourceCol, targetRow, targetCol, GetMoveDuration(sourceBlock, targetBlock));
                 }
             }
-            ServiceLocator.Get<GameplayController>().board[targetRow, targetCol].SetBlockPiece(hasPiece, piece);
+            ServiceLocator.Get<GameplayController>().SetSquare(targetRow, targetCol, piece);
         }
 
         // NOTE: these must be public. PUN resolves RPCs by reflecting the concrete component type
@@ -271,7 +271,7 @@ namespace Gameplay
         [PunRPC]
         public void DestroyPieceAt(int row, int col)
         {
-            Piece capturedPiece = ServiceLocator.Get<GameplayController>().board[row, col].Piece;
+            Piece capturedPiece = ServiceLocator.Get<GameplayController>().pieces[row, col];
             lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
             capturedPiece.Destroy();
         }
@@ -279,7 +279,7 @@ namespace Gameplay
         [PunRPC]
         public void CrownPieceAt(int row, int col)
         {
-            ServiceLocator.Get<GameplayController>().board[row, col].Piece.SetCrownKing();
+            ServiceLocator.Get<GameplayController>().pieces[row, col].SetCrownKing();
         }
 
         private bool AreAdjecent(Block b1, Block b2)

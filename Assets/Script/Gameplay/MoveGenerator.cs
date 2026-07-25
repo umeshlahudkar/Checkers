@@ -23,7 +23,8 @@ public class MoveGenerator : Service<MoveGenerator>
         this.ruleSet = ruleSet;
     }
 
-    private Block[,] Board => ServiceLocator.Get<GameplayController>().board;
+    private int[,] Occupancy => ServiceLocator.Get<GameplayController>().occupancy;
+    private Piece[,] Pieces => ServiceLocator.Get<GameplayController>().pieces;
 
     // Player 2 (white) advances down the board, player 1 (black) advances up it.
     private static int ForwardDirection(int playerID)
@@ -93,7 +94,7 @@ public class MoveGenerator : Service<MoveGenerator>
         {
             int adjRow = row + dir.dRow;
             int adjCol = col + dir.dCol;
-            if (IsValidPosition(adjRow, adjCol) && !Board[adjRow, adjCol].IsPiecePresent)
+            if (IsValidPosition(adjRow, adjCol) && Occupancy[adjRow, adjCol] == 0)
             {
                 return true;
             }
@@ -180,7 +181,7 @@ public class MoveGenerator : Service<MoveGenerator>
             int targetCol = col + dir.dCol;
 
             // A flying king can land on any empty square along the ray, not just the adjacent one.
-            while (IsValidPosition(targetRow, targetCol) && !Board[targetRow, targetCol].IsPiecePresent)
+            while (IsValidPosition(targetRow, targetCol) && Occupancy[targetRow, targetCol] == 0)
             {
                 piece.movablePositions.Add(new BoardPosition(targetRow, targetCol));
 
@@ -247,6 +248,7 @@ public class MoveGenerator : Service<MoveGenerator>
 
     private void SearchCaptures(Piece piece, List<BoardPosition> capturedSoFar, List<BoardPosition> landingsSoFar, List<CaptureSequence> results)
     {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
         int fromRow = piece.Row_ID;
         int fromCol = piece.Coloum_ID;
         bool foundFurtherCapture = false;
@@ -261,16 +263,16 @@ public class MoveGenerator : Service<MoveGenerator>
 
             if (flying)
             {
-                while (IsValidPosition(middleRow, middleCol) && !Board[middleRow, middleCol].IsPiecePresent)
+                while (IsValidPosition(middleRow, middleCol) && Occupancy[middleRow, middleCol] == 0)
                 {
                     middleRow += dir.dRow;
                     middleCol += dir.dCol;
                 }
             }
 
-            if (!IsValidPosition(middleRow, middleCol) || !Board[middleRow, middleCol].IsPiecePresent) { continue; }
+            if (!IsValidPosition(middleRow, middleCol) || Occupancy[middleRow, middleCol] == 0) { continue; }
 
-            Piece middlePiece = Board[middleRow, middleCol].Piece;
+            Piece middlePiece = Pieces[middleRow, middleCol];
             if (middlePiece.Player_ID == piece.Player_ID) { continue; }
 
             BoardPosition middlePos = new BoardPosition(middleRow, middleCol);
@@ -282,7 +284,7 @@ public class MoveGenerator : Service<MoveGenerator>
             int landingRow = middleRow + dir.dRow;
             int landingCol = middleCol + dir.dCol;
 
-            while (IsValidPosition(landingRow, landingCol) && !Board[landingRow, landingCol].IsPiecePresent)
+            while (IsValidPosition(landingRow, landingCol) && Occupancy[landingRow, landingCol] == 0)
             {
                 foundFurtherCapture = true;
                 BoardPosition landingPos = new BoardPosition(landingRow, landingCol);
@@ -290,9 +292,9 @@ public class MoveGenerator : Service<MoveGenerator>
                 // Simulate the jump (reusing the same mutate-then-revert technique the old
                 // single/double-kill checks used), then recurse to look for further jumps from the
                 // new landing before reverting.
-                Board[middleRow, middleCol].SetBlockPiece(false, null);
-                Board[fromRow, fromCol].SetBlockPiece(false, null);
-                Board[landingRow, landingCol].SetBlockPiece(true, piece);
+                gameplayController.SetSquare(middleRow, middleCol, null);
+                gameplayController.SetSquare(fromRow, fromCol, null);
+                gameplayController.SetSquare(landingRow, landingCol, piece);
 
                 capturedSoFar.Add(middlePos);
                 landingsSoFar.Add(landingPos);
@@ -302,9 +304,9 @@ public class MoveGenerator : Service<MoveGenerator>
                 capturedSoFar.RemoveAt(capturedSoFar.Count - 1);
                 landingsSoFar.RemoveAt(landingsSoFar.Count - 1);
 
-                Board[landingRow, landingCol].SetBlockPiece(false, null);
-                Board[fromRow, fromCol].SetBlockPiece(true, piece);
-                Board[middleRow, middleCol].SetBlockPiece(true, middlePiece);
+                gameplayController.SetSquare(landingRow, landingCol, null);
+                gameplayController.SetSquare(fromRow, fromCol, piece);
+                gameplayController.SetSquare(middleRow, middleCol, middlePiece);
 
                 if (!flying) { break; } // fixed-distance capture only ever has exactly one landing square
 
@@ -323,27 +325,12 @@ public class MoveGenerator : Service<MoveGenerator>
         }
     }
 
-    public bool IsSafeToMove(Piece piece, int targetRow, int targetCol)
-    {
-        int initialPieceRow = piece.Row_ID;
-        int initialPieceCol = piece.Coloum_ID;
-
-        Board[initialPieceRow, initialPieceCol].SetBlockPiece(false, null);
-        Board[targetRow, targetCol].SetBlockPiece(true, piece);
-
-        bool isSafe = IsSafe(piece);
-
-        Board[targetRow, targetCol].SetBlockPiece(false, null);
-        Board[initialPieceRow, initialPieceCol].SetBlockPiece(true, piece);
-
-        return isSafe;
-    }
-
     // Whether the piece ends up safe after playing out the *entire* given sequence (captured
     // pieces removed, piece moved to the final landing) - generalizes the old single/double-hop
     // safety checks to a sequence of any length.
     public bool IsSequenceSafe(Piece piece, CaptureSequence sequence)
     {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
         int originalRow = piece.Row_ID;
         int originalCol = piece.Coloum_ID;
 
@@ -351,27 +338,34 @@ public class MoveGenerator : Service<MoveGenerator>
         for (int i = 0; i < sequence.Captured.Count; i++)
         {
             BoardPosition captured = sequence.Captured[i];
-            removedPieces.Add(Board[captured.row_ID, captured.col_ID].Piece);
-            Board[captured.row_ID, captured.col_ID].SetBlockPiece(false, null);
+            removedPieces.Add(Pieces[captured.row_ID, captured.col_ID]);
+            gameplayController.SetSquare(captured.row_ID, captured.col_ID, null);
         }
 
-        Board[originalRow, originalCol].SetBlockPiece(false, null);
+        gameplayController.SetSquare(originalRow, originalCol, null);
 
         BoardPosition finalLanding = sequence.Landings[sequence.Landings.Count - 1];
-        Board[finalLanding.row_ID, finalLanding.col_ID].SetBlockPiece(true, piece);
+        gameplayController.SetSquare(finalLanding.row_ID, finalLanding.col_ID, piece);
 
         bool isSafe = IsSafe(piece);
 
-        Board[finalLanding.row_ID, finalLanding.col_ID].SetBlockPiece(false, null);
-        Board[originalRow, originalCol].SetBlockPiece(true, piece);
+        gameplayController.SetSquare(finalLanding.row_ID, finalLanding.col_ID, null);
+        gameplayController.SetSquare(originalRow, originalCol, piece);
 
         for (int i = 0; i < sequence.Captured.Count; i++)
         {
             BoardPosition captured = sequence.Captured[i];
-            Board[captured.row_ID, captured.col_ID].SetBlockPiece(true, removedPieces[i]);
+            gameplayController.SetSquare(captured.row_ID, captured.col_ID, removedPieces[i]);
         }
 
         return isSafe;
+    }
+
+    // Public entry point for AI evaluation - same check IsSafeToMove/IsSequenceSafe use internally,
+    // just against the piece's current position rather than a hypothetical one.
+    public bool IsPieceSafe(Piece piece)
+    {
+        return IsSafe(piece);
     }
 
     // A piece is unsafe if an adjacent enemy piece could jump over it to the opposite square. This
@@ -399,12 +393,12 @@ public class MoveGenerator : Service<MoveGenerator>
             int enemyRow = row + dir.dRow;
             int enemyCol = col + dir.dCol;
 
-            if (!IsValidPosition(enemyRow, enemyCol) || !Board[enemyRow, enemyCol].IsPiecePresent)
+            if (!IsValidPosition(enemyRow, enemyCol) || Occupancy[enemyRow, enemyCol] == 0)
             {
                 continue;
             }
 
-            Piece enemy = Board[enemyRow, enemyCol].Piece;
+            Piece enemy = Pieces[enemyRow, enemyCol];
             if (enemy.Player_ID == playerID)
             {
                 continue;
@@ -419,7 +413,7 @@ public class MoveGenerator : Service<MoveGenerator>
             int landingRow = row - dir.dRow;
             int landingCol = col - dir.dCol;
 
-            if (IsValidPosition(landingRow, landingCol) && !Board[landingRow, landingCol].IsPiecePresent)
+            if (IsValidPosition(landingRow, landingCol) && Occupancy[landingRow, landingCol] == 0)
             {
                 /* not safe position */
                 return false;
@@ -434,100 +428,4 @@ public class MoveGenerator : Service<MoveGenerator>
         return row >= 0 && row < ruleSet.Rows && col >= 0 && col < ruleSet.Columns;
     }
 
-    // Populates movablePositions/captureSequences for every piece in the list - a prerequisite for
-    // TryGetBestCapture/TryGetBestMove, which rank pre-computed options rather than deriving them.
-    public void PopulateMoveData(List<Piece> movablePieces)
-    {
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            Piece piece = movablePieces[i];
-            piece.ResetAllList();
-            SetPiecePosition(piece);
-        }
-    }
-
-    // Finds the longest capture available across all movable pieces, then (unless preferSafe is
-    // null) prefers one that leaves the piece safe afterward, falling back to any at that same
-    // longest length if none are safe. Shared by BotPlayer (Hard/Medium difficulty) and the Hint
-    // feature, which always wants this same "objectively best" ranking regardless of bot difficulty.
-    public bool TryGetBestCapture(List<Piece> movablePieces, bool? preferSafe, out Piece piece, out CaptureSequence sequence)
-    {
-        int maxLength = 0;
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            List<CaptureSequence> sequences = movablePieces[i].captureSequences;
-            for (int j = 0; j < sequences.Count; j++)
-            {
-                if (sequences[j].Length > maxLength)
-                {
-                    maxLength = sequences[j].Length;
-                }
-            }
-        }
-
-        if (maxLength == 0)
-        {
-            piece = null;
-            sequence = null;
-            return false;
-        }
-
-        (Piece piece, CaptureSequence sequence)? fallback = null;
-
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            Piece candidatePiece = movablePieces[i];
-            List<CaptureSequence> sequences = candidatePiece.captureSequences;
-            for (int j = 0; j < sequences.Count; j++)
-            {
-                CaptureSequence candidateSequence = sequences[j];
-                if (candidateSequence.Length != maxLength) { continue; }
-
-                if (!preferSafe.HasValue || IsSequenceSafe(candidatePiece, candidateSequence) == preferSafe.Value)
-                {
-                    piece = candidatePiece;
-                    sequence = candidateSequence;
-                    return true;
-                }
-
-                fallback ??= (candidatePiece, candidateSequence);
-            }
-        }
-
-        if (fallback.HasValue)
-        {
-            piece = fallback.Value.piece;
-            sequence = fallback.Value.sequence;
-            return true;
-        }
-
-        piece = null;
-        sequence = null;
-        return false;
-    }
-
-    public bool TryGetBestMove(List<Piece> movablePieces, bool? preferSafe, out Piece piece, out BoardPosition position)
-    {
-        for (int i = 0; i < movablePieces.Count; i++)
-        {
-            Piece candidatePiece = movablePieces[i];
-            for (int j = 0; j < candidatePiece.movablePositions.Count; j++)
-            {
-                BoardPosition candidatePosition = candidatePiece.movablePositions[j];
-
-                if (preferSafe.HasValue && IsSafeToMove(candidatePiece, candidatePosition.row_ID, candidatePosition.col_ID) != preferSafe.Value)
-                {
-                    continue;
-                }
-
-                piece = candidatePiece;
-                position = candidatePosition;
-                return true;
-            }
-        }
-
-        piece = null;
-        position = default;
-        return false;
-    }
 }

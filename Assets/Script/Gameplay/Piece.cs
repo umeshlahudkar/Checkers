@@ -46,7 +46,7 @@ public class Piece : MonoBehaviour
         thisTransform.sizeDelta = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.sizeDelta;
         thisTransform.localScale = Vector3.one;
 
-        ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(true, this);
+        ServiceLocator.Get<GameplayController>().SetSquare(rowID, columID, this);
 
         bool isOwnPiece = ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer
             || ServiceLocator.Get<GameManager>().GetPlayer(playerID).PhotonView.IsMine;
@@ -80,7 +80,7 @@ public class Piece : MonoBehaviour
     // than just vanishing.
     public void Destroy()
     {
-        ServiceLocator.Get<GameplayController>().board[rowID, columID].SetBlockPiece(false, null);
+        ServiceLocator.Get<GameplayController>().SetSquare(rowID, columID, null);
         button.interactable = false;
 
         ServiceLocator.Get<AudioManager>().PlayPieceKillSound();

@@ -6,6 +6,8 @@ using UnityEngine;
 public class GameplayController : Service<GameplayController>
 {
     public Block[,] board;
+    public int[,] occupancy; // 0 empty, 1/2 = owning player ID - nothing else
+    public Piece[,] pieces;  // the actual piece object on this square, or null
     public List<Piece> whitePieces = new();
     public List<Piece> blackPieces = new();
 
@@ -22,6 +24,22 @@ public class GameplayController : Service<GameplayController>
     {
         this.ruleSet = ruleSet;
         board = new Block[ruleSet.Rows, ruleSet.Columns];
+        occupancy = new int[ruleSet.Rows, ruleSet.Columns];
+        pieces = new Piece[ruleSet.Rows, ruleSet.Columns];
+    }
+
+    // Single entry point for "what's on this square" bookkeeping - keeps occupancy/pieces in sync
+    // so MoveGenerator's day-to-day legality checks and the bot's AI snapshot never disagree.
+    public void SetSquare(int row, int col, Piece piece)
+    {
+        pieces[row, col] = piece;
+        occupancy[row, col] = piece == null ? 0 : piece.Player_ID;
+
+        if (piece != null)
+        {
+            piece.Row_ID = row;
+            piece.Coloum_ID = col;
+        }
     }
 
     // Staggers the appear/disappear animation across every piece currently on the board (in
@@ -67,11 +85,14 @@ public class GameplayController : Service<GameplayController>
         {
             for(int j = 0; j < ruleSet.Columns; j++)
             {
-                if(board[i,j].Piece != null)
+                if(pieces[i,j] != null)
                 {
-                    Destroy(board[i, j].Piece.gameObject);
+                    Destroy(pieces[i, j].gameObject);
                 }
                 Destroy(board[i, j].gameObject);
+
+                pieces[i, j] = null;
+                occupancy[i, j] = 0;
             }
         }
         whitePieces.Clear();

@@ -172,7 +172,7 @@ public class BoardGenerator : MonoBehaviour
         {
             for (int j = 0; j < ruleSet.Columns; j++)
             {
-                gameplayController.board[i, j].SetBlockPiece(false, null);
+                gameplayController.SetSquare(i, j, null);
             }
         }
     }
