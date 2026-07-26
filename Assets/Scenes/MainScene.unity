@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 536777115}
   - component: {fileID: 536777114}
   - component: {fileID: 536777118}
+  - component: {fileID: 536777119}
   m_Layer: 5
   m_Name: MainMenu_Canvas
   m_TagString: Untagged
@@ -254,6 +255,21 @@ MonoBehaviour:
     page: {fileID: 700000000000000030}
   - key: 7
     page: {fileID: 200000000000000030}
+--- !u!114 &536777119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536777113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082cc9fe7c7161f41877fd73bf7076ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasScalerMatchSetter
+  referenceAspect: 0.5625
+  tallAspect: 0.46153846
+  wideAspect: 0.75
 --- !u!1 &604958211
 GameObject:
   m_ObjectHideFlags: 0
