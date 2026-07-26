@@ -15,3 +15,10 @@ MonoBehaviour:
   ruleSets:
   - {fileID: 11400000, guid: 4ef17791a1cbba23ecb8bbedf8d9fb8b, type: 2}
   - {fileID: 11400000, guid: 36da0ca97ce8b9e931ebb9e9166f83f3, type: 2}
+  - {fileID: 11400000, guid: 26e9b925a4d84f0fa13f05faacc97f2a, type: 2}
+  - {fileID: 11400000, guid: e0adb8e1e745472fb283561b392a8b85, type: 2}
+  - {fileID: 11400000, guid: 07d9bdabe4384c69ae467ae3d06845cc, type: 2}
+  - {fileID: 11400000, guid: 882a1a862bfb4ef28e52709c9e3195d8, type: 2}
+  - {fileID: 11400000, guid: 3a356788cb7d4eb7b1da46d7ad36230c, type: 2}
+  - {fileID: 11400000, guid: aa841f8e35a2458ba703b1de3840bef1, type: 2}
+  - {fileID: 11400000, guid: 2af4d7b89c774e80926461ccb050c61a, type: 2}

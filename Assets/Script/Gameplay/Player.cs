@@ -183,20 +183,46 @@ namespace Gameplay
 
             yield return new WaitForSeconds(0.5f);
 
-            bool justPromoted = !selectedPiece.IsCrownedKing && ServiceLocator.Get<GameManager>().RuleSet.IsPromotionRow(selectedPiece.Row_ID, selectedPiece.Player_ID);
-            if (justPromoted)
+            selectedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
+
+            IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
+            bool reachedPromotionRow = !selectedPiece.IsCrownedKing && ruleSet.IsPromotionRow(selectedPiece.Row_ID, selectedPiece.Player_ID);
+
+            // Russian-style: crown immediately, so the continuation check just below already sees
+            // the piece as a king (e.g. picks up flying-capture range a mere man never had) and
+            // must use those new powers this same turn.
+            bool promotesImmediately = reachedPromotionRow && ruleSet.MidChainPromotionRule == MidChainPromotionRule.ContinueAsKing;
+            if (promotesImmediately)
             {
                 thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
             }
 
-            selectedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
+            // American/Italian-style: the turn ends the instant a piece reaches the promotion row,
+            // even if the newly-crowned piece could otherwise keep capturing (e.g. backward) - so
+            // no continuation is offered at all, regardless of what CanPieceKill would say.
+            bool blocksContinuation = reachedPromotionRow && ruleSet.MidChainPromotionRule == MidChainPromotionRule.EndsTurnOnPromotion;
 
-            if (hasDeleted && ServiceLocator.Get<MoveGenerator>().CanPieceKill(selectedPiece))
+            // Otherwise (DeferUntilChainEnds, or not on the promotion row at all): checked with the
+            // piece's CURRENT move set - not-yet-promoted unless promotesImmediately already
+            // crowned it above - a man with a further legal capture from this square (some
+            // rulesets let men capture backward) must keep playing that capture as a man even
+            // though it's standing on the back row; it only actually crowns once the chain truly
+            // has nowhere further to go from here.
+            bool canContinue = !blocksContinuation && hasDeleted && ServiceLocator.Get<MoveGenerator>().CanPieceKill(selectedPiece);
+
+            if (canContinue)
             {
                 ContinueAfterKill(selectedPiece);
             }
             else
             {
+                bool justPromoted = promotesImmediately;
+                if (!justPromoted && reachedPromotionRow)
+                {
+                    thisPhotonView.RPC(nameof(CrownPieceAt), RpcTarget.All, selectedPiece.Row_ID, selectedPiece.Coloum_ID);
+                    justPromoted = true;
+                }
+
                 if (chainCaptureCount >= 2)
                 {
                     thisPhotonView.RPC(nameof(ShowGratificationText), RpcTarget.All, GetKillStreakText(chainCaptureCount));
@@ -306,9 +332,15 @@ namespace Gameplay
             ServiceLocator.Get<GameplayController>().pieces[row, col].SetCrownKing();
         }
 
+        // True for a single non-flying step in either scheme: a one-square diagonal move has both
+        // deltas at 1, a one-square orthogonal move has one delta at 1 and the other at 0 - either
+        // way the largest delta is exactly 1. Anything a flying king covers over a longer distance
+        // has a larger delta on at least one axis.
         private bool AreAdjecent(Block b1, Block b2)
         {
-            return (Mathf.Abs(b1.Row_ID - b2.Row_ID) == 1 && Mathf.Abs(b1.Coloum_ID - b2.Coloum_ID) == 1);
+            int rowDelta = Mathf.Abs(b1.Row_ID - b2.Row_ID);
+            int colDelta = Mathf.Abs(b1.Coloum_ID - b2.Coloum_ID);
+            return Mathf.Max(rowDelta, colDelta) == 1;
         }
 
         private float GetMoveDuration(Block fromBlock, Block toBlock)

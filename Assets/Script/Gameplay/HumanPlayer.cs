@@ -121,7 +121,11 @@ namespace Gameplay
             ServiceLocator.Get<GameplayController>().ClearHintHighlight();
             ResetHighlightedBlocks();
 
-            if (ServiceLocator.Get<MoveGenerator>().CanPieceMove(clickedPiece))
+            // Checking the turn's own movablePieces (computed once via CheckMovablePieces, which
+            // already applies mandatory-capture) rather than re-deriving CanPieceMove for just this
+            // piece - a piece with only a quiet move isn't selectable at all while some other piece
+            // on the board has a mandatory capture available, even though it can technically move.
+            if (movablePieces.Contains(clickedPiece))
             {
                 SelectPieceForNewMove(clickedPiece);
 

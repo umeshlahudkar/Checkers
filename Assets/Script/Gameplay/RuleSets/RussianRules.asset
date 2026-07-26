@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
+  m_Name: RussianRules
+  m_EditorClassIdentifier:
+  displayName: Russian
+  description: 8x8 draughts - flying kings, men capture backward, any legal capture is playable.
+  longDescription: "<b>Basic Movement</b>\nDark Squares Only: pieces move diagonally on the 32 dark squares. Forward Only: regular pieces can only step one square diagonally forward.\n\n<b>Capture Mechanics</b>\nBackward Captures: regular pieces can jump backward to capture an opponent, though they can't step backward normally. Mandatory Jumps: capturing is mandatory - but unlike International Draughts, if you have multiple jumping paths, you can choose any path you want, you don't have to pick the one with the maximum captures. Immediate Removal: captured pieces are taken off the board immediately as they're jumped, which can open up new paths mid-turn.\n\n<b>The Flying King</b>\nMid-Turn Promotion: if a regular piece reaches the opponent's back row during a multi-jump sequence, it instantly becomes a King and must continue jumping on that same turn using its new King powers. Long-Range Flight: a king can slide any number of empty squares along a diagonal line in any direction. Long-Range Jumps: a king can capture an enemy piece from any distance along a diagonal, fly over it, and land on any empty square behind it.\n\n<b>Winning the Game</b>\nElimination or Block: you win by capturing all opposing pieces or trapping your opponent so they have no legal moves left."
+  rows: 8
+  columns: 8
+  pieceRowsPerSide: 3
+  movementScheme: 0
+  piecesOnAllSquares: 0
+  leaveBackRowEmpty: 0
+  flyingKings: 1
+  menCaptureBackward: 1
+  menCannotCaptureKings: 0
+  mustCaptureMaximum: 0
+  preferKingMover: 0
+  preferKingCaptures: 0
+  preferEarlierKingCapture: 0
+  midChainPromotionRule: 2
+  deferCaptureRemoval: 0
+  forbidImmediateReversal: 0
+  noProgressMoveLimit: 30
+  singleManLosesToKing: 0

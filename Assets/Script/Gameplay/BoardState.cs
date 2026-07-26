@@ -14,9 +14,16 @@ public struct AIRules
 {
     public int Rows;
     public int Columns;
+    public MovementScheme MovementScheme;
     public bool FlyingKings;
     public bool MenCaptureBackward;
+    public bool MenCannotCaptureKings;
     public bool MustCaptureMaximum;
+    public bool PreferKingMover;
+    public bool PreferKingCaptures;
+    public bool PreferEarlierKingCapture;
+    public bool DeferCaptureRemoval;
+    public bool ForbidImmediateReversal;
 }
 
 // Plain-data copy of BotAISettingsSO's evaluation weights - snapshotted on the main thread (see
@@ -51,6 +58,10 @@ public class AICaptureSequence
 {
     public List<AIPosition> Landings = new();
     public List<AIPosition> Captured = new();
+    public int CapturedKingCount;
+
+    // Mirrors CaptureSequence.FirstKingCaptureIndex.
+    public int FirstKingCaptureIndex = int.MaxValue;
 
     public int Length => Captured.Count;
 }
@@ -86,6 +97,16 @@ public static class BoardState
         (1, -1), (1, 1), (-1, -1), (-1, 1)
     };
 
+    private static readonly (int dRow, int dCol)[] OrthogonalDirections =
+    {
+        (1, 0), (-1, 0), (0, -1), (0, 1)
+    };
+
+    private static (int dRow, int dCol)[] Directions(AIRules rules)
+    {
+        return rules.MovementScheme == MovementScheme.Orthogonal ? OrthogonalDirections : DiagonalDirections;
+    }
+
     private static int ForwardDirection(int playerID)
     {
         return playerID == 2 ? 1 : -1;
@@ -101,12 +122,14 @@ public static class BoardState
         return playerID == 2 ? row == rules.Rows - 1 : row == 0;
     }
 
-    private static IEnumerable<(int dRow, int dCol)> GetMoveDirections(bool isKing, int playerID)
+    // Non-king pieces may move in every direction except straight backward - see
+    // MoveGenerator.GetMoveDirections for why that's the right generalization across both schemes.
+    private static IEnumerable<(int dRow, int dCol)> GetMoveDirections(bool isKing, int playerID, AIRules rules)
     {
         int forward = ForwardDirection(playerID);
-        foreach ((int dRow, int dCol) dir in DiagonalDirections)
+        foreach ((int dRow, int dCol) dir in Directions(rules))
         {
-            if (isKing || dir.dRow == forward)
+            if (isKing || dir.dRow != -forward)
             {
                 yield return dir;
             }
@@ -117,9 +140,9 @@ public static class BoardState
     {
         if (isKing || rules.MenCaptureBackward)
         {
-            return DiagonalDirections;
+            return Directions(rules);
         }
-        return GetMoveDirections(isKing, playerID);
+        return GetMoveDirections(isKing, playerID, rules);
     }
 
     private static bool ContainsPosition(List<AIPosition> positions, AIPosition target)
@@ -131,13 +154,22 @@ public static class BoardState
         return false;
     }
 
+    // A square is passable for a flying king's outward search / landing enumeration if it's
+    // genuinely empty - mirrors MoveGenerator.IsPassable, see there for why DeferCaptureRemoval
+    // additionally excludes squares captured earlier in this same chain.
+    private static bool IsPassable(AICell[,] cells, int row, int col, List<AIPosition> capturedSoFar, AIRules rules)
+    {
+        if (!IsValidPosition(row, col, rules) || cells[row, col].PlayerID != 0) { return false; }
+        return !rules.DeferCaptureRemoval || !ContainsPosition(capturedSoFar, new AIPosition(row, col));
+    }
+
     public static List<AIPosition> GetQuietMoves(AICell[,] cells, int row, int col, AIRules rules)
     {
         List<AIPosition> positions = new();
         AICell cell = cells[row, col];
         bool flying = cell.IsKing && rules.FlyingKings;
 
-        foreach ((int dRow, int dCol) dir in GetMoveDirections(cell.IsKing, cell.PlayerID))
+        foreach ((int dRow, int dCol) dir in GetMoveDirections(cell.IsKing, cell.PlayerID, rules))
         {
             int targetRow = row + dir.dRow;
             int targetCol = col + dir.dCol;
@@ -160,11 +192,11 @@ public static class BoardState
     public static List<AICaptureSequence> FindCaptureSequences(AICell[,] cells, int row, int col, AIRules rules)
     {
         List<AICaptureSequence> results = new();
-        SearchCaptures(cells, row, col, new List<AIPosition>(), new List<AIPosition>(), rules, results);
+        SearchCaptures(cells, row, col, new List<AIPosition>(), new List<bool>(), new List<AIPosition>(), null, rules, results);
         return results;
     }
 
-    private static void SearchCaptures(AICell[,] cells, int fromRow, int fromCol, List<AIPosition> capturedSoFar, List<AIPosition> landingsSoFar, AIRules rules, List<AICaptureSequence> results)
+    private static void SearchCaptures(AICell[,] cells, int fromRow, int fromCol, List<AIPosition> capturedSoFar, List<bool> capturedWasKing, List<AIPosition> landingsSoFar, (int dRow, int dCol)? lastDirection, AIRules rules, List<AICaptureSequence> results)
     {
         AICell mover = cells[fromRow, fromCol];
         bool foundFurtherCapture = false;
@@ -172,12 +204,19 @@ public static class BoardState
 
         foreach ((int dRow, int dCol) dir in GetCaptureDirections(mover.IsKing, mover.PlayerID, rules))
         {
+            // The "no 180-degree turn" rule (Turkish): mirrors MoveGenerator.SearchCaptures.
+            if (rules.ForbidImmediateReversal && lastDirection.HasValue
+                && dir.dRow == -lastDirection.Value.dRow && dir.dCol == -lastDirection.Value.dCol)
+            {
+                continue;
+            }
+
             int middleRow = fromRow + dir.dRow;
             int middleCol = fromCol + dir.dCol;
 
             if (flying)
             {
-                while (IsValidPosition(middleRow, middleCol, rules) && cells[middleRow, middleCol].PlayerID == 0)
+                while (IsPassable(cells, middleRow, middleCol, capturedSoFar, rules))
                 {
                     middleRow += dir.dRow;
                     middleCol += dir.dCol;
@@ -189,13 +228,16 @@ public static class BoardState
             AICell middleCell = cells[middleRow, middleCol];
             if (middleCell.PlayerID == mover.PlayerID) { continue; }
 
+            // Immunity (Italian): a man can never capture a King - only an opposing King may.
+            if (rules.MenCannotCaptureKings && !mover.IsKing && middleCell.IsKing) { continue; }
+
             AIPosition middlePos = new AIPosition(middleRow, middleCol);
             if (ContainsPosition(capturedSoFar, middlePos)) { continue; } // already captured earlier in this chain
 
             int landingRow = middleRow + dir.dRow;
             int landingCol = middleCol + dir.dCol;
 
-            while (IsValidPosition(landingRow, landingCol, rules) && cells[landingRow, landingCol].PlayerID == 0)
+            while (IsPassable(cells, landingRow, landingCol, capturedSoFar, rules))
             {
                 foundFurtherCapture = true;
                 AIPosition landingPos = new AIPosition(landingRow, landingCol);
@@ -205,12 +247,14 @@ public static class BoardState
                 cells[landingRow, landingCol] = mover;
 
                 capturedSoFar.Add(middlePos);
+                capturedWasKing.Add(middleCell.IsKing);
                 landingsSoFar.Add(landingPos);
 
                 // Continue the chain from the new landing square, not the original square.
-                SearchCaptures(cells, landingRow, landingCol, capturedSoFar, landingsSoFar, rules, results);
+                SearchCaptures(cells, landingRow, landingCol, capturedSoFar, capturedWasKing, landingsSoFar, dir, rules, results);
 
                 capturedSoFar.RemoveAt(capturedSoFar.Count - 1);
+                capturedWasKing.RemoveAt(capturedWasKing.Count - 1);
                 landingsSoFar.RemoveAt(landingsSoFar.Count - 1);
 
                 cells[landingRow, landingCol] = default;
@@ -226,17 +270,41 @@ public static class BoardState
 
         if (!foundFurtherCapture && capturedSoFar.Count > 0)
         {
+            int kingCount = 0;
+            int firstKingIndex = int.MaxValue;
+            for (int i = 0; i < capturedWasKing.Count; i++)
+            {
+                if (capturedWasKing[i])
+                {
+                    kingCount++;
+                    if (firstKingIndex == int.MaxValue) { firstKingIndex = i; }
+                }
+            }
+
             results.Add(new AICaptureSequence
             {
                 Landings = new List<AIPosition>(landingsSoFar),
-                Captured = new List<AIPosition>(capturedSoFar)
+                Captured = new List<AIPosition>(capturedSoFar),
+                CapturedKingCount = kingCount,
+                FirstKingCaptureIndex = firstKingIndex
             });
         }
     }
 
-    private static int GetMaxCaptureLength(AICell[,] cells, int playerID, AIRules rules)
+    // One board square paired with one of its own candidate capture sequences - mirrors
+    // MoveGenerator.CaptureCandidate, see there for why some tiers need this instead of just a
+    // per-square sequence list.
+    private struct CaptureCandidate
     {
-        int maxLength = 0;
+        public int FromRow;
+        public int FromCol;
+        public bool IsKingMover;
+        public AICaptureSequence Sequence;
+    }
+
+    private static List<CaptureCandidate> GetCaptureCandidates(AICell[,] cells, int playerID, AIRules rules)
+    {
+        List<CaptureCandidate> candidates = new();
         for (int r = 0; r < rules.Rows; r++)
         {
             for (int c = 0; c < rules.Columns; c++)
@@ -246,47 +314,84 @@ public static class BoardState
                 List<AICaptureSequence> sequences = FindCaptureSequences(cells, r, c, rules);
                 for (int i = 0; i < sequences.Count; i++)
                 {
-                    if (sequences[i].Length > maxLength) { maxLength = sequences[i].Length; }
+                    candidates.Add(new CaptureCandidate
+                    {
+                        FromRow = r,
+                        FromCol = c,
+                        IsKingMover = cells[r, c].IsKing,
+                        Sequence = sequences[i]
+                    });
                 }
             }
         }
-        return maxLength;
+        return candidates;
     }
 
-    // Every legal move (captures union quiet moves, respecting mandatory-maximum-capture) for
-    // playerID in the board's current state - mirrors MoveGenerator.CheckMovablePieces plus
-    // PopulateMoveData, just against AICell[,] instead of Piece/Block.
+    // Mirrors MoveGenerator.ApplyMandatoryCaptureTiers - see there for the tier order/rationale.
+    private static List<CaptureCandidate> ApplyMandatoryCaptureTiers(List<CaptureCandidate> candidates, AIRules rules)
+    {
+        if (candidates.Count == 0 || !rules.MustCaptureMaximum) { return candidates; }
+
+        int maxLength = 0;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            if (candidates[i].Sequence.Length > maxLength) { maxLength = candidates[i].Sequence.Length; }
+        }
+        candidates = candidates.FindAll(c => c.Sequence.Length == maxLength);
+
+        if (rules.PreferKingMover && candidates.Exists(c => c.IsKingMover))
+        {
+            candidates = candidates.FindAll(c => c.IsKingMover);
+        }
+
+        if (rules.PreferKingCaptures)
+        {
+            int maxKingCount = 0;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (candidates[i].Sequence.CapturedKingCount > maxKingCount) { maxKingCount = candidates[i].Sequence.CapturedKingCount; }
+            }
+            candidates = candidates.FindAll(c => c.Sequence.CapturedKingCount == maxKingCount);
+        }
+
+        if (rules.PreferEarlierKingCapture)
+        {
+            int minFirstKingIndex = int.MaxValue;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (candidates[i].Sequence.FirstKingCaptureIndex < minFirstKingIndex) { minFirstKingIndex = candidates[i].Sequence.FirstKingCaptureIndex; }
+            }
+            candidates = candidates.FindAll(c => c.Sequence.FirstKingCaptureIndex == minFirstKingIndex);
+        }
+
+        return candidates;
+    }
+
+    // Every legal move for playerID in the board's current state - mirrors
+    // MoveGenerator.CheckMovablePieces plus PopulateMoveData, just against AICell[,] instead of
+    // Piece/Block. Capturing is always mandatory: if any capture is available anywhere on the
+    // board, only pieces with a qualifying capture (per ApplyMandatoryCaptureTiers) are selectable
+    // at all, quiet moves aren't legal for anyone that turn; otherwise any capture qualifies.
     public static List<AIMoveOption> GetLegalMoves(AICell[,] cells, int playerID, AIRules rules)
     {
         List<AIMoveOption> moves = new();
-        int maxCaptureLength = rules.MustCaptureMaximum ? GetMaxCaptureLength(cells, playerID, rules) : 0;
+        List<CaptureCandidate> allCandidates = GetCaptureCandidates(cells, playerID, rules);
+
+        if (allCandidates.Count > 0)
+        {
+            List<CaptureCandidate> qualifying = ApplyMandatoryCaptureTiers(allCandidates, rules);
+            for (int i = 0; i < qualifying.Count; i++)
+            {
+                moves.Add(new AIMoveOption { FromRow = qualifying[i].FromRow, FromCol = qualifying[i].FromCol, Sequence = qualifying[i].Sequence });
+            }
+            return moves;
+        }
 
         for (int r = 0; r < rules.Rows; r++)
         {
             for (int c = 0; c < rules.Columns; c++)
             {
                 if (cells[r, c].PlayerID != playerID) { continue; }
-
-                List<AICaptureSequence> sequences = FindCaptureSequences(cells, r, c, rules);
-
-                if (rules.MustCaptureMaximum && maxCaptureLength > 0)
-                {
-                    // Only pieces with a maximum-length capture are selectable at all - no quiet
-                    // moves in this branch, same as MoveGenerator.CheckMovablePieces.
-                    for (int i = 0; i < sequences.Count; i++)
-                    {
-                        if (sequences[i].Length == maxCaptureLength)
-                        {
-                            moves.Add(new AIMoveOption { FromRow = r, FromCol = c, Sequence = sequences[i] });
-                        }
-                    }
-                    continue;
-                }
-
-                for (int i = 0; i < sequences.Count; i++)
-                {
-                    moves.Add(new AIMoveOption { FromRow = r, FromCol = c, Sequence = sequences[i] });
-                }
 
                 List<AIPosition> quiet = GetQuietMoves(cells, r, c, rules);
                 for (int i = 0; i < quiet.Count; i++)
@@ -369,7 +474,7 @@ public static class BoardState
 
         int forward = ForwardDirection(piece.PlayerID);
 
-        foreach ((int dRow, int dCol) dir in DiagonalDirections)
+        foreach ((int dRow, int dCol) dir in Directions(rules))
         {
             int enemyRow = row + dir.dRow;
             int enemyCol = col + dir.dCol;
@@ -381,6 +486,13 @@ public static class BoardState
 
             AICell enemy = cells[enemyRow, enemyCol];
             if (enemy.PlayerID == piece.PlayerID)
+            {
+                continue;
+            }
+
+            // Immunity (Italian): a man threatens nothing if piece is a King - only an opposing
+            // King could actually capture it.
+            if (rules.MenCannotCaptureKings && piece.IsKing && !enemy.IsKing)
             {
                 continue;
             }

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
+  m_Name: PoolCheckersRules
+  m_EditorClassIdentifier:
+  displayName: Pool Checkers
+  description: 8x8 draughts - flying kings, men capture backward, any legal capture is playable.
+  longDescription: "<b>Board Size & Setup</b>\nPlayed on a standard 8x8 grid (64 squares) using only the 32 dark squares. The board is oriented so each player has a light square in their bottom-right corner. Each player starts with 12 pieces filling the first three rows closest to them. Black moves first, unlike most other variants where White opens.\n\n<b>Basic Movement</b>\nForward Only: regular pieces (men) can only move one square diagonally forward into an empty dark space - they cannot take standard steps backward.\n\n<b>Capture Mechanics</b>\nBackward Jumps: regular pieces can jump backward to capture an opponent's piece, even though they cannot step backward normally. Mandatory Jumps: capturing is strictly mandatory. Choice of Path: unlike International or Brazilian checkers, you do not have to choose the path that captures the maximum number of pieces - if you have multiple jumping paths available, you can freely choose whichever one you prefer. Immediate Removal: captured pieces are removed from the board immediately as they're jumped during a multi-jump sequence.\n\n<b>The Flying King</b>\nEnd-of-Turn Promotion: a piece becomes a King only if it lands and finishes its turn on the opponent's back row - if a piece hits the back row during a multi-jump sequence and must continue jumping forward, it does not promote. Long-Range Flight: a King can slide any number of empty squares along an open diagonal line. Long-Range Jumps: a King can jump over an isolated enemy piece from a distance and land on any empty square behind it.\n\n<b>Winning the Game</b>\nElimination or Blockade: you win by capturing all 12 opposing pieces or trapping your opponent so they have no legal moves left on their turn."
+  rows: 8
+  columns: 8
+  pieceRowsPerSide: 3
+  movementScheme: 0
+  piecesOnAllSquares: 0
+  leaveBackRowEmpty: 0
+  flyingKings: 1
+  menCaptureBackward: 1
+  menCannotCaptureKings: 0
+  mustCaptureMaximum: 0
+  preferKingMover: 0
+  preferKingCaptures: 0
+  preferEarlierKingCapture: 0
+  midChainPromotionRule: 0
+  deferCaptureRemoval: 0
+  forbidImmediateReversal: 0
+  noProgressMoveLimit: 30
+  singleManLosesToKing: 0

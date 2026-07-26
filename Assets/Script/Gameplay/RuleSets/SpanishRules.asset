@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
+  m_Name: SpanishRules
+  m_EditorClassIdentifier:
+  displayName: Spanish
+  description: 8x8 draughts - flying kings, forward-only men, mandatory maximum capture.
+  longDescription: "<b>Board Size & Setup</b>\nPlayed on a standard 8x8 grid using only the 32 dark squares. The board is rotated so the bottom-right corner square for each player is a white square, meaning the long diagonal starts at each player's left side. Each player starts with 12 pieces on the dark squares of the three rows closest to them.\n\n<b>Basic Movement</b>\nForward Only: regular pieces (men) can only move one square diagonally forward - they cannot move or capture backward under any circumstance.\n\n<b>Capture Mechanics & Hierarchy</b>\nCapturing is mandatory, following a strict hierarchy: 1) Maximum Quantity - you must choose the jumping sequence that captures the largest possible number of pieces. 2) Value Hierarchy - if different paths capture an equal number, you must choose the path that captures the most Kings. 3) The No-Removal Rule - captured pieces remain on the board until your entire multi-jump turn is finished; you cannot jump over the same piece twice.\n\n<b>The Flying King</b>\nEnd-of-Turn Promotion: a piece becomes a King only if it lands and finishes its turn on the opponent's back row - if it hits the back row mid-jump and must continue jumping, it does not promote. Long-Range Flight: a King can slide any number of empty squares along a diagonal line in any direction. Long-Range Jumps: a King can jump over an isolated enemy piece from a distance and choose any empty square behind it to land on.\n\n<b>Winning the Game</b>\nElimination or Blockade: you win by capturing all opposing pieces or entirely trapping your opponent so they have no legal moves left on their turn."
+  rows: 8
+  columns: 8
+  pieceRowsPerSide: 3
+  movementScheme: 0
+  piecesOnAllSquares: 0
+  leaveBackRowEmpty: 0
+  flyingKings: 1
+  menCaptureBackward: 0
+  menCannotCaptureKings: 0
+  mustCaptureMaximum: 1
+  preferKingMover: 0
+  preferKingCaptures: 1
+  preferEarlierKingCapture: 0
+  midChainPromotionRule: 0
+  deferCaptureRemoval: 1
+  forbidImmediateReversal: 0
+  noProgressMoveLimit: 30
+  singleManLosesToKing: 0

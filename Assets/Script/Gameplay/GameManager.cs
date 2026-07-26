@@ -402,11 +402,19 @@ public class GameManager : Service<GameManager>
         timer.ResetTimer();
         ServiceLocator.Get<GamePageManager>().GamePage.SetActiveTurn(currentTurn);
 
-        if (players[currentTurn - 1].PhotonView.IsMine && !players[currentTurn - 1].CanPlay())
+        if (players[currentTurn - 1].PhotonView.IsMine)
         {
-            int winner = (currentTurn == 1) ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "no legal moves left");
-            return;
+            if (TryEndGameOnSingleManVsKing())
+            {
+                return;
+            }
+
+            if (!players[currentTurn - 1].CanPlay())
+            {
+                int winner = (currentTurn == 1) ? 2 : 1;
+                gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "no legal moves left");
+                return;
+            }
         }
 
         // Turn timer / miss-count enforcement is a Multiplayer-only concern - offline matches
@@ -417,6 +425,40 @@ public class GameManager : Service<GameManager>
         {
             timer.StartTimer();
         }
+    }
+
+    // Turkish dama's single-man-vs-Dama instant-win rule: a pure board-state check independent of
+    // whose turn it is, so it's checked once per turn transition (a capture is the only way piece
+    // counts change) rather than tied to currentTurn specifically.
+    private bool TryEndGameOnSingleManVsKing()
+    {
+        if (!ruleSet.SingleManLosesToKing) { return false; }
+
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        int winner = GetSingleManVsKingWinner(gameplayController.blackPieces, gameplayController.whitePieces, 2);
+        if (winner == 0)
+        {
+            winner = GetSingleManVsKingWinner(gameplayController.whitePieces, gameplayController.blackPieces, 1);
+        }
+
+        if (winner == 0) { return false; }
+
+        gameManagerPhotonView.RPC(nameof(GameOver), RpcTarget.All, winner, "reduced to a single man against a Dama");
+        return true;
+    }
+
+    // If reducedSidePieces has been reduced to exactly one non-king piece and otherSidePieces has
+    // at least one King, otherSidePlayerNumber instantly wins. Returns 0 if the condition doesn't
+    // hold.
+    private int GetSingleManVsKingWinner(List<Piece> reducedSidePieces, List<Piece> otherSidePieces, int otherSidePlayerNumber)
+    {
+        if (reducedSidePieces.Count != 1 || reducedSidePieces[0].IsCrownedKing) { return 0; }
+
+        for (int i = 0; i < otherSidePieces.Count; i++)
+        {
+            if (otherSidePieces[i].IsCrownedKing) { return otherSidePlayerNumber; }
+        }
+        return 0;
     }
 
     [PunRPC]

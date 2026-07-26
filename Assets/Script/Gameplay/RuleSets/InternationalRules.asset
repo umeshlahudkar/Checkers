@@ -14,10 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: International
   description: 10x10 draughts - flying kings, mandatory maximum capture, men can capture backward.
+  longDescription: "<b>Basic Movement</b>\nDark Squares Only: pieces move diagonally on the 50 dark squares. Forward Only: regular pieces can only step one square diagonally forward.\n\n<b>Capture Mechanics</b>\nBackward Captures: regular pieces can jump backward to capture, even though they can't step backward normally. Mandatory Maximum: jumps are strictly mandatory, and you must choose the path that captures the most pieces, whether they're regular pieces or Kings. The No-Removal Rule: captured pieces stay on the board until your entire multi-jump turn is complete - you can't jump over the same piece twice.\n\n<b>The Flying King</b>\nPromotion: a piece becomes a king only if it finishes its turn on the opponent's back row - if it jumps through the back row and lands elsewhere, it stays a regular piece. Long-Range Flight: a king can slide any number of empty squares along a diagonal line. Long-Range Jumps: a king can capture an enemy piece from a distance, fly over it, and choose which empty square to land on behind it.\n\n<b>Winning the Game</b>\nElimination or Block: capturing all opposing pieces, or leaving your opponent with no legal moves."
   rows: 10
   columns: 10
   pieceRowsPerSide: 4
+  movementScheme: 0
+  piecesOnAllSquares: 0
+  leaveBackRowEmpty: 0
   flyingKings: 1
   menCaptureBackward: 1
+  menCannotCaptureKings: 0
   mustCaptureMaximum: 1
+  preferKingMover: 0
+  preferKingCaptures: 0
+  preferEarlierKingCapture: 0
+  midChainPromotionRule: 0
+  deferCaptureRemoval: 1
+  forbidImmediateReversal: 0
   noProgressMoveLimit: 25
+  singleManLosesToKing: 0

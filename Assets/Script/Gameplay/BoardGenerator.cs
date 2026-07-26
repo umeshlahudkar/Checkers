@@ -117,18 +117,23 @@ public class BoardGenerator : MonoBehaviour
         int colums = ruleSet.Columns;
         int pieceRowsPerSide = ruleSet.PieceRowsPerSide;
 
+        // Most variants fill starting from each player's own back row inward. Turkish dama instead
+        // leaves that very back row empty and starts filling one row further in, so the whole block
+        // is offset by one row from each edge.
+        int backRowOffset = ruleSet.LeaveBackRowEmpty ? 1 : 0;
+
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < colums; j++)
             {
-                if ((i + j) % 2 != 0)
+                if (ruleSet.PiecesOnAllSquares || (i + j) % 2 != 0)
                 {
-                    if (i < pieceRowsPerSide)
+                    if (i >= backRowOffset && i < backRowOffset + pieceRowsPerSide)
                     {
                         SpawnPiece(2, i, j, player2_pieceType);
                     }
 
-                    if (i >= rows - pieceRowsPerSide)
+                    if (i < rows - backRowOffset && i >= rows - backRowOffset - pieceRowsPerSide)
                     {
                         SpawnPiece(1, i, j, player1_pieceType);
                     }

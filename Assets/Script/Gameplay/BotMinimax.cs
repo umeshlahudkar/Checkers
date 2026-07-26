@@ -30,9 +30,16 @@ public static class BotMinimax
         {
             Rows = ruleSet.Rows,
             Columns = ruleSet.Columns,
+            MovementScheme = ruleSet.MovementScheme,
             FlyingKings = ruleSet.FlyingKings,
             MenCaptureBackward = ruleSet.MenCaptureBackward,
-            MustCaptureMaximum = ruleSet.MustCaptureMaximum
+            MenCannotCaptureKings = ruleSet.MenCannotCaptureKings,
+            MustCaptureMaximum = ruleSet.MustCaptureMaximum,
+            PreferKingMover = ruleSet.PreferKingMover,
+            PreferKingCaptures = ruleSet.PreferKingCaptures,
+            PreferEarlierKingCapture = ruleSet.PreferEarlierKingCapture,
+            DeferCaptureRemoval = ruleSet.DeferCaptureRemoval,
+            ForbidImmediateReversal = ruleSet.ForbidImmediateReversal
         };
 
         // Snapshotted into a plain struct here (main thread) rather than read from the

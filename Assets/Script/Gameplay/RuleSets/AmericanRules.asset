@@ -14,10 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: American
   description: Standard 8x8 checkers - men capture only forward, any legal capture is playable.
+  longDescription: "<b>Basic Movement</b>\nDark Squares Only: pieces always stay on the dark squares. Forward Only: regular pieces (men) can only move diagonally forward. One Square: standard moves are exactly one square into an adjacent empty space.\n\n<b>Capture Mechanics</b>\nThe Jump: capture an opponent's piece by jumping diagonally over it into an empty square directly behind it. Mandatory Jumps: if a jump is available on your turn, you must take it. Multi-Jumps: if your piece lands and has another legal jump available, you must continue jumping in the same turn. Removal: captured pieces are immediately taken off the board.\n\n<b>Kinging (Crowning)</b>\nReaching the End: when a piece reaches the farthest row, it becomes a King. Two-Way Movement: Kings can move and capture both forward and backward diagonally. Turn Resolution: if a piece becomes a King during a jumping sequence, its turn ends immediately - it can't use its new backward powers until the next turn.\n\n<b>Winning the Game</b>\nElimination: capturing all of your opponent's pieces. Blockade: trapping your opponent so they have no legal moves left on their turn."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3
+  movementScheme: 0
+  piecesOnAllSquares: 0
+  leaveBackRowEmpty: 0
   flyingKings: 0
   menCaptureBackward: 0
+  menCannotCaptureKings: 0
   mustCaptureMaximum: 0
+  preferKingMover: 0
+  preferKingCaptures: 0
+  preferEarlierKingCapture: 0
+  midChainPromotionRule: 1
+  deferCaptureRemoval: 0
+  forbidImmediateReversal: 0
   noProgressMoveLimit: 40
+  singleManLosesToKing: 0
