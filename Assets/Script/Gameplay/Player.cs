@@ -259,7 +259,17 @@ namespace Gameplay
                 // square it lands on once the move finishes (see
                 // GameplayController.ShowLastMoveInProgress). A move by our own side clears it instead
                 // - it's no longer "the opponent's last move" once we've moved.
-                if (IsLocalPlayer)
+                //
+                // VsPlayer (pass-and-play) has no single "local" side - both players share the same
+                // device/view, so every move should show its own highlight rather than only ever
+                // showing player 2's (IsLocalPlayer's playerID == 1 check would otherwise always
+                // treat player 1 as "us" and clear instead of show for their moves).
+                if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.VsPlayer)
+                {
+                    gameplayController.ClearLastMoveHighlight();
+                    gameplayController.ShowLastMoveInProgress(sourceRow, sourceCol, targetRow, targetCol, GetMoveDuration(sourceBlock, targetBlock));
+                }
+                else if (IsLocalPlayer)
                 {
                     gameplayController.ClearLastMoveHighlight();
                 }
