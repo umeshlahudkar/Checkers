@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
   m_Name: AmericanRules
   m_EditorClassIdentifier:
+  displayName: American
+  description: Standard 8x8 checkers - men capture only forward, any legal capture is playable.
   rows: 8
   columns: 8
   pieceRowsPerSide: 3

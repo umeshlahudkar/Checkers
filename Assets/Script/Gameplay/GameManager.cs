@@ -446,7 +446,7 @@ public class GameManager : Service<GameManager>
         if (isLocalWin)
         {
             //ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
-            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictory(loserName, GetRemainingPieceCount(winnerPlayerNumber), matchWinCoinReward);
+            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictory(loserName, GetRemainingPieceCount(winnerPlayerNumber));
             ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
         }
         else

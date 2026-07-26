@@ -6,4 +6,6 @@ public struct GameSettingsData
     public int boardThemeIndex;
     public bool showMoveHints;
     public bool vibrationEnabled;
+    public int ruleSetIndex;
+    public BotDifficulty botDifficulty;
 }

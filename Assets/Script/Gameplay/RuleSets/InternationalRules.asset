@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
   m_Name: InternationalRules
   m_EditorClassIdentifier:
+  displayName: International
+  description: 10x10 draughts - flying kings, mandatory maximum capture, men can capture backward.
   rows: 10
   columns: 10
   pieceRowsPerSide: 4

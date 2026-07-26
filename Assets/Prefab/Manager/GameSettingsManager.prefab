@@ -45,3 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardThemeList: {fileID: 11400000, guid: 0e6ea235976983927927fccdbbef656e, type: 2}
+  ruleSetList: {fileID: 11400000, guid: ff8207b821c643759229ad8843c4ba7a, type: 2}

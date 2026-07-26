@@ -144,7 +144,7 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
         yield return StartCoroutine(ServiceLocator.Get<GameManager>().PrepareGameOverVisuals());
 
         //ServiceLocator.Get<CoinManager>().AddCoin(500);
-        ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit(500);
+        ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit();
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
     }
 
