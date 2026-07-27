@@ -9,5 +9,6 @@ public enum MenuPageType
     UserNameInput,
     AvtarSelection,
     Setting,
-    Matchmaking
+    Matchmaking,
+    RuleSetInfoPage
 }
