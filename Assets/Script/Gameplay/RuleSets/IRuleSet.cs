@@ -59,6 +59,17 @@ public interface IRuleSet
 
     bool IsPromotionRow(int row, int playerID);
 
+    // Which color takes the very first turn of the match (Italian/Spanish/Canadian: White; Pool
+    // Checkers: Black) - PieceType.None for every ruleset that doesn't fix an opening color, which
+    // keeps the existing "player 1 always opens" behavior for them (see
+    // GameManager.DetermineFirstTurnPlayer).
+    PieceType FirstMoveColor { get; }
+
+    // Whether the bottom-right corner square is dark (Italian's "cantone" convention) rather than
+    // the light/white corner every other modeled ruleset uses - purely cosmetic, doesn't affect
+    // legality (see BoardGenerator.GenerateBoard).
+    bool DarkSquareBottomRight { get; }
+
     // Number of consecutive turns (across both players) without a capture or promotion before the
     // match is called a draw - prevents a shuffle that makes no progress from running forever. A
     // simplified, single-threshold stand-in for the real tournament rule (which shortens the limit

@@ -19,6 +19,11 @@ public class Piece : MonoBehaviour
     [SerializeField] private bool isCrownedKing;
     [SerializeField] private int playerID;
 
+    // Set by MarkCaptured, never by Destroy - true for the DeferCaptureRemoval window where a
+    // captured piece is still sitting on its square (blocking it) but can no longer be captured
+    // again or threaten anyone, pending the real Destroy() once the whole chain ends.
+    private bool isCaptured;
+
 
     [Header("Piece AI")]
     [HideInInspector] public List<BoardPosition> movablePositions = new();
@@ -80,10 +85,15 @@ public class Piece : MonoBehaviour
     // than just vanishing.
     public void Destroy()
     {
+        // MarkCaptured already fired the kill sound/capture-flash and started the shrink at the
+        // moment this piece was actually captured - if this is the deferred final removal for a
+        // piece that went through that path, don't repeat those "just captured" cues, just finish
+        // the job (board/list bookkeeping + the real disappear/destroy).
+        bool alreadyMarked = isCaptured;
+        isCaptured = true;
+
         ServiceLocator.Get<GameplayController>().SetSquare(rowID, columID, null);
         button.interactable = false;
-
-        ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
 
         GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
 
@@ -97,10 +107,34 @@ public class Piece : MonoBehaviour
         }
 
         ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
-        ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+
+        if (!alreadyMarked)
+        {
+            ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
+            ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+        }
 
         PlayDisappearAnimation(0f, () => Destroy(gameObject));
     }
+
+    // DeferCaptureRemoval rulesets (International/Brazilian/Spanish/Canadian): a captured piece
+    // stays on the board - still occupying its square, still blocking a flying king's path - until
+    // the whole capture turn ends, so this stops short of Destroy()'s board/list bookkeeping. It
+    // only flags the piece as consumed (can't be captured again, can't threaten anyone - see
+    // MoveGenerator's IsCaptured checks) and shrinks it halfway so it reads as knocked out. The real
+    // Destroy() runs later, once the chain finishes (see Player.FinalizeCapturedChain).
+    public void MarkCaptured()
+    {
+        isCaptured = true;
+        button.interactable = false;
+
+        ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
+        ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+
+        thisTransform.DOScale(0.5f, DisappearDuration).SetEase(Ease.InBack);
+    }
+
+    public bool IsCaptured => isCaptured;
 
     public const float AppearDuration = 0.3f;
     public const float DisappearDuration = 0.25f;

@@ -24,6 +24,12 @@ namespace Gameplay
         // fresh piece is picked up (see SelectPieceForNewMove), not between individual hops.
         private int chainCaptureCount;
 
+        // DeferCaptureRemoval rulesets only: pieces captured so far this same capture-chain move,
+        // merely marked (Piece.MarkCaptured) rather than actually destroyed, so they keep blocking
+        // their square until the chain truly ends. Same reset lifetime as chainCaptureCount - swept
+        // and really destroyed in FinalizeCapturedChain, right before the turn is handed over.
+        private readonly List<Piece> capturedThisChain = new();
+
         private static readonly Color KillStreakTextColor = new(1f, 0.3f, 0.3f);
 
         public PieceType PieceType { get { return pieceType; } }
@@ -151,6 +157,7 @@ namespace Gameplay
         {
             selectedPiece = piece;
             chainCaptureCount = 0;
+            capturedThisChain.Clear();
         }
 
         public void OnHighlightedTargetBlockClick(Block block)
@@ -173,6 +180,8 @@ namespace Gameplay
                 // distance along the diagonal, so the two aren't a fixed offset apart.
                 BoardPosition captured = block.CapturedPosition;
 
+                // DestroyPieceAt itself decides whether this is a real destroy or (for no-removal
+                // rulesets) just a mark-as-captured - see there.
                 thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, captured.row_ID, captured.col_ID);
                 hasDeleted = true;
                 chainCaptureCount++;
@@ -227,6 +236,18 @@ namespace Gameplay
                 {
                     thisPhotonView.RPC(nameof(ShowGratificationText), RpcTarget.All, GetKillStreakText(chainCaptureCount));
                 }
+
+                // The chain is over (this is reached exactly once per whole move, whether it took
+                // one hop or many) - now's the single correct point to really destroy every piece
+                // that was only marked-captured along the way, before the opponent's turn starts.
+                // Re-running DestroyPieceAt for each one is what actually destroys it this time,
+                // since IsCaptured is already true from when it was first marked.
+                for (int i = 0; i < capturedThisChain.Count; i++)
+                {
+                    Piece piece = capturedThisChain[i];
+                    thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, piece.Row_ID, piece.Coloum_ID);
+                }
+                capturedThisChain.Clear();
 
                 ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);
                 ResetNextToNextHighlightedBlock();
@@ -318,12 +339,28 @@ namespace Gameplay
         // index) still exists until the fade completes, so reading it here is safe.
         private int lastCapturedPieceSiblingIndex = -1;
 
+        // For DeferCaptureRemoval rulesets (International/Brazilian/Spanish/Canadian), a captured
+        // piece must stay on the board - blocking its square, uncapturable again - until the whole
+        // chain ends, rather than vanishing the instant it's jumped. The first hit on a given piece
+        // this turn only marks it (Piece.MarkCaptured); the real destroy is deferred to a second
+        // call, made from the end-of-chain sweep in HandlePieceMovementAndPieceDelete once
+        // IsCaptured is already true. Every other ruleset always takes the real-destroy branch
+        // immediately, exactly as before this fix.
         [PunRPC]
         public void DestroyPieceAt(int row, int col)
         {
             Piece capturedPiece = ServiceLocator.Get<GameplayController>().pieces[row, col];
             lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
-            capturedPiece.Destroy();
+
+            if (ServiceLocator.Get<GameManager>().RuleSet.DeferCaptureRemoval && !capturedPiece.IsCaptured)
+            {
+                capturedPiece.MarkCaptured();
+                capturedThisChain.Add(capturedPiece);
+            }
+            else
+            {
+                capturedPiece.Destroy();
+            }
         }
 
         [PunRPC]

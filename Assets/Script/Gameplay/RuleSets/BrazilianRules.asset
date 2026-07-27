@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: Brazilian
   description: International draughts on a smaller 8x8 board - flying kings, mandatory maximum capture.
-  longDescription: "<b>Basic Movement</b>\nDark Squares Only: pieces move diagonally on the 32 dark squares. Forward Only: regular pieces can only step one square diagonally forward.\n\n<b>Capture Mechanics</b>\nBackward Captures: regular pieces can jump backward to capture, though they can't step backward normally. Mandatory Maximum: capturing is mandatory, and if you have multiple jumping paths, you must choose the one that captures the most pieces. King Priority: if two different paths capture the exact same number of pieces, you must choose the path that captures more Kings. The No-Removal Rule: captured pieces stay on the board until the entire multi-jump turn is complete - you can't jump over the same piece twice.\n\n<b>The Flying King</b>\nEnd-of-Turn Promotion: a piece only becomes a king if it finishes its turn on the opponent's back row - if it jumps through the back row and lands elsewhere, it does not promote. Long-Range Flight: a king can slide any number of empty squares along a diagonal line. Long-Range Jumps: a king can capture an enemy piece from a distance, fly over it, and choose which empty square to land on behind it.\n\n<b>Winning the Game</b>\nElimination or Blockade: you win by capturing all opposing pieces or trapping your opponent so they have no legal moves left."
+  longDescription: "<b>Basic Movement</b>\nDark Squares Only: pieces move diagonally on the 32 dark squares. Forward Only: regular pieces can only step one square diagonally forward.\n\n<b>Capture Mechanics</b>\nBackward Captures: regular pieces can jump backward to capture, though they can't step backward normally. Mandatory Maximum: capturing is mandatory, and if you have multiple jumping paths, you must choose the one that captures the most pieces - regardless of whether the pieces taken are men or Kings. The No-Removal Rule: captured pieces stay on the board until the entire multi-jump turn is complete - you can't jump over the same piece twice.\n\n<b>The Flying King</b>\nEnd-of-Turn Promotion: a piece only becomes a king if it finishes its turn on the opponent's back row - if it jumps through the back row and lands elsewhere, it does not promote. Long-Range Flight: a king can slide any number of empty squares along a diagonal line. Long-Range Jumps: a king can capture an enemy piece from a distance, fly over it, and choose which empty square to land on behind it.\n\n<b>Winning the Game</b>\nElimination or Blockade: you win by capturing all opposing pieces or trapping your opponent so they have no legal moves left."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3
@@ -26,10 +26,11 @@ MonoBehaviour:
   menCannotCaptureKings: 0
   mustCaptureMaximum: 1
   preferKingMover: 0
-  preferKingCaptures: 1
+  preferKingCaptures: 0
   preferEarlierKingCapture: 0
   midChainPromotionRule: 0
   deferCaptureRemoval: 1
   forbidImmediateReversal: 0
   noProgressMoveLimit: 25
   singleManLosesToKing: 0
+  firstMoveColor: 1

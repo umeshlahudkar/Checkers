@@ -33,3 +33,4 @@ MonoBehaviour:
   forbidImmediateReversal: 0
   noProgressMoveLimit: 30
   singleManLosesToKing: 0
+  firstMoveColor: 1

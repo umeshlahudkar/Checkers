@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: Italian
   description: 8x8 draughts - short-range kings only, men can't capture backward or capture Kings.
-  longDescription: "<b>Board Size & Unique Orientation</b>\nPlayed on a standard 8x8 grid using only the 32 dark squares. The board is rotated 90 degrees compared to American checkers: the bottom-right corner square (the cantone) must be a dark square for both players. Each player starts with 12 pieces on the dark squares of the three rows closest to them.\n\n<b>Basic Movement</b>\nForward Only: regular pieces (men) can only move one square diagonally forward into an empty dark square - they cannot move backward.\n\n<b>The Short-Range King</b>\nPromotion: when a piece reaches the opponent's back row, it becomes a King - if it lands there mid-jump sequence, its turn ends immediately. No Flying: unlike International or Russian checkers, Italian Kings do not fly - they only move one square diagonally, forward or backward. Immunity: regular pieces cannot capture Kings - a King can only be jumped and captured by an opposing King.\n\n<b>Strict Capture Hierarchy</b>\nCapturing is entirely mandatory, following a strict priority: 1) Maximum Quantity - choose the path that captures the largest amount of pieces. 2) King Dominance - if two paths capture an equal number, you must use a King to make the capture instead of a regular piece. 3) Target Kings - if the paths still tie, choose the path that captures the most Kings. 4) First Blood - if a tie still exists, choose the sequence that captures a King first.\n\n<b>Winning the Game</b>\nElimination or Blockade."
+  longDescription: "<b>Board Size & Unique Orientation</b>\nPlayed on a standard 8x8 grid using only the 32 dark squares. The board is rotated 90 degrees compared to American checkers: the bottom-right corner square (the cantone) must be a dark square for both players. Each player starts with 12 pieces on the dark squares of the three rows closest to them.\n\n<b>Basic Movement</b>\nForward Only: regular pieces (men) can only move one square diagonally forward into an empty dark square - they cannot move backward.\n\n<b>The Short-Range King</b>\nPromotion: when a piece reaches the opponent's back row, it becomes a King - if it lands there mid-jump sequence, its turn ends immediately. No Flying: unlike International or Russian checkers, Italian Kings do not fly - they only move one square diagonally, forward or backward. Immunity: regular pieces cannot capture Kings - a King can only be jumped and captured by an opposing King.\n\n<b>Strict Capture Hierarchy</b>\nCapturing is entirely mandatory, following a strict priority: 1) Maximum Quantity - choose the path that captures the largest amount of pieces. 2) King Dominance - if two paths capture an equal number, you must use a King to make the capture instead of a regular piece. 3) Target Kings - if the paths still tie, choose the path that captures the most Kings. 4) First Blood - if a tie still exists, choose the sequence that captures a King first. No-Removal Rule: captured pieces remain on the board until the entire multi-jump turn is complete - you cannot jump over the same piece twice.\n\n<b>Winning the Game</b>\nElimination or Blockade."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3
@@ -29,7 +29,9 @@ MonoBehaviour:
   preferKingCaptures: 1
   preferEarlierKingCapture: 1
   midChainPromotionRule: 1
-  deferCaptureRemoval: 0
+  deferCaptureRemoval: 1
   forbidImmediateReversal: 0
   noProgressMoveLimit: 40
   singleManLosesToKing: 0
+  firstMoveColor: 1
+  darkSquareBottomRight: 1

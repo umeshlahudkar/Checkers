@@ -212,9 +212,22 @@ public class GameManager : Service<GameManager>
 
     private void StartFirstTurn()
     {
-        currentTurn = 1;
+        currentTurn = DetermineFirstTurnPlayer();
         PushHistorySnapshot();
         StartTurn();
+    }
+
+    // Most rulesets don't fix an opening color (ruleSet.FirstMoveColor is PieceType.None), so they
+    // keep the previous "player 1 always opens" behavior unchanged. A few fix it instead
+    // (Italian/Spanish/Canadian: White; Pool Checkers: Black) - for those, whichever seat currently
+    // holds that color goes first. Both players' PieceType are already resolved by this point in
+    // every mode (SetupLocalMatch/SpawnLocalPlayer offline, Player.Start's OwnerActorNr derivation
+    // online), so this needs no extra network round-trip - each client computes the same answer
+    // from state it already has locally.
+    private int DetermineFirstTurnPlayer()
+    {
+        if (ruleSet.FirstMoveColor == PieceType.None) { return 1; }
+        return players[0].PieceType == ruleSet.FirstMoveColor ? 1 : 2;
     }
 
     private bool HasBothPlayerReady()

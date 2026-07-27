@@ -354,6 +354,10 @@ public class MoveGenerator : Service<MoveGenerator>
             Piece middlePiece = Pieces[middleRow, middleCol];
             if (middlePiece.Player_ID == piece.Player_ID) { continue; }
 
+            // Already captured earlier this same live-play turn (DeferCaptureRemoval): it's still
+            // sitting on the board as an obstacle, but it's dead and can't be jumped a second time.
+            if (middlePiece.IsCaptured) { continue; }
+
             // Immunity (Italian): a man can never capture a King - only an opposing King may.
             if (ruleSet.MenCannotCaptureKings && !piece.IsCrownedKing && middlePiece.IsCrownedKing) { continue; }
 
@@ -497,6 +501,13 @@ public class MoveGenerator : Service<MoveGenerator>
 
             Piece enemy = Pieces[enemyRow, enemyCol];
             if (enemy.Player_ID == playerID)
+            {
+                continue;
+            }
+
+            // Already captured earlier this turn (DeferCaptureRemoval) - still on the board as an
+            // obstacle, but dead, so it poses no threat.
+            if (enemy.IsCaptured)
             {
                 continue;
             }

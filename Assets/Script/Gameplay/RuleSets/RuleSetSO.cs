@@ -36,6 +36,9 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     [SerializeField] private int noProgressMoveLimit = 80;
     [SerializeField] private bool singleManLosesToKing;
 
+    [SerializeField] private PieceType firstMoveColor = PieceType.None;
+    [SerializeField] private bool darkSquareBottomRight;
+
     public string DisplayName => displayName;
     public string Description => description;
     public string LongDescription => longDescription;
@@ -62,6 +65,9 @@ public class RuleSetSO : ScriptableObject, IRuleSet
 
     public int NoProgressMoveLimit => noProgressMoveLimit;
     public bool SingleManLosesToKing => singleManLosesToKing;
+
+    public PieceType FirstMoveColor => firstMoveColor;
+    public bool DarkSquareBottomRight => darkSquareBottomRight;
 
     public bool IsPromotionRow(int row, int playerID)
     {

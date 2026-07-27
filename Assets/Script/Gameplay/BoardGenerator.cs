@@ -69,14 +69,13 @@ public class BoardGenerator : MonoBehaviour
                 block.ThisTransform.localPosition = new Vector3(currentX, currentY, 0);
                 block.ThisTransform.sizeDelta = new Vector2(blockSize, blockSize);
 
-                if ((i + j) % 2 == 0)
-                {
-                    block.SetBlock(i, j, whiteBlockSprite);
-                }
-                else
-                {
-                    block.SetBlock(i, j, blackBlockSprite);
-                }
+                // Flipped wholesale (every square, not just the corner) for rulesets whose corner
+                // convention differs (Italian: dark bottom-right) - flipping every square is what
+                // keeps the alternating pattern intact while landing the opposite color in that
+                // corner. Every other modeled ruleset leaves this false, so (i+j)%2==0 alone still
+                // decides it, exactly as before.
+                bool isWhiteSquare = ((i + j) % 2 == 0) != ruleSet.DarkSquareBottomRight;
+                block.SetBlock(i, j, isWhiteSquare ? whiteBlockSprite : blackBlockSprite);
 
                 ServiceLocator.Get<GameplayController>().board[i, j] = block;
                 currentX += blockSize;
