@@ -29,16 +29,14 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 3759420599191209703}
   - {fileID: 700000000000000420}
-  - {fileID: 700000000000000120}
-  - {fileID: 1919868576091091339}
-  - {fileID: 700000000000000320}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 900, y: 1500}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &700000000000000050
 MonoBehaviour:
@@ -79,18 +77,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 700000000000000110}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 700000000000000020}
+  m_Father: {fileID: 700000000000000420}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 640}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -44}
   m_SizeDelta: {x: 820, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &700000000000000130
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -128,8 +126,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4293587190
-  m_fontColor: {r: 0.9647059, g: 0.9411765, b: 0.9176471, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -227,7 +225,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 820, y: 1240.92}
+  m_SizeDelta: {x: 820, y: 585.47}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &700000000000000230
 CanvasRenderer:
@@ -257,48 +255,34 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<b>Board Size & Unique Orientation</b>
+  m_text: '- 8x8 board, all squares used, 16 pieces each; the back row starts empty.
 
-    Played on a standard 8x8 grid
-    using only the 32 dark squares. The board is rotated 90 degrees compared to American
-    checkers: the bottom-right corner square (the cantone) must be a dark square
-    for both players. Each player starts with 12 pieces on the dark squares of the
-    three rows closest to them.
+    -
+    Orthogonal movement only - no diagonals.
 
+    - Men move forward, left, or right;
+    they capture in all four directions.
 
-    <b>Basic Movement</b>
+    - No 180-degree turn: you can''t reverse
+    straight back through the square you just left.
 
-    Forward Only: regular
-    pieces (men) can only move one square diagonally forward into an empty dark square
-    - they cannot move backward.
+    - Capturing is mandatory
+    - you must play the path that captures the most pieces.
 
+    - Captured pieces
+    are removed immediately - this can open new paths mid-turn.
 
-    <b>The Short-Range King</b>
+    - The Dama (king)
+    slides and captures any distance in a straight line.
 
-    Promotion:
-    when a piece reaches the opponent''s back row, it becomes a King - if it lands
-    there mid-jump sequence, its turn ends immediately. No Flying: unlike International
-    or Russian checkers, Italian Kings do not fly - they only move one square diagonally,
-    forward or backward. Immunity: regular pieces cannot capture Kings - a King can
-    only be jumped and captured by an opposing King.
+    - A piece only crowns
+    if it finishes its turn on the back row.
 
+    - White always moves first.
 
-    <b>Strict Capture Hierarchy</b>
-
-    Capturing
-    is entirely mandatory, following a strict priority: 1) Maximum Quantity - choose
-    the path that captures the largest amount of pieces. 2) King Dominance - if two
-    paths capture an equal number, you must use a King to make the capture instead
-    of a regular piece. 3) Target Kings - if the paths still tie, choose the path
-    that captures the most Kings. 4) First Blood - if a tie still exists, choose
-    the sequence that captures a King first. No-Removal Rule: captured pieces remain
-    on the board until the entire multi-jump turn is complete - you cannot jump over
-    the same piece twice.
-
-
-    <b>Winning the Game</b>
-
-    Elimination or Blockade.'
+    -
+    Win by capturing every piece, blocking every legal move, or reducing your opponent
+    to one man against your Dama.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -307,8 +291,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4293587190
-  m_fontColor: {r: 0.9647059, g: 0.9411765, b: 0.9176471, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -410,19 +394,19 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 700000000000000310}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 700000000000000370}
-  m_Father: {fileID: 700000000000000020}
+  m_Father: {fileID: 700000000000000420}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -620}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 47}
   m_SizeDelta: {x: 400, y: 120}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &700000000000000330
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -637,7 +621,7 @@ GameObject:
   - component: {fileID: 700000000000000430}
   - component: {fileID: 700000000000000440}
   m_Layer: 5
-  m_Name: Bg
+  m_Name: Content
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -650,17 +634,20 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 700000000000000410}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 700000000000000120}
+  - {fileID: 1919868576091091339}
+  - {fileID: 700000000000000320}
   m_Father: {fileID: 700000000000000020}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 43.320312}
+  m_SizeDelta: {x: 900, y: 1050}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &700000000000000430
 CanvasRenderer:
@@ -683,7 +670,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.13333334, g: 0.10980392, b: 0.16862746, a: 1}
+  m_Color: {r: 0.6830188, g: 0.6585332, b: 0.6585332, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -736,7 +723,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 585.47}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8667490377320952487
 MonoBehaviour:
@@ -778,6 +765,81 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!1 &2108195218938315881
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3759420599191209703}
+  - component: {fileID: 8342074283134767041}
+  - component: {fileID: 1547723234266943842}
+  m_Layer: 5
+  m_Name: Bg
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3759420599191209703
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108195218938315881}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 700000000000000020}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8342074283134767041
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108195218938315881}
+  m_CullTransparentMesh: 1
+--- !u!114 &1547723234266943842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108195218938315881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.13333334, g: 0.10980392, b: 0.16862746, a: 0.9019608}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: -3257826427820282976, guid: 86b7c9dbacc851d48b7a61fd9050de03, type: 3}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &2884911410806927177
 GameObject:
   m_ObjectHideFlags: 0
@@ -894,18 +956,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7841736580601637914}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7486631035611059594}
-  m_Father: {fileID: 700000000000000020}
+  m_Father: {fileID: 700000000000000420}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 20.9722}
-  m_SizeDelta: {x: 820, y: 1058.0557}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
+  m_AnchoredPosition: {x: 0, y: -495.46558}
+  m_SizeDelta: {x: 820, y: 652.9867}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4211688596402324894
 CanvasRenderer:

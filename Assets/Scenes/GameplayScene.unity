@@ -136,10 +136,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: QuitMatchPopup
       objectReference: {fileID: 0}
-    - target: {fileID: 600000000000000010, guid: 85e510fdd0e3b5fe3b961086c3b6ea89, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 600000000000000020, guid: 85e510fdd0e3b5fe3b961086c3b6ea89, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -507,7 +503,7 @@ MonoBehaviour:
   - key: 2
     page: {fileID: 256893551}
   - key: 3
-    page: {fileID: 2097745838}
+    page: {fileID: 1999242976}
 --- !u!224 &421978047 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 7944926746807521136, guid: b90bfab5ec66db74c965ff78eb2b8986, type: 3}
@@ -854,7 +850,7 @@ RectTransform:
   m_Children:
   - {fileID: 256893550}
   - {fileID: 421978047}
-  - {fileID: 2097745837}
+  - {fileID: 1999242975}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1054,7 +1050,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2097745836
+--- !u!1001 &1999242974
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -1092,11 +1088,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 700000000000000020, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
       propertyPath: m_SizeDelta.x
-      value: -180
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 700000000000000020, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
       propertyPath: m_SizeDelta.y
-      value: -420
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 700000000000000020, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1151,15 +1147,15 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
---- !u!224 &2097745837 stripped
+--- !u!224 &1999242975 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 700000000000000020, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
-  m_PrefabInstance: {fileID: 2097745836}
+  m_PrefabInstance: {fileID: 1999242974}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2097745838 stripped
+--- !u!114 &1999242976 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 700000000000000050, guid: 6e4d0391569262c6d5444ea06b5c78c7, type: 3}
-  m_PrefabInstance: {fileID: 2097745836}
+  m_PrefabInstance: {fileID: 1999242974}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -1392,10 +1388,6 @@ PrefabInstance:
     - target: {fileID: 3026959932615805257, guid: b90bfab5ec66db74c965ff78eb2b8986, type: 3}
       propertyPath: m_Name
       value: ResultPage
-      objectReference: {fileID: 0}
-    - target: {fileID: 3026959932615805257, guid: b90bfab5ec66db74c965ff78eb2b8986, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7944926746807521136, guid: b90bfab5ec66db74c965ff78eb2b8986, type: 3}
       propertyPath: m_Pivot.x
