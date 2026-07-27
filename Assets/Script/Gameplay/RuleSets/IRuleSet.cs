@@ -1,5 +1,9 @@
 public interface IRuleSet
 {
+    // Display metadata (mode-selection card, and the in-app rules popup - see RuleSetInfoPage).
+    string DisplayName { get; }
+    string LongDescription { get; }
+
     int Rows { get; }
     int Columns { get; }
     int PieceRowsPerSide { get; }

@@ -26,7 +26,6 @@ public class GameManager : Service<GameManager>
     private bool isReadyToLeaveGameplay = false;
 
     private readonly int maxTurnMissCount = 3;
-    private readonly int matchWinCoinReward = 500;
 
     private const string GameplayReadyPropertyKey = "GameplayReady";
 

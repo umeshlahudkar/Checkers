@@ -170,6 +170,13 @@ public class GamePage : Page
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.QuitPage);
     }
 
+    public void OnRulesButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GamePageManager>().RuleSetInfoPage.Show(ServiceLocator.Get<GameManager>().RuleSet);
+        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.RuleSetInfoPage);
+    }
+
     public void OnHintButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
