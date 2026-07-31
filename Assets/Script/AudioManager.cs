@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class AudioManager : Service<AudioManager>, IInitializable
 {
-    [SerializeField] private AudioSource bgAudioSource;
     [SerializeField] private AudioSource sfxAudioSource;
     [SerializeField] private AudioSource pieceKillAudioSource;
     [SerializeField] private AudioSource timeTickingAudioSource;
@@ -12,71 +11,49 @@ public class AudioManager : Service<AudioManager>, IInitializable
     [SerializeField] private AudioClip pieceKilledClip;
     [SerializeField] private AudioClip pieceMoveClip;
     [SerializeField] private AudioClip coinClip;
-    [SerializeField] private AudioClip scrollingMatchmakingClip;
     [SerializeField] private AudioClip crownKingClip;
 
-    private float bgVolume = 0.5f;
+    private AudioSourcePool sfxSourcePool;
+
     private float sfxVolume = 0.5f;
 
-    private bool isBgMute = false;
     private bool isSfxMute = false;
 
-    public float BgVolume { get { return bgVolume; } }
     public float SFXVolume { get { return sfxVolume; } }
 
-    public bool IsBgMute { get { return isBgMute; } }
     public bool IsSFXMute { get { return isSfxMute; } }
 
     public IEnumerator Initialize()
     {
+        sfxSourcePool = new AudioSourcePool(sfxAudioSource);
+
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         if (SavingSystem.Exists(AudioData.FileName))
         {
             AudioData data = SavingSystem.Load<AudioData>(AudioData.FileName);
 
-            isBgMute = data.isMusicMute;
             isSfxMute = data.isSoundMute;
-            bgVolume = data.musicVolume;
             sfxVolume = data.soundVolume;
         }
 #endif
 
-        bgAudioSource.mute = isBgMute;
-        sfxAudioSource.mute = isSfxMute;
+        sfxSourcePool.SetMute(isSfxMute);
         pieceKillAudioSource.mute = isSfxMute;
         timeTickingAudioSource.mute = isSfxMute;
 
-        bgAudioSource.volume = bgVolume;
-        sfxAudioSource.volume = sfxVolume;
+        sfxSourcePool.SetVolume(sfxVolume);
         pieceKillAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
 
         yield break;
     }
 
-    public void ToggleBgMusicMute()
-    {
-        isBgMute = !isBgMute;
-        bgAudioSource.mute = isBgMute;
-
-        SaveAudioData();
-    }
-
     public void ToggleSFXMusicMute()
     {
         isSfxMute = !isSfxMute;
-        sfxAudioSource.mute = isSfxMute;
+        sfxSourcePool.SetMute(isSfxMute);
         pieceKillAudioSource.mute = isSfxMute;
         timeTickingAudioSource.mute = isSfxMute;
-
-        SaveAudioData();
-    }
-
-    public void UpdateBgVolume(float volume)
-    {
-        bgVolume = volume;
-        bgVolume = Mathf.Clamp(bgVolume, 0, 1);
-        bgAudioSource.volume = bgVolume;
 
         SaveAudioData();
     }
@@ -85,7 +62,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     {
         sfxVolume = volume;
         sfxVolume = Mathf.Clamp(sfxVolume, 0, 1);
-        sfxAudioSource.volume = sfxVolume;
+        sfxSourcePool.SetVolume(sfxVolume);
         pieceKillAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
 
@@ -94,39 +71,12 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayButtonClickSound()
     {
-        if(!isSfxMute)
-        {
-            sfxAudioSource.Stop();
-            sfxAudioSource.clip = buttonClickClip;
-            sfxAudioSource.Play();
-        }
-    }
-
-    public void PlayMatchmakingScrollSound()
-    {
-        if (!isSfxMute)
-        {
-            sfxAudioSource.Stop();
-            sfxAudioSource.loop = true;
-            sfxAudioSource.clip = scrollingMatchmakingClip;
-            sfxAudioSource.Play();
-        }
-    }
-
-    public void StopMatchmakingScrollSound()
-    {
-        sfxAudioSource.loop = false;
-        sfxAudioSource.Stop();
+        PlaySfx(buttonClickClip);
     }
 
     public void PlayPieceMoveSound()
     {
-        if (!isSfxMute)
-        {
-            sfxAudioSource.Stop();
-            sfxAudioSource.clip = pieceMoveClip;
-            sfxAudioSource.Play();
-        }
+        PlaySfx(pieceMoveClip);
     }
 
     public void PlayPieceKillSound()
@@ -141,22 +91,12 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayCoinSound()
     {
-        if (!isSfxMute)
-        {
-            sfxAudioSource.Stop();
-            sfxAudioSource.clip = coinClip;
-            sfxAudioSource.Play();
-        }
+        PlaySfx(coinClip);
     }
 
     public void PlayCrownKingSound()
     {
-        if (!isSfxMute)
-        {
-            sfxAudioSource.Stop();
-            sfxAudioSource.clip = crownKingClip;
-            sfxAudioSource.Play();
-        }
+        PlaySfx(crownKingClip);
     }
 
     public void PlayTimeTickingSound()
@@ -173,14 +113,20 @@ public class AudioManager : Service<AudioManager>, IInitializable
         timeTickingAudioSource.Stop();
     }
 
+    private void PlaySfx(AudioClip clip)
+    {
+        if (!isSfxMute)
+        {
+            sfxSourcePool.Play(clip);
+        }
+    }
+
     private void SaveAudioData()
     {
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         AudioData data = new()
         {
-            isMusicMute = isBgMute,
             isSoundMute = isSfxMute,
-            musicVolume = bgVolume,
             soundVolume = sfxVolume
         };
 
@@ -188,4 +134,3 @@ public class AudioManager : Service<AudioManager>, IInitializable
 #endif
     }
 }
-

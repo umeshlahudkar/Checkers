@@ -32,13 +32,6 @@ public class MatchmakingPage : Page
         stakeText.text = StakeAmount + " coin stake";
 
         ShowSearching();
-
-        ServiceLocator.Get<AudioManager>().PlayMatchmakingScrollSound();
-    }
-
-    protected override void OnClosed()
-    {
-        ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
     }
 
     private void ShowSearching()
@@ -67,8 +60,6 @@ public class MatchmakingPage : Page
 
         searchingSpinner.SetActive(false);
         statusText.text = "Opponent found — starting...";
-
-        ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
     }
 
     public void ShowFailed(string message)
@@ -77,8 +68,6 @@ public class MatchmakingPage : Page
 
         searchingSpinner.SetActive(false);
         statusText.text = message;
-
-        ServiceLocator.Get<AudioManager>().StopMatchmakingScrollSound();
     }
 
     public void OnBackButtonClick()

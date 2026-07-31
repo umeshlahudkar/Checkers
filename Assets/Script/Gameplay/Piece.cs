@@ -68,6 +68,7 @@ public class Piece : MonoBehaviour
     {
         SetKingState(true);
         ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
+        HapticFeedback.TriggerKingPromotionVibration();
         ServiceLocator.Get<GameManager>().ShowFloatingText("CROWNED KING!", KingTextColor);
     }
 
@@ -111,6 +112,7 @@ public class Piece : MonoBehaviour
         if (!alreadyMarked)
         {
             ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
+            HapticFeedback.TriggerCaptureVibration();
             ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
         }
 
@@ -129,6 +131,7 @@ public class Piece : MonoBehaviour
         button.interactable = false;
 
         ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
+        HapticFeedback.TriggerCaptureVibration();
         ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
 
         thisTransform.DOScale(0.5f, DisappearDuration).SetEase(Ease.InBack);
@@ -163,6 +166,7 @@ public class Piece : MonoBehaviour
     {
         thisTransform.DOKill();
         thisTransform.DOShakeAnchorPos(0.4f, new Vector2(12f, 4f), vibrato: 20, randomness: 90, fadeOut: true);
+        HapticFeedback.TriggerInvalidMoveVibration();
     }
 
     public bool IsCrownedKing

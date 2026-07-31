@@ -3,23 +3,19 @@ using UnityEngine;
 
 public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
 {
-    [SerializeField] private BoardThemeListSO boardThemeList;
     [SerializeField] private RuleSetListSO ruleSetList;
 
-    private int boardThemeIndex;
     private bool showMoveHints;
     private bool vibrationEnabled;
     private int ruleSetIndex;
     private BotDifficulty botDifficulty;
 
-    public int BoardThemeCount { get { return boardThemeList.themes.Count; } }
     public bool ShowMoveHints { get { return showMoveHints; } }
     public bool VibrationEnabled { get { return vibrationEnabled; } }
     public int RuleSetCount { get { return ruleSetList.ruleSets.Count; } }
 
     public IEnumerator Initialize()
     {
-        boardThemeIndex = 0;
         showMoveHints = true;
         vibrationEnabled = true;
         ruleSetIndex = 0;
@@ -30,7 +26,6 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
         {
             GameSettingsData data = SavingSystem.Load<GameSettingsData>(GameSettingsData.FileName);
 
-            boardThemeIndex = data.boardThemeIndex;
             showMoveHints = data.showMoveHints;
             vibrationEnabled = data.vibrationEnabled;
             ruleSetIndex = data.ruleSetIndex;
@@ -39,22 +34,6 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
 #endif
 
         yield break;
-    }
-
-    public BoardThemeInfo GetBoardTheme(int index)
-    {
-        return boardThemeList.themes[index];
-    }
-
-    public int GetBoardThemeIndex()
-    {
-        return boardThemeIndex;
-    }
-
-    public void SetBoardTheme(int index)
-    {
-        boardThemeIndex = index;
-        Save();
     }
 
     public void SetShowMoveHints(bool value)
@@ -101,7 +80,6 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         GameSettingsData data = new()
         {
-            boardThemeIndex = boardThemeIndex,
             showMoveHints = showMoveHints,
             vibrationEnabled = vibrationEnabled,
             ruleSetIndex = ruleSetIndex,
