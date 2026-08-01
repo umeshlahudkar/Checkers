@@ -5,15 +5,6 @@ TextureImporter:
   - first:
       213: -8024188632878854666
     second: icon_vs_player_512_0
-  - first:
-      213: -185411704142201874
-    second: icon_vs_player_512_1
-  - first:
-      213: -2045094037781796213
-    second: icon_vs_player_512_2
-  - first:
-      213: 5030542278201131532
-    second: icon_vs_player_512_3
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -151,14 +142,14 @@ TextureImporter:
       name: icon_vs_player_512_0
       rect:
         serializedVersion: 2
-        x: 129
-        y: 287
-        width: 143
-        height: 143
+        x: 49
+        y: 134
+        width: 414
+        height: 296
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: -1
@@ -166,73 +157,7 @@ TextureImporter:
       spriteID: 6fd478ec3fa54a090800000000000000
       internalID: -8024188632878854666
       vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: icon_vs_player_512_1
-      rect:
-        serializedVersion: 2
-        x: 275
-        y: 287
-        width: 96
-        height: 143
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: eeb776599094d6df0800000000000000
-      internalID: -185411704142201874
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: icon_vs_player_512_2
-      rect:
-        serializedVersion: 2
-        x: 49
-        y: 134
-        width: 302
-        height: 128
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b8a2fb9decd5e93e0800000000000000
-      internalID: -2045094037781796213
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: icon_vs_player_512_3
-      rect:
-        serializedVersion: 2
-        x: 321
-        y: 134
-        width: 142
-        height: 129
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c0243cf8c8310d540800000000000000
-      internalID: 5030542278201131532
-      vertices: []
-      indices: 
+      indices:
       edges: []
       weights: []
     outline: []
@@ -250,9 +175,6 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       icon_vs_player_512_0: -8024188632878854666
-      icon_vs_player_512_1: -185411704142201874
-      icon_vs_player_512_2: -2045094037781796213
-      icon_vs_player_512_3: 5030542278201131532
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

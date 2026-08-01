@@ -8,4 +8,5 @@ public class ModeInfo
     public string modeName;
     [TextArea] public string modeDescription;
     public Sprite modeIcon;
+    public bool showOnlineBadge;
 }

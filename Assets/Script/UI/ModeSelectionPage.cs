@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +16,18 @@ public class ModeSelectionPage : Page
     [SerializeField] private TappableCarousel ruleSetCarousel;
     [SerializeField] private GameDataSO gameDataSO;
 
+    [Header("Ruleset Pagination")]
+    [SerializeField] private Image dotTemplate;
+    [SerializeField] private Transform dotsContainer;
+    [SerializeField] private Sprite dotActiveSprite;
+    [SerializeField] private Sprite dotIdleSprite;
+
+    private static readonly Vector2 DotIdleSize = new Vector2(12, 12);
+    private static readonly Vector2 DotActiveSize = new Vector2(44, 12);
+
+    private readonly List<Image> ruleSetDots = new List<Image>();
+    private bool dotsCreated;
+
     [Header("Layout")]
     [SerializeField] private RectTransform scrollContent;
 
@@ -24,6 +38,7 @@ public class ModeSelectionPage : Page
         CreateTiles();
 
         GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
+        CreateDots(settings.RuleSetCount);
         int startIndex = settings.GetRuleSetIndex();
         ruleSetCarousel.Setup(settings.RuleSetCount, startIndex, OnRuleSetIndexChanged);
         OnRuleSetIndexChanged(startIndex);
@@ -44,6 +59,35 @@ public class ModeSelectionPage : Page
 
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
+    }
+
+    // One dot per ruleset, same instantiate-once-into-a-container pattern as CreateTiles - the
+    // template stays inactive in the prefab and is cloned RuleSetCount times.
+    private void CreateDots(int ruleSetCount)
+    {
+        if (dotsCreated)
+        {
+            return;
+        }
+
+        for (int i = 0; i < ruleSetCount; i++)
+        {
+            Image dot = Instantiate(dotTemplate, dotsContainer);
+            dot.gameObject.SetActive(true);
+            ruleSetDots.Add(dot);
+        }
+
+        dotsCreated = true;
+    }
+
+    private void RefreshDots(int index)
+    {
+        for (int i = 0; i < ruleSetDots.Count; i++)
+        {
+            bool isActive = i == index;
+            ruleSetDots[i].sprite = isActive ? dotActiveSprite : dotIdleSprite;
+            ruleSetDots[i].rectTransform.sizeDelta = isActive ? DotActiveSize : DotIdleSize;
+        }
     }
 
     private void CreateTiles()
@@ -74,8 +118,11 @@ public class ModeSelectionPage : Page
     private void OnRuleSetIndexChanged(int index)
     {
         selectedRuleSetIndex = index;
-        ruleSetCard.Setup(index, ServiceLocator.Get<GameSettingsManager>().GetRuleSet(index), null);
-        ServiceLocator.Get<GameSettingsManager>().SetRuleSetIndex(index);
+        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
+        ruleSetCard.Setup(index, settings.GetRuleSet(index), null);
+        settings.SetRuleSetIndex(index);
+
+        RefreshDots(index);
     }
 
     // Tapping a tile still starts the match immediately, same as before - it just also carries

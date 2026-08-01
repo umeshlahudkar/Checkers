@@ -15,16 +15,19 @@ MonoBehaviour:
   modes:
   - isActive: 1
     mode: 3
-    modeName: vs Computer
-    modeDescription: Practice against a bot.
-    modeIcon: {fileID: -2375545498015344480, guid: fda98e1a68d6f0c46892b77d01d5e30c, type: 3}
-  - isActive: 1
-    mode: 1
-    modeName: Online Match
-    modeDescription: 
-    modeIcon: {fileID: 8446614719137098419, guid: db236206cc83bc042b1a3bbeb67a179f, type: 3}
+    modeName: Vs Bot
+    modeDescription: "Play offline \xB7 hints and undo on"
+    modeIcon: {fileID: 21300000, guid: 74f66b6f13e46ed4eb9c440cade1f517, type: 3}
+    showOnlineBadge: 0
   - isActive: 1
     mode: 2
-    modeName: Pass & Play
-    modeDescription: Two players, one device
-    modeIcon: {fileID: -1913942027339801933, guid: 4b907a6bd891f0c4b8ec47db0d09df49, type: 3}
+    modeName: Vs Player
+    modeDescription: Pass and play on one device
+    modeIcon: {fileID: 21300000, guid: 399252938b4ec8548bd276e4ce6bdfbb, type: 3}
+    showOnlineBadge: 0
+  - isActive: 1
+    mode: 1
+    modeName: Multiplayer
+    modeDescription: "250 coin stake \xB7 30s turns"
+    modeIcon: {fileID: 21300000, guid: c568b2371895f8945a97fa3c6770c175, type: 3}
+    showOnlineBadge: 1
