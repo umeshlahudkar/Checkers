@@ -8,11 +8,13 @@ using UnityEngine;
 // pattern as ResultPage, just with no win/loss branching.
 public class RuleSetInfoPage : Page
 {
+    [SerializeField] private TextMeshProUGUI variantLabelText;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI bodyText;
 
-    public void Show(IRuleSet ruleSet)
+    public void Show(IRuleSet ruleSet, int ruleSetIndex, int ruleSetCount)
     {
+        variantLabelText.text = $"RULES VARIANT {ruleSetIndex + 1} OF {ruleSetCount}";
         titleText.text = ruleSet.DisplayName;
 
         // Rich-text TMP tags (<b>Header</b>) are already baked into LongDescription - Rich Text

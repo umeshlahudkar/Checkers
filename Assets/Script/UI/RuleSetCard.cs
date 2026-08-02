@@ -38,7 +38,9 @@ public class RuleSetCard : MonoBehaviour
     public void OnViewRulesButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<MenuPageManager>().RuleSetInfoPage.Show(currentRuleSet);
+
+        int ruleSetCount = ServiceLocator.Get<GameSettingsManager>().RuleSetCount;
+        ServiceLocator.Get<MenuPageManager>().RuleSetInfoPage.Show(currentRuleSet, ruleSetIndex, ruleSetCount);
         ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.RuleSetInfoPage);
     }
 }
