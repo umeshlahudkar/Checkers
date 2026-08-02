@@ -10,9 +10,12 @@ public class SettingPage : Page
     [SerializeField] private TMP_Text soundVolumeValueText;
 
     [Header("Music")]
+    [SerializeField] private ToggleSwitch musicToggle;
+    [SerializeField] private Slider musicVolumeSlider;
     [SerializeField] private TMP_Text musicVolumeValueText;
 
     private float soundVolume;
+    private float musicVolume;
 
     [Header("Gameplay")]
     [SerializeField] private ToggleSwitch moveHintsToggle;
@@ -22,8 +25,13 @@ public class SettingPage : Page
     {
         soundVolume = ServiceLocator.Get<AudioManager>().SFXVolume;
         soundToggle.Setup(!ServiceLocator.Get<AudioManager>().IsSFXMute, OnSoundToggleChanged);
-        soundVolumeSlider.value = ServiceLocator.Get<AudioManager>().IsSFXMute ? 0 : soundVolume;
+        soundVolumeSlider.SetValueWithoutNotify(ServiceLocator.Get<AudioManager>().IsSFXMute ? 0 : soundVolume);
         UpdateSoundVolumeValueText(soundVolumeSlider.value);
+
+        musicVolume = ServiceLocator.Get<AudioManager>().MusicVolume;
+        musicToggle.Setup(!ServiceLocator.Get<AudioManager>().IsMusicMute, OnMusicToggleChanged);
+        musicVolumeSlider.SetValueWithoutNotify(ServiceLocator.Get<AudioManager>().IsMusicMute ? 0 : musicVolume);
+        UpdateMusicVolumeValueText(musicVolumeSlider.value);
 
         moveHintsToggle.Setup(ServiceLocator.Get<GameSettingsManager>().ShowMoveHints, OnMoveHintsToggleChanged);
         vibrationToggle.Setup(ServiceLocator.Get<GameSettingsManager>().VibrationEnabled, OnVibrationToggleChanged);
@@ -32,7 +40,7 @@ public class SettingPage : Page
     private void OnSoundToggleChanged(bool isOn)
     {
         ServiceLocator.Get<AudioManager>().ToggleSFXMusicMute();
-        soundVolumeSlider.value = ServiceLocator.Get<AudioManager>().IsSFXMute ? 0 : soundVolume;
+        soundVolumeSlider.SetValueWithoutNotify(ServiceLocator.Get<AudioManager>().IsSFXMute ? 0 : soundVolume);
         UpdateSoundVolumeValueText(soundVolumeSlider.value);
     }
 
@@ -41,6 +49,7 @@ public class SettingPage : Page
         soundVolume = value;
         ServiceLocator.Get<AudioManager>().UpdateSFXVolume(soundVolume);
         UpdateSoundVolumeValueText(value);
+        soundToggle.SetStateWithoutNotify(!ServiceLocator.Get<AudioManager>().IsSFXMute);
     }
 
     private void UpdateSoundVolumeValueText(float value)
@@ -48,7 +57,22 @@ public class SettingPage : Page
         soundVolumeValueText.text = Mathf.RoundToInt(value * 100).ToString();
     }
 
+    private void OnMusicToggleChanged(bool isOn)
+    {
+        ServiceLocator.Get<AudioManager>().ToggleMusicMute();
+        musicVolumeSlider.SetValueWithoutNotify(ServiceLocator.Get<AudioManager>().IsMusicMute ? 0 : musicVolume);
+        UpdateMusicVolumeValueText(musicVolumeSlider.value);
+    }
+
     public void OnMusicVolumeChanged(float value)
+    {
+        musicVolume = value;
+        ServiceLocator.Get<AudioManager>().UpdateMusicVolume(musicVolume);
+        UpdateMusicVolumeValueText(value);
+        musicToggle.SetStateWithoutNotify(!ServiceLocator.Get<AudioManager>().IsMusicMute);
+    }
+
+    private void UpdateMusicVolumeValueText(float value)
     {
         musicVolumeValueText.text = Mathf.RoundToInt(value * 100).ToString();
     }

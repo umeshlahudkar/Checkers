@@ -398,6 +398,8 @@ MonoBehaviour:
   soundToggle: {fileID: 9000000000000000016}
   soundVolumeSlider: {fileID: 9000000000000000023}
   soundVolumeValueText: {fileID: 9000000000000000043}
+  musicToggle: {fileID: 3347826024021564043}
+  musicVolumeSlider: {fileID: 5755018142522277198}
   musicVolumeValueText: {fileID: 6872734316024815260}
   moveHintsToggle: {fileID: 8459874250915849373}
   vibrationToggle: {fileID: 1717021648657882739}

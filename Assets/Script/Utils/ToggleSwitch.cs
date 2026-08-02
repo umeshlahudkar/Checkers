@@ -22,6 +22,11 @@ public class ToggleSwitch : MonoBehaviour
         Apply(value);
     }
 
+    public void SetStateWithoutNotify(bool value)
+    {
+        Apply(value);
+    }
+
     public void OnToggleClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();

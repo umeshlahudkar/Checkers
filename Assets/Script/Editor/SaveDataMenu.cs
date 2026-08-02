@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEngine;
 
 public static class SaveDataMenu
 {
@@ -14,7 +15,12 @@ public static class SaveDataMenu
         if (confirmed)
         {
             SavingSystem.Delete(ProfileData.FileName);
-            SavingSystem.Delete(AudioData.FileName);
+
+            PlayerPrefs.DeleteKey(AudioManager.SfxVolumeKey);
+            PlayerPrefs.DeleteKey(AudioManager.SfxMuteKey);
+            PlayerPrefs.DeleteKey(AudioManager.MusicVolumeKey);
+            PlayerPrefs.DeleteKey(AudioManager.MusicMuteKey);
+            PlayerPrefs.Save();
 
             EditorUtility.DisplayDialog("Delete Save Data", "Saved data deleted.", "OK");
         }

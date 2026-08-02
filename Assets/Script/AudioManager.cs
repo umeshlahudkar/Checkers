@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class AudioManager : Service<AudioManager>, IInitializable
 {
+    public const string SfxVolumeKey = "Audio.SfxVolume";
+    public const string SfxMuteKey = "Audio.SfxMute";
+    public const string MusicVolumeKey = "Audio.MusicVolume";
+    public const string MusicMuteKey = "Audio.MusicMute";
+
     [SerializeField] private AudioSource sfxAudioSource;
     [SerializeField] private AudioSource pieceKillAudioSource;
     [SerializeField] private AudioSource timeTickingAudioSource;
@@ -16,34 +21,29 @@ public class AudioManager : Service<AudioManager>, IInitializable
     private AudioSourcePool sfxSourcePool;
 
     private float sfxVolume = 0.5f;
+    private float musicVolume = 0.5f;
 
     private bool isSfxMute = false;
+    private bool isMusicMute = false;
 
     public float SFXVolume { get { return sfxVolume; } }
+    public float MusicVolume { get { return musicVolume; } }
 
     public bool IsSFXMute { get { return isSfxMute; } }
+    public bool IsMusicMute { get { return isMusicMute; } }
 
     public IEnumerator Initialize()
     {
         sfxSourcePool = new AudioSourcePool(sfxAudioSource);
 
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
-        if (SavingSystem.Exists(AudioData.FileName))
-        {
-            AudioData data = SavingSystem.Load<AudioData>(AudioData.FileName);
+        sfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, sfxVolume);
+        isSfxMute = PlayerPrefs.GetInt(SfxMuteKey, 0) == 1;
 
-            isSfxMute = data.isSoundMute;
-            sfxVolume = data.soundVolume;
-        }
-#endif
+        musicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, musicVolume);
+        isMusicMute = PlayerPrefs.GetInt(MusicMuteKey, 0) == 1;
 
-        sfxSourcePool.SetMute(isSfxMute);
-        pieceKillAudioSource.mute = isSfxMute;
-        timeTickingAudioSource.mute = isSfxMute;
-
-        sfxSourcePool.SetVolume(sfxVolume);
-        pieceKillAudioSource.volume = sfxVolume;
-        timeTickingAudioSource.volume = sfxVolume;
+        ApplyMute();
+        ApplyVolume();
 
         yield break;
     }
@@ -51,22 +51,40 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public void ToggleSFXMusicMute()
     {
         isSfxMute = !isSfxMute;
-        sfxSourcePool.SetMute(isSfxMute);
-        pieceKillAudioSource.mute = isSfxMute;
-        timeTickingAudioSource.mute = isSfxMute;
+        ApplyMute();
 
-        SaveAudioData();
+        PlayerPrefs.SetInt(SfxMuteKey, isSfxMute ? 1 : 0);
+        PlayerPrefs.Save();
     }
 
     public void UpdateSFXVolume(float volume)
     {
-        sfxVolume = volume;
-        sfxVolume = Mathf.Clamp(sfxVolume, 0, 1);
-        sfxSourcePool.SetVolume(sfxVolume);
-        pieceKillAudioSource.volume = sfxVolume;
-        timeTickingAudioSource.volume = sfxVolume;
+        sfxVolume = Mathf.Clamp01(volume);
+        isSfxMute = sfxVolume <= 0f;
+        ApplyMute();
+        ApplyVolume();
 
-        SaveAudioData();
+        PlayerPrefs.SetFloat(SfxVolumeKey, sfxVolume);
+        PlayerPrefs.SetInt(SfxMuteKey, isSfxMute ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    public void ToggleMusicMute()
+    {
+        isMusicMute = !isMusicMute;
+
+        PlayerPrefs.SetInt(MusicMuteKey, isMusicMute ? 1 : 0);
+        PlayerPrefs.Save();
+    }
+
+    public void UpdateMusicVolume(float volume)
+    {
+        musicVolume = Mathf.Clamp01(volume);
+        isMusicMute = musicVolume <= 0f;
+
+        PlayerPrefs.SetFloat(MusicVolumeKey, musicVolume);
+        PlayerPrefs.SetInt(MusicMuteKey, isMusicMute ? 1 : 0);
+        PlayerPrefs.Save();
     }
 
     public void PlayButtonClickSound()
@@ -81,12 +99,14 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayPieceKillSound()
     {
-        if (!isSfxMute)
+        if (isSfxMute)
         {
-            pieceKillAudioSource.Stop();
-            pieceKillAudioSource.clip = pieceKilledClip;
-            pieceKillAudioSource.Play();
+            return;
         }
+
+        pieceKillAudioSource.Stop();
+        pieceKillAudioSource.clip = pieceKilledClip;
+        pieceKillAudioSource.Play();
     }
 
     public void PlayCoinSound()
@@ -101,11 +121,13 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayTimeTickingSound()
     {
-        if (!isSfxMute)
+        if (isSfxMute)
         {
-            timeTickingAudioSource.Stop();
-            timeTickingAudioSource.Play();
+            return;
         }
+
+        timeTickingAudioSource.Stop();
+        timeTickingAudioSource.Play();
     }
 
     public void StopTimeTickingSound()
@@ -115,22 +137,25 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     private void PlaySfx(AudioClip clip)
     {
-        if (!isSfxMute)
+        if (isSfxMute)
         {
-            sfxSourcePool.Play(clip);
+            return;
         }
+
+        sfxSourcePool.Play(clip);
     }
 
-    private void SaveAudioData()
+    private void ApplyMute()
     {
-#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
-        AudioData data = new()
-        {
-            isSoundMute = isSfxMute,
-            soundVolume = sfxVolume
-        };
+        sfxSourcePool.SetMute(isSfxMute);
+        pieceKillAudioSource.mute = isSfxMute;
+        timeTickingAudioSource.mute = isSfxMute;
+    }
 
-        SavingSystem.Save(AudioData.FileName, data);
-#endif
+    private void ApplyVolume()
+    {
+        sfxSourcePool.SetVolume(sfxVolume);
+        pieceKillAudioSource.volume = sfxVolume;
+        timeTickingAudioSource.volume = sfxVolume;
     }
 }
