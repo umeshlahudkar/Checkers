@@ -10,7 +10,6 @@ public class GameManager : Service<GameManager>
     [SerializeField] private BoardGenerator boardGenerator;
     [SerializeField] private PhotonView gameManagerPhotonView;
     [SerializeField] private TimerController timer;
-    [SerializeField] private GameObject retryButton;
 
     [SerializeField] private Gameplay.HumanPlayer humanPlayerPrefab;
     [SerializeField] private Gameplay.BotPlayer botPlayerPrefab;
@@ -146,8 +145,6 @@ public class GameManager : Service<GameManager>
         GeneratePiecesAndInitUI();
         yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesAppearAnimation());
         StartFirstTurn();
-
-        retryButton.SetActive(true);
     }
 
     // Identity can't be auto-derived from the PhotonView's OwnerActorNr the way real multiplayer
@@ -210,7 +207,6 @@ public class GameManager : Service<GameManager>
         yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesAppearAnimation());
 
         StartFirstTurn();
-        retryButton.SetActive(false);
     }
 
     private void GeneratePiecesAndInitUI()

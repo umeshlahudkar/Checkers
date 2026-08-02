@@ -12,9 +12,20 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private TextMeshProUGUI piecesLeftText;
-    [SerializeField] private GameObject border;
     [SerializeField] private Image bg;
     [SerializeField] private Image pieceIcon;
+    [SerializeField] private Image iconBg;
+
+
+    [SerializeField] private Sprite selectedBgSprite;
+    [SerializeField] private Sprite unSelectedBgSprite;
+    [SerializeField] private Sprite selectedIconBgSprite;
+    [SerializeField] private Sprite unSelectedIconBgSprite;
+
+    [Header("Turn Indicator")]
+    [SerializeField] private Sprite activeIndicatorSprite;
+    [SerializeField] private Sprite disableIndicatorSprite;
+    [SerializeField] private GameObject turnIndicatorMainParent;
     [SerializeField] private Transform turnIndicatorParent;
     [SerializeField] private GameObject turnIndicatorTemplate;
 
@@ -23,7 +34,7 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private float blinkInterval = 0.25f;
     [SerializeField] private Color blinkColor = new(1f, 0.3f, 0.3f, 1f);
 
-    private readonly List<GameObject> turnIndicators = new();
+    private readonly List<Image> turnIndicators = new();
     private Color bgDefaultColor;
     private Coroutine blinkCoroutine;
     private int totalPieces;
@@ -44,7 +55,8 @@ public class PlayerCardUI : MonoBehaviour
 
     public void SetTurnActive(bool isActive)
     {
-        border.SetActive(isActive);
+        bg.sprite = isActive ? selectedBgSprite : unSelectedBgSprite;
+        iconBg.sprite = isActive ? selectedIconBgSprite : unSelectedIconBgSprite;
     }
 
     public void InitPiecesLeft(int total)
@@ -69,9 +81,13 @@ public class PlayerCardUI : MonoBehaviour
 
     public void InitTurnIndicators(int maxMissCount)
     {
+        // maxMissCount is 0 for modes that don't enforce a turn timer (VsBot/VsPlayer offline - see
+        // GameManager.SetupLocalMatch) - hide the whole row rather than leave an empty parent.
+        turnIndicatorMainParent.SetActive(maxMissCount > 0);
+
         for (int i = 0; i < turnIndicators.Count; i++)
         {
-            Destroy(turnIndicators[i]);
+            Destroy(turnIndicators[i].gameObject);
         }
         turnIndicators.Clear();
 
@@ -79,15 +95,22 @@ public class PlayerCardUI : MonoBehaviour
         {
             GameObject indicator = Instantiate(turnIndicatorTemplate, turnIndicatorParent);
             indicator.SetActive(true);
-            turnIndicators.Add(indicator);
+
+            Image indicatorImage = indicator.GetComponent<Image>();
+            indicatorImage.sprite = activeIndicatorSprite;
+            turnIndicators.Add(indicatorImage);
         }
     }
 
+    // Indicators stay active/visible for the whole match - a miss swaps its sprite to the disabled
+    // look instead of hiding the GameObject, so the row of dots never shifts/reflows as misses come
+    // in. Disables from the last indicator backward, so the first ones stay lit longest.
     public void SetMissCount(int missCount)
     {
+        int disableFromIndex = turnIndicators.Count - missCount;
         for (int i = 0; i < turnIndicators.Count; i++)
         {
-            turnIndicators[i].SetActive(i >= missCount);
+            turnIndicators[i].sprite = i >= disableFromIndex ? disableIndicatorSprite : activeIndicatorSprite;
         }
     }
 
