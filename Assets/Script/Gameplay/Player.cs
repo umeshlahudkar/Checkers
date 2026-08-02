@@ -249,6 +249,11 @@ namespace Gameplay
                 }
                 capturedThisChain.Clear();
 
+                if (chainCaptureCount > 0)
+                {
+                    thisPhotonView.RPC(nameof(ReportChainLength), RpcTarget.All, chainCaptureCount);
+                }
+
                 ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);
                 ResetNextToNextHighlightedBlock();
             }
@@ -352,6 +357,11 @@ namespace Gameplay
             Piece capturedPiece = ServiceLocator.Get<GameplayController>().pieces[row, col];
             lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
 
+            // Computed before either branch mutates IsCaptured, so a DeferCaptureRemoval piece -
+            // hit once here to mark it, then again from the end-of-chain sweep to actually destroy
+            // it - only counts toward captureCount on that first call.
+            bool isNewCapture = !capturedPiece.IsCaptured;
+
             if (ServiceLocator.Get<GameManager>().RuleSet.DeferCaptureRemoval && !capturedPiece.IsCaptured)
             {
                 capturedPiece.MarkCaptured();
@@ -361,12 +371,29 @@ namespace Gameplay
             {
                 capturedPiece.Destroy();
             }
+
+            if (isNewCapture)
+            {
+                ServiceLocator.Get<GameManager>().RegisterCapture(Player_ID);
+            }
         }
 
         [PunRPC]
         public void CrownPieceAt(int row, int col)
         {
             ServiceLocator.Get<GameplayController>().pieces[row, col].SetCrownKing();
+            ServiceLocator.Get<GameManager>().RegisterKingCrowned(Player_ID);
+        }
+
+        // Reports how many captures this whole turn's chain ended up with, so GameManager can track
+        // each player's longest chain for the result screen. A PunRPC (like DestroyPieceAt/
+        // CrownPieceAt above) rather than a direct GameManager call, since HandlePieceMovementAndPieceDelete
+        // only runs on the client whose turn it is - every other client's GameManager needs this
+        // relayed the same way it already gets board-state changes.
+        [PunRPC]
+        public void ReportChainLength(int chainLength)
+        {
+            ServiceLocator.Get<GameManager>().RegisterChainLength(Player_ID, chainLength);
         }
 
         // True for a single non-flying step in either scheme: a one-square diagonal move has both

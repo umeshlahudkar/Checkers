@@ -32,6 +32,16 @@ public class GameManager : Service<GameManager>
     private string player1DisplayName;
     private string player2DisplayName;
 
+    // Match stats shown on the result pages, indexed by playerNumber - 1. Captures/kings are
+    // updated from Player.DestroyPieceAt/CrownPieceAt (both PunRPCs, so every client's copy stays
+    // in sync the same way board state does) and longestChainCount from Player.ReportChainLength;
+    // matchStartTime is stamped once per client off PhotonNetwork.Time, the same synced clock
+    // TimerController already relies on, so match duration comes out consistent without an RPC.
+    private readonly int[] captureCount = new int[2];
+    private readonly int[] kingsCrownedCount = new int[2];
+    private readonly int[] longestChainCount = new int[2];
+    private double matchStartTime;
+
     // Board state at the start of every turn, offline modes only (see PushHistorySnapshot) - powers
     // Undo. The last entry is always "now" (the turn in progress, not yet played); Undo trims back
     // to an earlier entry rather than trying to reverse individual moves/captures/promotions.
@@ -212,6 +222,7 @@ public class GameManager : Service<GameManager>
     private void StartFirstTurn()
     {
         currentTurn = DetermineFirstTurnPlayer();
+        matchStartTime = PhotonNetwork.Time;
         PushHistorySnapshot();
         StartTurn();
     }
@@ -497,17 +508,27 @@ public class GameManager : Service<GameManager>
         string winnerName = winnerPlayerNumber == 1 ? player1DisplayName : player2DisplayName;
         string loserName = loserPlayerNumber == 1 ? player1DisplayName : player2DisplayName;
 
-        if (isLocalWin)
+        int localPlayerNumber = isLocalWin ? winnerPlayerNumber : loserPlayerNumber;
+        int opponentPlayerNumber = isLocalWin ? loserPlayerNumber : winnerPlayerNumber;
+
+        //if (isLocalWin) ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
+        GameResult result = new GameResult
         {
-            //ServiceLocator.Get<CoinManager>().AddCoin(matchWinCoinReward);
-            ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictory(loserName, GetRemainingPieceCount(winnerPlayerNumber));
-            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
-        }
-        else
-        {
-            ServiceLocator.Get<GamePageManager>().ResultPage.ShowDefeat(winnerName, reason);
-            ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
-        }
+            Outcome = isLocalWin ? GameOutcome.Victory : GameOutcome.Defeat,
+            OpponentName = isLocalWin ? loserName : winnerName,
+            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
+            LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
+            OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
+            Reason = reason,
+            LocalCaptures = captureCount[localPlayerNumber - 1],
+            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
+            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
+            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
+            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
+            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
+            MatchDuration = GetMatchDurationText()
+        };
+        ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
     }
 
     [PunRPC]
@@ -520,8 +541,89 @@ public class GameManager : Service<GameManager>
     {
         yield return StartCoroutine(PrepareGameOverVisuals());
 
-        ServiceLocator.Get<GamePageManager>().ResultPage.ShowDraw(reason);
-        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
+        int localPlayerNumber = GetLocalPlayerNumber();
+        int opponentPlayerNumber = localPlayerNumber == 1 ? 2 : 1;
+
+        GameResult result = new GameResult
+        {
+            Outcome = GameOutcome.Draw,
+            OpponentName = gameDataSO.opponentPlayer.userName,
+            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
+            LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
+            OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
+            Reason = reason,
+            LocalCaptures = captureCount[localPlayerNumber - 1],
+            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
+            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
+            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
+            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
+            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
+            MatchDuration = GetMatchDurationText()
+        };
+        ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
+    }
+
+    // Multiplayer's player1/player2 slots flip with master-client role (see PrepareOnlineMode), so
+    // "local" has to be resolved via PhotonView.IsMine there; offline modes always seat the local
+    // player as player 1 (see SetupLocalMatch), matching the convention already used by isLocalWin
+    // above.
+    private int GetLocalPlayerNumber()
+    {
+        if (gameMode == GameModeType.Multiplayer)
+        {
+            return players[0].PhotonView.IsMine ? 1 : 2;
+        }
+        return 1;
+    }
+
+    public void RegisterCapture(int playerNumber)
+    {
+        captureCount[playerNumber - 1]++;
+    }
+
+    public void RegisterKingCrowned(int playerNumber)
+    {
+        kingsCrownedCount[playerNumber - 1]++;
+    }
+
+    public void RegisterChainLength(int playerNumber, int chainLength)
+    {
+        if (chainLength > longestChainCount[playerNumber - 1])
+        {
+            longestChainCount[playerNumber - 1] = chainLength;
+        }
+    }
+
+    private string GetMatchDurationText()
+    {
+        int totalSeconds = Mathf.Max(0, (int)(PhotonNetwork.Time - matchStartTime));
+        return $"{totalSeconds / 60}:{totalSeconds % 60:D2}";
+    }
+
+    // Called when the opponent leaves the match (see MatchSessionEventManager.PlayForfeitSequence) -
+    // always a local win since the only way to forfeit is for the *other* side to leave.
+    public void ShowVictoryByForfeit()
+    {
+        int localPlayerNumber = GetLocalPlayerNumber();
+        int opponentPlayerNumber = localPlayerNumber == 1 ? 2 : 1;
+
+        GameResult result = new GameResult
+        {
+            Outcome = GameOutcome.Victory,
+            OpponentName = gameDataSO.opponentPlayer.userName,
+            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
+            LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
+            OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
+            Reason = "Your opponent left the match",
+            LocalCaptures = captureCount[localPlayerNumber - 1],
+            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
+            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
+            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
+            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
+            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
+            MatchDuration = GetMatchDurationText()
+        };
+        ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
     }
 
     // Shared by every end-of-match path (a decisive winner, a no-progress draw, or the opponent
@@ -566,6 +668,12 @@ public class GameManager : Service<GameManager>
         GameOver(2, "debug loss");
     }
 
+    [ContextMenu("Force Draw")]
+    private void ForceDraw()
+    {
+        Draw("debug draw");
+    }
+
     [ContextMenu("Test Floating Text")]
     private void TestFloatingText()
     {
@@ -585,6 +693,13 @@ public class GameManager : Service<GameManager>
         movesWithoutProgress = 0;
         gameState = GameState.Waiting;
         IsReadyToLeaveGameplay = false;
+
+        for (int i = 0; i < 2; i++)
+        {
+            captureCount[i] = 0;
+            kingsCrownedCount[i] = 0;
+            longestChainCount[i] = 0;
+        }
     }
 
     public Gameplay.Player GetPlayer(int playerID)

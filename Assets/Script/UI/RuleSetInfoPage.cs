@@ -5,7 +5,7 @@ using UnityEngine;
 // different places with two different page managers: RuleSetCard's "view rules" button on the
 // mode-selection carousel (MenuPageManager, mode-selection scene) and GamePage.OnRulesButtonClick
 // (GamePageManager, gameplay scene). Follows the same Show(...)-then-OpenPageAsOverlay(...)
-// pattern as ResultPage, just with no win/loss branching.
+// pattern as VictoryPage/DefeatPage/DrawPage, just with no win/loss branching.
 public class RuleSetInfoPage : Page
 {
     [SerializeField] private TextMeshProUGUI variantLabelText;

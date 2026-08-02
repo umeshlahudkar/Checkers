@@ -131,7 +131,10 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
-        bool canOpenGameOverScreen = !ServiceLocator.Get<GamePageManager>().IsPageOpen(GamePageType.ResultPage);
+        GamePageManager pageManager = ServiceLocator.Get<GamePageManager>();
+        bool canOpenGameOverScreen = !pageManager.IsPageOpen(GamePageType.VictoryPage)
+            && !pageManager.IsPageOpen(GamePageType.DefeatPage)
+            && !pageManager.IsPageOpen(GamePageType.DrawPage);
 
         if(canOpenGameOverScreen)
         {
@@ -144,8 +147,7 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
         yield return StartCoroutine(ServiceLocator.Get<GameManager>().PrepareGameOverVisuals());
 
         //ServiceLocator.Get<CoinManager>().AddCoin(500);
-        ServiceLocator.Get<GamePageManager>().ResultPage.ShowVictoryByForfeit();
-        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.ResultPage);
+        ServiceLocator.Get<GameManager>().ShowVictoryByForfeit();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
