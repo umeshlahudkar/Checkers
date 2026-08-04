@@ -16,7 +16,7 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     public void OnClick()
     {
-        thisTransform.DOScale(Vector3.one * 0.8f, 0.2f).OnComplete(() =>
+        thisTransform.DOScale(Vector3.one * 0.9f, 0.2f).OnComplete(() =>
         {
             unityEvent.Invoke();
             thisTransform.DOScale(Vector3.one, 0.2f);
@@ -26,7 +26,7 @@ public class CustomButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandle
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        thisTransform.DOScale(Vector3.one * 0.8f, 0.1f);
+        thisTransform.DOScale(Vector3.one * 0.9f, 0.1f);
     }
 
     public void OnPointerUp(PointerEventData eventData)
