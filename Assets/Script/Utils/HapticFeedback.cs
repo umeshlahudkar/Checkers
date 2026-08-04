@@ -23,6 +23,7 @@ public static class HapticFeedback
 
     private static void Vibrate(long[] pattern)
     {
+        return;
         if (!ServiceLocator.Get<GameSettingsManager>().VibrationEnabled)
         {
             return;
