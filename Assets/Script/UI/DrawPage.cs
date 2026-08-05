@@ -29,8 +29,8 @@ public class DrawPage : Page
         opponentPiecesText.text = result.OpponentPiecesLeft.ToString();
         reasonText.text = result.Reason;
 
-        capturesText.text = $"{result.LocalCaptures} · {result.OpponentCaptures}";
-        kingsCrownedText.text = $"{result.LocalKingsCrowned} · {result.OpponentKingsCrowned}";
+        capturesText.text = $"{result.LocalCaptures} : {result.OpponentCaptures}";
+        kingsCrownedText.text = $"{result.LocalKingsCrowned} : {result.OpponentKingsCrowned}";
         matchTimeText.text = result.MatchDuration;
     }
 
