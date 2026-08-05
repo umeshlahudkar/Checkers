@@ -204,7 +204,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -212,8 +212,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: HINT
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
-  m_sharedMaterial: {fileID: 3660901378471078487, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
+  m_sharedMaterial: {fileID: 1729553477846523856, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -237,13 +237,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 25
-  m_fontSizeBase: 25
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -630,7 +630,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -638,8 +638,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: MENU
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
-  m_sharedMaterial: {fileID: 3660901378471078487, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
+  m_sharedMaterial: {fileID: 1729553477846523856, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -663,13 +663,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 25
-  m_fontSizeBase: 25
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1013,7 +1013,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -1021,8 +1021,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: RULES
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
-  m_sharedMaterial: {fileID: 3660901378471078487, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
+  m_sharedMaterial: {fileID: 1729553477846523856, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1046,13 +1046,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 25
-  m_fontSizeBase: 25
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -1671,7 +1671,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -1679,8 +1679,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: UNDO
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
-  m_sharedMaterial: {fileID: 3660901378471078487, guid: 5aecb637c2c196e4988ec56339a524e9, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
+  m_sharedMaterial: {fileID: 1729553477846523856, guid: 40a6a7d5a2bc4f242987646ecf2bf3c8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1704,13 +1704,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 25
-  m_fontSizeBase: 25
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2165,7 +2165,19 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4746251914761033605, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
@@ -2326,7 +2338,19 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4746251914761033605, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5386183945242505687, guid: 9ebb5b6c08ab38a45b528f5e35b73665, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}

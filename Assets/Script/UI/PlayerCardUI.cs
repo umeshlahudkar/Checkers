@@ -34,6 +34,9 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private float blinkInterval = 0.25f;
     [SerializeField] private Color blinkColor = new(1f, 0.3f, 0.3f, 1f);
 
+    private static readonly Color SelectedContentColor = Color.white;
+    private static readonly Color UnselectedContentColor = new Color32(0x84, 0x94, 0xAC, 0xFF);
+
     private readonly List<Image> turnIndicators = new();
     private Color bgDefaultColor;
     private Coroutine blinkCoroutine;
@@ -57,6 +60,13 @@ public class PlayerCardUI : MonoBehaviour
     {
         bg.sprite = isActive ? selectedBgSprite : unSelectedBgSprite;
         iconBg.sprite = isActive ? selectedIconBgSprite : unSelectedIconBgSprite;
+
+        Color contentColor = isActive ? SelectedContentColor : UnselectedContentColor;
+        avatarImage.color = contentColor;
+        nameText.color = contentColor;
+        timerText.color = contentColor;
+        piecesLeftText.color = contentColor;
+        pieceIcon.color = contentColor;
     }
 
     public void InitPiecesLeft(int total)

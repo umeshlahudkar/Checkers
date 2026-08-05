@@ -345,7 +345,6 @@ MonoBehaviour:
   boardGenerator: {fileID: 1096947540}
   gameManagerPhotonView: {fileID: 347150546}
   timer: {fileID: 668355909}
-  retryButton: {fileID: 0}
   humanPlayerPrefab: {fileID: 3681808228812323391, guid: cc82e00b1d89d6546bb6b010a6d159ea, type: 3}
   botPlayerPrefab: {fileID: 8409993811043939639, guid: db4394eaff884174ebac28e3bfaad053, type: 3}
   players:
