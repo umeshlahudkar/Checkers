@@ -165,6 +165,20 @@ namespace Gameplay
             StartCoroutine(HandlePieceMovementAndPieceDelete(block));
         }
 
+        // Mirrors the "does this piece have anywhere further to capture" half of the canContinue
+        // check HandlePieceMovementAndPieceDelete runs after its settle wait - minus that check's
+        // ContinueAsKing crowning side effect, which is safe to drop here because no
+        // DeferCaptureRemoval ruleset (the only caller of this method) ever sets
+        // MidChainPromotionRule to ContinueAsKing (only Russian does, and it doesn't defer capture
+        // removal). Used to let a capture decide immediately whether it's this chain's last hop.
+        private bool WouldChainContinue(Piece piece)
+        {
+            IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
+            bool reachedPromotionRow = !piece.IsCrownedKing && ruleSet.IsPromotionRow(piece.Row_ID, piece.Player_ID);
+            bool blocksContinuation = reachedPromotionRow && ruleSet.MidChainPromotionRule == MidChainPromotionRule.EndsTurnOnPromotion;
+            return !blocksContinuation && ServiceLocator.Get<MoveGenerator>().CanPieceKill(piece);
+        }
+
         private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
         {
             ServiceLocator.Get<GameplayController>().ClearHintHighlight();
@@ -172,23 +186,46 @@ namespace Gameplay
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;
+            BoardPosition capturedPosition = default;
 
             if (block.IsNextToNextHighlighted)
             {
                 // Read the captured piece's position from the block rather than deriving it
                 // geometrically from the landing square - a flying king can capture from any
                 // distance along the diagonal, so the two aren't a fixed offset apart.
-                BoardPosition captured = block.CapturedPosition;
+                capturedPosition = block.CapturedPosition;
 
                 // DestroyPieceAt itself decides whether this is a real destroy or (for no-removal
                 // rulesets) just a mark-as-captured - see there.
-                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, captured.row_ID, captured.col_ID);
+                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, capturedPosition.row_ID, capturedPosition.col_ID);
                 hasDeleted = true;
                 chainCaptureCount++;
                 block.IsNextToNextHighlighted = false;
             }
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece, hasDeleted);
+
+            // GameplayController.SetSquare (called from inside UpdateGrid) updates row/col/occupancy
+            // synchronously regardless of how long the slide animation takes to visually finish, so
+            // this doesn't need to wait for that - a DeferCaptureRemoval capture can find out RIGHT
+            // NOW whether it's this chain's last hop, instead of only after the settle wait below.
+            // Only actually acted on when capturedThisChain.Count == 1 (this hop is the chain's
+            // ONLY capture so far, i.e. it's a plain single capture, not part of a multi-kill) - a
+            // lone capture gets one clean destroy animation immediately instead of marking-and-
+            // pulsing only to throw that away a moment later. A multi-kill still leaves every piece
+            // marked-and-waiting so the whole chain's captures are swept and destroyed together,
+            // simultaneously, once the chain truly ends - not the last one immediately and the rest
+            // staggered in later.
+            if (hasDeleted && capturedThisChain.Count == 1 && ServiceLocator.Get<GameManager>().RuleSet.DeferCaptureRemoval)
+            {
+                Piece movedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
+                if (!WouldChainContinue(movedPiece))
+                {
+                    Piece justCapturedPiece = ServiceLocator.Get<GameplayController>().pieces[capturedPosition.row_ID, capturedPosition.col_ID];
+                    thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, capturedPosition.row_ID, capturedPosition.col_ID);
+                    capturedThisChain.Remove(justCapturedPiece);
+                }
+            }
 
             yield return new WaitForSeconds(0.5f);
 
@@ -242,6 +279,7 @@ namespace Gameplay
                 // that was only marked-captured along the way, before the opponent's turn starts.
                 // Re-running DestroyPieceAt for each one is what actually destroys it this time,
                 // since IsCaptured is already true from when it was first marked.
+                bool hadDeferredCaptures = capturedThisChain.Count > 0;
                 for (int i = 0; i < capturedThisChain.Count; i++)
                 {
                     Piece piece = capturedThisChain[i];
@@ -252,6 +290,15 @@ namespace Gameplay
                 if (chainCaptureCount > 0)
                 {
                     thisPhotonView.RPC(nameof(ReportChainLength), RpcTarget.All, chainCaptureCount);
+                }
+
+                // Lets the deferred pieces' final disappear animation actually finish before the
+                // turn visibly switches, instead of both landing in the same frame - only relevant
+                // for DeferCaptureRemoval rulesets, since everyone else already destroyed their
+                // captures back at hop time.
+                if (hadDeferredCaptures)
+                {
+                    yield return new WaitForSeconds(Piece.DisappearDuration);
                 }
 
                 ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);

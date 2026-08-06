@@ -116,6 +116,9 @@ public class Piece : MonoBehaviour
             ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
         }
 
+        // Stops MarkCaptured's idle pulse (if this piece went through that path) so it doesn't
+        // fight the final shrink-to-nothing tween started below.
+        thisTransform.DOKill();
         PlayDisappearAnimation(0f, () => Destroy(gameObject));
     }
 
@@ -134,7 +137,18 @@ public class Piece : MonoBehaviour
         HapticFeedback.TriggerCaptureVibration();
         ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
 
+        // Shrinks to half size and stays there - it has to keep occupying its square as a
+        // rules-required obstacle until the whole capture chain ends (see class comment above).
+        // The chain's actual last hop never reaches this path any more (see
+        // Player.WouldChainContinue) - it destroys itself for real immediately instead - so this
+        // only ever runs for a genuine mid-chain hop, which is about to be superseded by the next
+        // hop's own move/capture a moment later anyway.
         thisTransform.DOScale(0.5f, DisappearDuration).SetEase(Ease.InBack);
+    }
+
+    private void OnDestroy()
+    {
+        thisTransform.DOKill();
     }
 
     public bool IsCaptured => isCaptured;
