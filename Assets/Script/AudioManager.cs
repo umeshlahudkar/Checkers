@@ -126,6 +126,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
             return;
         }
 
+        timeTickingAudioSource.pitch = 1f;
         timeTickingAudioSource.Stop();
         timeTickingAudioSource.Play();
     }
@@ -133,6 +134,16 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public void StopTimeTickingSound()
     {
         timeTickingAudioSource.Stop();
+        timeTickingAudioSource.pitch = 1f;
+    }
+
+    // Speeds the ticking loop up (and, as a side effect of pitch, raises its tone) as the turn
+    // timer approaches zero - mirrors the same urgency curve PlayerCardUI's low-time blink/pulse
+    // ramps up on, so the sound and the visual escalate together instead of the tick staying flat
+    // while everything else on screen gets more frantic.
+    public void SetTimeTickingUrgency(float urgency)
+    {
+        timeTickingAudioSource.pitch = Mathf.Lerp(1f, 1.5f, Mathf.Clamp01(urgency));
     }
 
     private void PlaySfx(AudioClip clip)

@@ -65,5 +65,11 @@ public class TimerController : MonoBehaviour
             hasPlayedTickingSound = true;
             ServiceLocator.Get<AudioManager>().PlayTimeTickingSound();
         }
+
+        if (isLowTime)
+        {
+            float urgency = 1f - Mathf.Clamp01(currentTime / activeCard.LowTimeThreshold);
+            ServiceLocator.Get<AudioManager>().SetTimeTickingUrgency(urgency);
+        }
     }
 }

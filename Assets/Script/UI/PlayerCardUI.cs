@@ -48,6 +48,8 @@ public class PlayerCardUI : MonoBehaviour
 
     public RectTransform RectTransform { get { return rectTransform; } }
 
+    public float LowTimeThreshold { get { return lowTimeThreshold; } }
+
     private void Awake()
     {
         bgDefaultColor = bg.color;
@@ -76,6 +78,13 @@ public class PlayerCardUI : MonoBehaviour
         piecesLeftText.DOColor(contentColor, activationTweenDuration);
         pieceIcon.DOKill();
         pieceIcon.DOColor(contentColor, activationTweenDuration);
+
+        for (int i = 0; i < turnIndicators.Count; i++)
+        {
+            Image indicator = turnIndicators[i];
+            indicator.DOKill();
+            indicator.DOColor(contentColor, activationTweenDuration);
+        }
     }
 
     public void InitPiecesLeft(int total)
