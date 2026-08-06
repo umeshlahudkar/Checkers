@@ -1,6 +1,4 @@
 using Photon.Pun;
-using System;
-using UnityEngine;
 
 public class QuitPage : Page
 {
@@ -15,5 +13,14 @@ public class QuitPage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<GamePageManager>().CloseOverlay(GamePageType.QuitPage);
+    }
+
+    public void OnRestartButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+
+        ServiceLocator.Get<GamePageManager>().CloseOverlay(GamePageType.QuitPage);
+        ServiceLocator.Get<GameManager>().StartRematch();
     }
 }
