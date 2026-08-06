@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: AmericanRules
   m_EditorClassIdentifier:
   displayName: American
-  description: Standard 8x8 checkers - men capture only forward, any legal capture is playable.
-  longDescription: "- 8x8 board, dark squares only, 12 pieces each.\n- Men move and capture diagonally forward only.\n- Kings move and capture one square, forward or backward - no flying.\n- Capturing is mandatory whenever it's available.\n- If a jump leads to another jump, you must keep jumping.\n- Captured pieces are removed immediately.\n- Reaching the back row crowns a piece and ends its turn right there.\n- Win by capturing every piece or leaving your opponent no legal move."
+  description: Standard 8x8 checkers, 12 pieces a side - men capture forward only, any legal capture is playable, and kings can't fly.
+  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on an 8x8 board, using only the dark squares. Each player starts with 12 pieces filling the first three rows on their side.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move and capture diagonally forward only. Kings move and capture one square at a time, forward or backward - they don't fly.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory whenever it's available, and if a jump leads straight into another jump, you must keep jumping. Captured pieces are removed from the board immediately.\n\n<b><color=#D4AF37>Kings:</color></b>\nReaching the back row crowns a piece immediately and ends its turn right there - even mid-capture, even if the new king could otherwise keep going.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: RussianRules
   m_EditorClassIdentifier:
   displayName: Russian
-  description: 8x8 draughts - flying kings, men capture backward, any legal capture is playable.
-  longDescription: "- 8x8 board, 12 pieces each.\n- Men move forward only, but capture in any diagonal direction.\n- Capturing is mandatory, but any legal capture path may be chosen.\n- Captured pieces are removed immediately - this can open new paths mid-turn.\n- Kings fly: they slide and capture any distance along a diagonal.\n- A piece crowns immediately mid-capture and must keep capturing with its new king powers.\n- Win by capturing every piece or leaving your opponent no legal move."
+  description: 8x8 draughts - flying kings, men capture backward, any legal capture is playable, and a newly crowned king keeps capturing that turn.
+  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on an 8x8 board. Each player starts with 12 pieces filling the first three rows on their side.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory, and men may capture in any diagonal direction, including backward - but any legal capture path may be chosen, with no \"most pieces\" requirement. Captured pieces are removed from the board immediately, which can open up new paths mid-turn.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece crowns the instant it reaches the back row, even mid-capture, and must immediately keep capturing that same turn using its new king powers.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3

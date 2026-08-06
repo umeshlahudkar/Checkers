@@ -53,6 +53,7 @@ MonoBehaviour:
   variantLabelText: {fileID: 7900000000000000008}
   titleText: {fileID: 700000000000000140}
   bodyText: {fileID: 700000000000000240}
+  bodyScrollRect: {fileID: 6598535333524711733}
 --- !u!1 &700000000000000110
 GameObject:
   m_ObjectHideFlags: 0
