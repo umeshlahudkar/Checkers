@@ -9,7 +9,6 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public const string MusicMuteKey = "Audio.MusicMute";
 
     [SerializeField] private AudioSource sfxAudioSource;
-    [SerializeField] private AudioSource pieceKillAudioSource;
     [SerializeField] private AudioSource timeTickingAudioSource;
 
     [SerializeField] private AudioClip buttonClickClip;
@@ -17,8 +16,6 @@ public class AudioManager : Service<AudioManager>, IInitializable
     [SerializeField] private AudioClip pieceMoveClip;
     [SerializeField] private AudioClip coinClip;
     [SerializeField] private AudioClip crownKingClip;
-
-    private AudioSourcePool sfxSourcePool;
 
     private float sfxVolume = 0.5f;
     private float musicVolume = 0.5f;
@@ -34,8 +31,6 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public IEnumerator Initialize()
     {
-        sfxSourcePool = new AudioSourcePool(sfxAudioSource);
-
         sfxVolume = PlayerPrefs.GetFloat(SfxVolumeKey, sfxVolume);
         isSfxMute = PlayerPrefs.GetInt(SfxMuteKey, 0) == 1;
 
@@ -99,14 +94,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayPieceKillSound()
     {
-        if (isSfxMute)
-        {
-            return;
-        }
-
-        pieceKillAudioSource.Stop();
-        pieceKillAudioSource.clip = pieceKilledClip;
-        pieceKillAudioSource.Play();
+        PlaySfx(pieceKilledClip);
     }
 
     public void PlayCoinSound()
@@ -146,6 +134,8 @@ public class AudioManager : Service<AudioManager>, IInitializable
         timeTickingAudioSource.pitch = Mathf.Lerp(1f, 1.5f, Mathf.Clamp01(urgency));
     }
 
+    // PlayOneShot layers overlapping SFX on this single source itself, mixed together, instead of
+    // needing a pool of cloned AudioSource components to avoid one cutting another off.
     private void PlaySfx(AudioClip clip)
     {
         if (isSfxMute)
@@ -153,20 +143,18 @@ public class AudioManager : Service<AudioManager>, IInitializable
             return;
         }
 
-        sfxSourcePool.Play(clip);
+        sfxAudioSource.PlayOneShot(clip);
     }
 
     private void ApplyMute()
     {
-        sfxSourcePool.SetMute(isSfxMute);
-        pieceKillAudioSource.mute = isSfxMute;
+        sfxAudioSource.mute = isSfxMute;
         timeTickingAudioSource.mute = isSfxMute;
     }
 
     private void ApplyVolume()
     {
-        sfxSourcePool.SetVolume(sfxVolume);
-        pieceKillAudioSource.volume = sfxVolume;
+        sfxAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
     }
 }
