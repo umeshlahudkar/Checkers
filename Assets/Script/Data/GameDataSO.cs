@@ -9,5 +9,6 @@ public class GameDataSO : ScriptableObject
     public PlayerInfo opponentPlayer;
     public BotDifficulty botDifficulty = BotDifficulty.Easy;
     public RuleSetSO ruleSet;
+    public bool enableTurnTimer = true;
     public BotAISettingsSO botAISettings;
 }

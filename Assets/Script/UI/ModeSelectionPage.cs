@@ -134,6 +134,7 @@ public class ModeSelectionPage : Page
 
         GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
         gameDataSO.ruleSet = settings.GetRuleSet(selectedRuleSetIndex);
+        gameDataSO.enableTurnTimer = info.enableTurnTimer;
 
         if (info.mode == GameModeType.VsBot)
         {

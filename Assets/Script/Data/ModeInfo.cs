@@ -9,4 +9,5 @@ public class ModeInfo
     [TextArea] public string modeDescription;
     public Sprite modeIcon;
     public bool showOnlineBadge;
+    public bool enableTurnTimer = true;
 }

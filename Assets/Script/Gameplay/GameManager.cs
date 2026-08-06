@@ -22,6 +22,7 @@ public class GameManager : Service<GameManager>
 
     private GameState gameState = GameState.Waiting;
     private GameModeType gameMode;
+    private bool enableTurnTimer;
     private bool isReadyToLeaveGameplay = false;
 
     private readonly int maxTurnMissCount = 3;
@@ -96,6 +97,7 @@ public class GameManager : Service<GameManager>
         yield return null;
 
         gameMode = gameDataSO.gameMode;
+        enableTurnTimer = gameDataSO.enableTurnTimer;
         gameState = GameState.Playing;
 
         ruleSet = gameDataSO.ruleSet;
@@ -134,8 +136,8 @@ public class GameManager : Service<GameManager>
         gamePageManager.GamePage.ShowPlayerInfo(
             ownInfo.userName, ownInfo.avatar, boardGenerator.GetPieceSprite(ownInfo.pieceType),
             opponentInfo.userName, opponentInfo.avatar, boardGenerator.GetPieceSprite(opponentInfo.pieceType));
-        gamePageManager.GamePage.InitTurnIndicators(0);
-        gamePageManager.GamePage.SetTimerVisible(false);
+        gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
+        gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
 
         boardGenerator.GenerateBoard(ruleSet);
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
@@ -182,8 +184,8 @@ public class GameManager : Service<GameManager>
         gamePageManager.GamePage.ShowPlayerInfo(
             player1.userName, player1.avatar, boardGenerator.GetPieceSprite(player1.pieceType),
             player2.userName, player2.avatar, boardGenerator.GetPieceSprite(player2.pieceType));
-        gamePageManager.GamePage.InitTurnIndicators(maxTurnMissCount);
-        gamePageManager.GamePage.SetTimerVisible(true);
+        gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
+        gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
 
         while(!HasBothPlayerReady())
         {
@@ -436,11 +438,11 @@ public class GameManager : Service<GameManager>
             }
         }
 
-        // Turn timer / miss-count enforcement is a Multiplayer-only concern - offline matches
-        // (VsBot/VsPlayer) let a player take as long as they like, so the timer simply never runs
-        // there and HandleTurnMissCount (which only fires from its countdown reaching zero) never
-        // triggers either.
-        if (gameMode == GameModeType.Multiplayer)
+        // Turn timer / miss-count enforcement is opt-in per mode (see ModeInfo.enableTurnTimer,
+        // carried in via GameDataSO) rather than tied to Multiplayer specifically - a mode with it
+        // off never starts the timer, so it simply never runs and HandleTurnMissCount (which only
+        // fires from its countdown reaching zero) never triggers either.
+        if (enableTurnTimer)
         {
             timer.StartTimer();
         }

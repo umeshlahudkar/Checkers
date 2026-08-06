@@ -34,6 +34,9 @@ public class PlayerCardUI : MonoBehaviour
     [SerializeField] private float blinkInterval = 0.25f;
     [SerializeField] private Color blinkColor = new(1f, 0.3f, 0.3f, 1f);
 
+    [Header("Turn Activation Juice")]
+    [SerializeField] private float activationTweenDuration = 0.2f;
+
     private static readonly Color SelectedContentColor = Color.white;
     private static readonly Color UnselectedContentColor = new Color32(0x84, 0x94, 0xAC, 0xFF);
 
@@ -41,6 +44,7 @@ public class PlayerCardUI : MonoBehaviour
     private Color bgDefaultColor;
     private Coroutine blinkCoroutine;
     private int totalPieces;
+    private float blinkRemainingTime;
 
     public RectTransform RectTransform { get { return rectTransform; } }
 
@@ -62,11 +66,16 @@ public class PlayerCardUI : MonoBehaviour
         iconBg.sprite = isActive ? selectedIconBgSprite : unSelectedIconBgSprite;
 
         Color contentColor = isActive ? SelectedContentColor : UnselectedContentColor;
-        avatarImage.color = contentColor;
-        nameText.color = contentColor;
-        timerText.color = contentColor;
-        piecesLeftText.color = contentColor;
-        pieceIcon.color = contentColor;
+        avatarImage.DOKill();
+        avatarImage.DOColor(contentColor, activationTweenDuration);
+        nameText.DOKill();
+        nameText.DOColor(contentColor, activationTweenDuration);
+        timerText.DOKill();
+        timerText.DOColor(contentColor, activationTweenDuration);
+        piecesLeftText.DOKill();
+        piecesLeftText.DOColor(contentColor, activationTweenDuration);
+        pieceIcon.DOKill();
+        pieceIcon.DOColor(contentColor, activationTweenDuration);
     }
 
     public void InitPiecesLeft(int total)
@@ -132,6 +141,7 @@ public class PlayerCardUI : MonoBehaviour
     public bool UpdateTimer(float currentTime, float turnTime)
     {
         SetTimerText(currentTime);
+        blinkRemainingTime = currentTime;
 
         bool shouldBlink = currentTime > 0 && currentTime <= lowTimeThreshold;
         if (shouldBlink && blinkCoroutine == null)
@@ -160,15 +170,26 @@ public class PlayerCardUI : MonoBehaviour
             blinkCoroutine = null;
         }
         bg.color = bgDefaultColor;
+        timerText.rectTransform.localScale = Vector3.one;
     }
 
+    // Blink speed and the timer text's pulse both ramp up as remainingTime approaches zero,
+    // so the last couple seconds feel more urgent than the moment the blink first kicks in.
     private IEnumerator BlinkBg()
     {
         float t = 0f;
         while (true)
         {
-            t += Time.deltaTime / blinkInterval;
-            bg.color = Color.Lerp(bgDefaultColor, blinkColor, Mathf.PingPong(t, 1f));
+            float urgency = 1f - Mathf.Clamp01(blinkRemainingTime / lowTimeThreshold);
+            float currentInterval = Mathf.Lerp(blinkInterval, blinkInterval * 0.4f, urgency);
+
+            t += Time.deltaTime / currentInterval;
+            float pingPong = Mathf.PingPong(t, 1f);
+
+            bg.color = Color.Lerp(bgDefaultColor, blinkColor, pingPong);
+            float pulseScale = Mathf.Lerp(0.08f, 0.18f, urgency);
+            timerText.rectTransform.localScale = Vector3.one * (1f + pulseScale * pingPong);
+
             yield return null;
         }
     }
