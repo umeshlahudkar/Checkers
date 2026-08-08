@@ -14,6 +14,44 @@ pass missed. Five have since been fixed (see "Second independent audit" near the
 document for what changed and why); one AI-search-quality gap (Russian) and one genuinely unresolved
 rules question (Turkish's mid-chain promotion timing, where sources disagree) remain open.
 
+A third pass — this one documentation-driven, expanding **all nine** sections to spell out their
+movement/capture/win/draw rules in full and checking each claim against the assets and code — turned
+up four further open **rule** discrepancies that neither audit caught, all still unfixed as of this
+writing. Five variants came back completely clean (Brazilian, Italian, Spanish, Canadian, Pool
+Checkers), and two of them strengthened existing findings: Brazilian and Pool Checkers each
+independently corroborated a fix the second audit had applied, while Italian's weakly-evidenced
+`deferCaptureRemoval` fix went uncorroborated but was shown to be behaviorally inert, so it no longer
+matters either way. A consolidated list of everything still open is at the end of this document.
+
+That pass also found a **cosmetic implementation defect** in board orientation: the
+`DarkSquareBottomRight` flag recolors squares but never moves the pieces, so it inverts Italian's
+board rather than correcting it, and cannot express Spanish's mirrored board at all. It affects no
+outcomes — a mirrored checkers board is an isomorphic game — but it means two variants render
+unlike themselves. See the cross-cutting notes for the trace.
+
+- **International never sets `firstMoveColor`, though White is supposed to move first.** Same class
+  of bug as the Brazilian and Turkish findings below.
+- **Russian never sets `firstMoveColor` either** — White moves first there too. Third instance of
+  that same bug class.
+- **Turkish sets `menCaptureBackward: 1`, but men should not capture backward** — per the FMJD's own
+  rules PDF among others.
+- **Russian sets `deferCaptureRemoval: 0`, but Russian draughts uses delayed removal** (the *Turkish
+  strike* rule). This one also partly undercuts the second audit's reasoning, which treated Russian's
+  immediate removal as a correct baseline while fixing Pool Checkers against it — see Russian's
+  caveats.
+
+That pass also re-opened the Turkish mid-chain promotion question in a new way: the FMJD PDF
+describes a *third* behavior (`EndsTurnOnPromotion`) that neither earlier audit considered, leaving
+the current setting the least-supported of three candidates. And it confirmed one *non*-issue worth
+recording so it isn't re-flagged later: American's immediate-removal setting is behaviorally
+identical to deferred removal for that variant, for reasons given in its section.
+
+A cross-cutting gap the same pass made explicit: **draw conditions are barely modeled anywhere.**
+Every variant relies on the single generic `noProgressMoveLimit` counter. Draw by mutual agreement
+and draw by threefold repetition are absent engine-wide (no draw-offer path, no position history),
+as are all the variant-specific endgame draws — International's king-count rules and Turkish's
+1-vs-1 rule. See each variant's "Draw conditions" for specifics.
+
 Each variant is a `RuleSetSO` asset under `Assets/Script/Gameplay/RuleSets/`, selectable from the
 mode-selection screen's ruleset carousel. The engine that reads these assets lives mainly in
 `MoveGenerator.cs` (live gameplay) and its pure-data mirror `BoardState.cs` (used by the bot's
@@ -26,95 +64,398 @@ field values.
 |---|---|---|---|---|---|---|---|---|---|
 | American | 8×8 | 12 | Diagonal | No | No | No | — | Ends turn | Immediate |
 | International | 10×10 | 20 | Diagonal | Yes | Yes | Yes | — | Deferred | No-removal |
-| Russian | 8×8 | 12 | Diagonal | Yes | Yes | No | — | Continue as King | Immediate |
+| Russian | 8×8 | 12 | Diagonal | Yes | Yes | No | — | Continue as King | Immediate‡ |
 | Brazilian | 8×8 | 12 | Diagonal | Yes | Yes | Yes | — | Deferred | No-removal |
 | Italian | 8×8 | 12 | Diagonal | No | No | Yes | King mover → Most Kings → First King soonest | Ends turn | No-removal |
 | Spanish | 8×8 | 12 | Diagonal | Yes | No | Yes | Most Kings captured | Deferred | No-removal |
 | Canadian | 12×12 | 30 | Diagonal | Yes | Yes | Yes | — | Deferred | No-removal |
 | Pool Checkers | 8×8 | 12 | Diagonal | Yes | Yes | No | — | Deferred | No-removal |
-| Turkish (Dama) | 8×8 | 16 | Orthogonal | Yes | Yes | Yes | — | Deferred§ | Immediate |
+| Turkish (Dama) | 8×8 | 16 | Orthogonal | Yes | Yes‡ | Yes | — | Deferred§ | Immediate |
 
 "Deferred" promotion = a piece that reaches the back row mid-capture, with a further legal capture
 still available, keeps playing as a man and only crowns once the chain truly ends there.
 "No-removal" = captured pieces stay on the board (blocking, not recapturable) until the whole
 capture turn finishes, rather than disappearing the instant they're jumped.
 
+This table describes **what the engine currently does**, which is not always what the variant's
+published rules say — see each section's caveats.
+
 § — flagged by the second independent audit as genuinely unresolved (sources disagree on Turkish's
-promotion timing). See "Second independent audit" near the end of this document for specifics and
-for the five findings from that audit that have since been fixed (no longer marked here).
+promotion timing), and since widened to a three-way split by a later documentation pass. See
+"Second independent audit" near the end of this document for specifics and for the five findings
+from that audit that have since been fixed (no longer marked here).
+
+‡ — believed **wrong**, open and unfixed; see the relevant variant's caveats. Turkish men should not
+capture backward, and Russian should use delayed (not immediate) removal.
 
 ---
 
 ## American Checkers (English Draughts)
 
-- 8×8 board, 32 dark squares only, 12 pieces/side on the first 3 rows.
-- Men move and capture diagonally forward only; kings move/capture one square, forward or backward
-  (no flying).
-- Capturing is mandatory whenever available, but there's no "longest sequence" requirement — any
-  legal capture may be played.
-- A piece that reaches the back row mid-capture crowns immediately and its turn ends right there —
-  it can't use new king powers (e.g. capturing backward) until the following turn.
-- Win by elimination or by leaving the opponent with no legal moves.
+Also known as **Straight Checkers** (North America, to distinguish it from Pool Checkers and the
+unrelated Chinese Checkers), **English Draughts** (UK), **Dams** (historical Scots), and
+**Dama/Dames/Damas** in continental Europe. "Checkers" names the checkered board; "draughts" comes
+from the old verb meaning to draw/move a piece. Every one of those names refers to this same
+variant.
+
+### Board and setup
+
+- 8×8 board = 64 squares, but play happens **only on the 32 dark squares** — a piece never occupies
+  or crosses a light square.
+- The board is oriented so each player has a dark square in their nearest bottom-left corner.
+  (Engine default; American does not set `DarkSquareBottomRight`, unlike Italian.)
+- 12 pieces per side, on the dark squares of the 3 rows closest to each player.
+- Only one piece per square; no stacking.
+
+### Movement
+
+- **Men** move one square diagonally forward into an empty dark square. Never backward, never
+  sideways.
+- **Kings** move one square diagonally *either* forward or backward. They do **not** fly — a king
+  covers exactly one square per step, same as a man, just in four directions instead of two.
+- One piece moves per turn, the sole exception being a piece continuing a multi-jump.
+
+### Capturing
+
+- **The jump.** If an enemy piece sits diagonally adjacent and the square directly beyond it (same
+  diagonal) is empty, you jump over it and land there.
+- **Mandatory.** If any jump exists anywhere on the board, a quiet move is illegal — you must jump.
+- **Free choice of jump.** When several pieces can jump, or one piece has several jump paths, you
+  pick freely. There is *no* longest-sequence requirement: taking fewer pieces is legal.
+  (`mustCaptureMaximum: 0`, so `MoveGenerator.ApplyMandatoryCaptureTiers` returns every candidate
+  untouched — none of the tiebreak tiers used by Italian/Spanish/Brazilian apply here.)
+- **Multi-jumps.** If the landing square offers another jump for that same piece, it must keep
+  jumping, repeating until no further jump is available to it.
+- **Men never capture backward** — an enemy piece sitting open on the diagonal behind a man is
+  simply safe from it (`menCaptureBackward: 0`).
+- **Kings capture in all four diagonal directions** and may freely mix forward and backward hops
+  inside one multi-jump chain.
+- **No piece is jumped twice** in a single turn.
+
+### Kings (promotion)
+
+- A man reaching any square of the opponent's back row (the King's Row) is crowned immediately.
+- **The crowning ends the turn on the spot.** Even if the newly-made king has a backward jump
+  available from that square, it cannot take it this turn — it must wait until its next turn to use
+  king powers. This is `midChainPromotionRule: 1` (`MidChainPromotionRule.EndsTurnOnPromotion`),
+  shared only with Italian.
+
+### Win conditions
+
+A player wins the moment either holds:
+
+1. **Total elimination** — the opponent has no pieces left on the board.
+2. **Total immobilization (blockade)** — the opponent still has pieces, but it is their turn and
+   they have zero legal moves; every piece is blocked by other pieces or by the board edge.
+
+Both funnel through the same check: `GameManager.StartTurn` calls `Player.CanPlay()` at the start of
+each turn and, when it returns false, ends the match with reason `"no legal moves left"` — an
+empty board is just the degenerate case of having no moves.
+
+### Draw conditions
+
+Real American checkers recognizes three draws; **the engine implements one of them.**
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree neither can force a win | **Not implemented** — no draw-offer UI or RPC exists |
+| 40-move / no-progress rule | 40 consecutive moves *by each player* with no capture and no man advanced | **Implemented, but counted differently** — see below |
+| Threefold repetition | Same position, same side to move, three times | **Not implemented** — no position history is kept |
+
+The one that does run is the no-progress rule: `AmericanRules.asset` sets `noProgressMoveLimit: 40`,
+and `GameManager.SwitchTurn` increments `movesWithoutProgress` on every turn that made no progress,
+declaring a draw with reason `"no progress for too long"` once it reaches the limit. Two deliberate
+differences from the textbook rule are worth knowing:
+
+- **It counts plies, not move-pairs.** 40 here means 40 individual turns total (20 per side), where
+  the traditional 40-move rule means 40 by *each* player. The engine's limit is therefore roughly
+  half as patient.
+- **"Progress" means a capture or a promotion, not a man advancing.** `Player.cs:304` passes
+  `hasDeleted || justPromoted` as the progress flag, so a plain man advance does not reset the
+  counter even though the classic rule treats it as progress. In practice this only bites in long
+  king-vs-king endings where men still exist but never move.
+
+A timed-out turn (turn-timer modes only) neither advances nor resets the counter — it is carried
+over unchanged, since no move was played.
 
 **Caveats:** none known. Fully audited; two real bugs were found and fixed during that audit
 (mandatory capture wasn't actually enforced over quiet moves, and mid-chain promotion was letting
 the newly-crowned piece keep capturing with backward powers in the same turn).
 
+One point where American's configuration *looks* like it contradicts the published rules but does
+not, traced during this pass: most descriptions of American checkers say captured pieces are lifted
+only once the whole jumping turn ends, whereas `AmericanRules.asset` sets `deferCaptureRemoval: 0`
+(immediate removal). The two are **behaviorally identical for this variant**, because American's
+kings don't fly. Every hop moves the mover exactly ±2 rows and ±2 columns, so `(row % 2, col % 2)`
+is invariant across an entire chain, while every captured square sits at ±1 on both axes — the
+opposite parity. A captured piece's square can therefore never be a landing square later in the same
+chain. Its only other possible role is as a later hop's midpoint, and there both settings refuse the
+jump anyway (immediate removal leaves nothing to jump over; deferred removal leaves a corpse that
+`MoveGenerator.SearchCaptures` skips via `middlePiece.IsCaptured`). The distinction only becomes
+observable with flying kings, which is exactly why it was a real bug for Pool Checkers (see the
+second independent audit below) and is a non-issue here.
+
 ## International Draughts
 
-- 10×10 board, 20 pieces/side on the first 4 rows.
-- Men move diagonally forward only, but capture in any diagonal direction (backward included).
-- Kings are flying kings: slide any distance along an empty diagonal, and can capture from a
-  distance, landing on any empty square behind the captured piece.
-- Mandatory maximum capture: if multiple capture paths exist, the one taking the most pieces must
-  be played, regardless of whether they're men or kings.
-- No-removal: a captured piece stays on the board until the whole turn finishes; you can't jump the
-  same piece twice.
-- A piece only becomes a king if it *finishes* its turn on the back row — jumping through the back
-  row mid-chain and landing elsewhere leaves it a man.
-- Win by elimination or blockade.
+Also called **International Checkers** or **Polish draughts** — the globally standardized variant,
+governed by the FMJD, and the one played competitively across Europe, Africa, and South America. Its
+rules diverge from American on almost every axis that matters: bigger board, backward captures for
+men, flying kings, forced-maximum captures, and end-of-turn removal.
 
-**Caveats:** none known. The no-removal live-play gap that used to be documented here was fixed: a
-captured piece is now only marked captured and shrunk to half-scale at hop time
-(`Piece.MarkCaptured`), keeping its square occupied — and therefore still blocking a flying king's
-path — until the whole capture turn ends, at which point every piece marked this turn is actually
-destroyed (`Player.DestroyPieceAt`, called a second time per piece from the end-of-chain sweep)
-right before the turn switches. See the cross-cutting notes below for detail shared with
-Brazilian/Spanish/Canadian.
+### Board and setup
+
+- 10×10 board = 100 squares, using only the **50 dark squares**.
+- Oriented so each player's nearest bottom-left corner square is dark. This is the engine's shared
+  default (`DarkSquareBottomRight` is unset here — only Italian flips it), so no special handling is
+  needed.
+- 20 pieces per side, filling the dark squares of the first 4 rows (4 rows × 5 dark squares = 20).
+- **White moves first** — the reverse of American. See the caveat below; this is *not* currently
+  modeled.
+
+### Movement
+
+- **Men** move one square diagonally forward only, never backward. (Backward *capturing* is a
+  separate matter — see below.)
+- **Flying kings** (`flyingKings: 1`): a king slides any number of empty squares along a diagonal,
+  forward or backward, like a chess bishop.
+
+### Capturing
+
+- **Mandatory**, as everywhere.
+- **Men capture backward.** A man may not *move* backward, but it may jump an adjacent enemy piece
+  in any of the four diagonal directions, landing on the empty square beyond
+  (`menCaptureBackward: 1`). This is one of the sharpest tactical differences from American.
+- **Flying king captures.** A king may jump an enemy piece from arbitrary distance provided every
+  square between them is empty, and it may land on **any** empty square beyond the captured piece,
+  not just the one immediately behind. Both halves are explicit in
+  `MoveGenerator.SearchCaptures`: a `flying` piece walks outward through `IsPassable` squares to
+  find its victim ([MoveGenerator.cs:343](Assets/Script/Gameplay/MoveGenerator.cs:343)), then the
+  landing loop keeps advancing past the victim, recursing from each landing square in turn, until it
+  hits an obstruction or the edge ([MoveGenerator.cs:373](Assets/Script/Gameplay/MoveGenerator.cs:373)).
+  Non-flying pieces `break` after the single landing square.
+- **Maximum capture rule (quantity only).** With several capture paths available, the one taking the
+  most pieces is compulsory — a 3-piece path forbids a 2-piece path *even if the shorter one takes
+  kings*. `mustCaptureMaximum: 1` with all three `prefer*` tiebreak flags at `0`, so
+  `ApplyMandatoryCaptureTiers` filters on count and then stops; quality is never consulted. (Compare
+  Italian, which layers three further tiers on top, and Spanish, which adds one.)
+- **No in-flight removal ("the Turk's stroke").** Captured pieces stay on the board until the whole
+  turn completes: they still block squares, and the same piece can never be jumped twice
+  (`deferCaptureRemoval: 1`). Because kings fly here, this is load-bearing rather than cosmetic — a
+  corpse left standing can block a king's ray for the rest of the turn, which is precisely the
+  tactical point of the rule.
+
+### Kings (promotion)
+
+- A man crowns **only if it finishes its turn** on the opponent's back row. Passing *through* the
+  back row during a multi-jump and landing elsewhere leaves it a man
+  (`midChainPromotionRule: 0` = `MidChainPromotionRule.DeferUntilChainEnds`).
+- A piece that lands on the back row with a further legal capture still available must play that
+  capture, as a man, and only crowns if the chain genuinely ends there.
+
+### Win conditions
+
+1. **Total elimination** — the opponent has no pieces left.
+2. **Total immobilization** — it's the opponent's turn and they have no legal move.
+
+Same single code path as every other variant: `Player.CanPlay()` checked from
+`GameManager.StartTurn`, ending the match with reason `"no legal moves left"`.
+
+### Draw conditions
+
+International's official draw rules are the most elaborate of any variant here, and **none of them
+are implemented as specified.**
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Threefold repetition | Same position, same side to move, three times | **Not implemented** — no position history kept |
+| 3 kings vs 1 king | Draw after 16 moves if no win is forced | **Not implemented** — no endgame material tracking |
+| 2 kings, or king + man, vs 1 king | Draw after 5 moves | **Not implemented** — same |
+
+What runs instead is the engine's single generic no-progress rule, tuned tighter for this variant:
+`InternationalRules.asset` sets `noProgressMoveLimit: 25` (against American's 40), so a draw is
+declared after 25 consecutive turns without a capture or a promotion. It is a rough stand-in for the
+material-specific endgame limits above rather than an implementation of them — the two king-count
+rules in particular would need piece-composition tracking that doesn't exist anywhere in the
+codebase. As with American, the counter runs in plies rather than move-pairs and treats only
+captures and promotions as progress ([Player.cs:304](Assets/Script/Gameplay/Player.cs:304)).
+
+**Caveats:** one open discrepancy, plus one previously-documented gap that is fixed.
+
+- **`firstMoveColor` is unset; it should be `White`.** Found while documenting the rules above, not
+  by either earlier audit — `InternationalRules.asset` has no `firstMoveColor` line at all, so it
+  falls back to `PieceType.None` and `GameManager.DetermineFirstTurnPlayer` simply hands the first
+  turn to player 1 regardless of color. FMJD Annex 1 and the general rule descriptions agree White
+  opens in international draughts. This is the exact same class of bug the second independent audit
+  found and fixed for Brazilian and Turkish — International was assumed to be in the "doesn't care"
+  group at that time and was never rechecked. Since piece color is player-selectable in offline
+  modes, a player who picks Black currently still moves first. The fix is the same one-liner applied
+  to the five sibling assets (`firstMoveColor: 1`); it has **not** been applied here, since this pass
+  was scoped to documentation.
+- ~~**No-removal live-play gap**~~ — **Fixed.** A captured piece is now only marked and shrunk to
+  half-scale at hop time (`Piece.MarkCaptured`), keeping its square occupied — and therefore still
+  blocking a flying king's path — until the whole capture turn ends, at which point every piece
+  marked this turn is actually destroyed (`Player.DestroyPieceAt`, called a second time per piece
+  from the end-of-chain sweep) right before the turn switches. See the cross-cutting notes below for
+  detail shared with Brazilian/Spanish/Canadian.
 
 ## Russian Checkers (Shashki)
 
-- 8×8 board, 12 pieces/side on the first 3 rows.
-- Men move diagonally forward only, but capture in any diagonal direction (backward included).
-- Flying kings, same as International.
-- Capturing is mandatory, but *not* maximum — any legal capture path may be chosen freely.
-- Captured pieces are removed from the board immediately as they're jumped, which can open up new
-  paths mid-turn.
-- A piece that reaches the back row mid-capture crowns *immediately* and must continue capturing
-  the same turn using its new king powers (most notably: a king's long-range flying capture, which
-  a mere man never had — Russian men already capture backward, so that isn't the "new power" here).
-- Win by elimination or blockade.
+**Shashki** (русские шашки) — American's compact 8×8 footprint married to International's long-range
+mechanics, minus the maximum-capture constraint. Its signature is mid-turn promotion: a piece can
+change what it *is* partway through a single move.
 
-**Caveats:** live-play mechanics confirmed correct. One AI-quality-only gap found in the second
-independent audit (see that section near the end) — the bot's minimax search never models mid-chain
-promotion, so a piece that would crown partway through a hypothetical search line is still evaluated
-with man-only movement for the rest of that search. Doesn't produce illegal moves (live execution
-crowns for real, hop-by-hop, independent of the search), just makes the bot's search slightly blind
-to king-power lines that are specific to Russian's `ContinueAsKing` rule.
+### Board and setup
+
+- 8×8 board, 32 dark squares only, 12 pieces per side on the nearest 3 rows.
+- Oriented with a dark square in each player's nearest bottom-left corner — the engine's shared
+  default, so no flag needed.
+- **White moves first**, the reverse of American. See the caveats — not currently modeled.
+
+### Movement
+
+- **Men** move one square diagonally forward only; never backward, never sideways.
+- **Flying kings** (`flyingKings: 1`): a crowned piece (*damka*) slides any number of empty squares
+  along a diagonal in either direction, like a chess bishop.
+
+### Capturing
+
+- **Mandatory but not maximum.** Capture is compulsory, but among available paths you choose freely —
+  there is no obligation to take the longest line (`mustCaptureMaximum: 0`, so
+  `ApplyMandatoryCaptureTiers` returns every candidate untouched). This is the sharpest divergence
+  from International, which shares nearly everything else.
+- **Men capture backward** (`menCaptureBackward: 1`) — a man may not *move* backward, but may jump
+  in any diagonal direction.
+- **Long-range king jumps:** a king glides across empty squares to reach a distant victim and may
+  land on any empty square beyond it.
+- **Mid-jump instant promotion.** A man landing on the back row mid-chain crowns *immediately* and
+  must keep capturing that same turn with its new king powers
+  (`midChainPromotionRule: 2` = `MidChainPromotionRule.ContinueAsKing` — the only ruleset here that
+  uses it). The genuinely new power is the king's long-range flying capture; backward capture isn't
+  it, since Russian men already had that.
+- **Removal timing:** the engine removes captured pieces immediately; published rules say they stay
+  until the turn ends. See the caveats — this is an open discrepancy.
+
+### Win conditions
+
+1. **Total elimination** — all 12 enemy pieces captured.
+2. **Total immobilization** — the opponent has zero legal moves on their turn.
+
+Same shared path as every variant: `Player.CanPlay()` from `GameManager.StartTurn`, ending with
+reason `"no legal moves left"`.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| 25-move rule | 25 consecutive moves using only kings, no capture and no man advanced | **Approximated** — generic counter at `noProgressMoveLimit: 30` |
+| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+
+The generic counter is a loose stand-in rather than the real rule: it is set to 30 (not 25), counts
+plies rather than move-pairs, treats captures and promotions as the only progress
+([Player.cs:304](Assets/Script/Gameplay/Player.cs:304)), and — unlike the published rule — never
+checks the "using only kings" precondition, so it can fire in positions where the real 25-move rule
+would not apply at all.
+
+**Caveats:** two open discrepancies found by a later documentation pass, plus the previously-known
+AI-quality gap.
+
+- **Open — `deferCaptureRemoval` should probably be `1`, not `0`.** The asset configures immediate
+  removal, but multiple sources describe Russian draughts as using delayed removal: jumped pieces
+  stay on the board until the whole turn completes, and the same piece can never be jumped twice.
+  This is the well-known *Turkish strike* (турецкий удар) situation, where a flying king's path stays
+  blocked by a piece it already captured earlier in the same chain. Because Russian has flying kings,
+  the difference is behaviorally real — exactly the reasoning the second independent audit used to
+  fix Pool Checkers. **This finding partly undercuts that audit's premise:** it justified Pool
+  Checkers' old setting as "matching Russian" and corrected only Pool Checkers, treating Russian's
+  immediate removal as the correct baseline. If Russian is deferred too, that baseline was wrong and
+  Pool Checkers happened to get the right fix for a partly-wrong reason. Not applied here — and worth
+  noting it would be the first pairing of `ContinueAsKing` with `deferCaptureRemoval: 1` anywhere in
+  the project, a combination nothing has exercised yet, so it deserves actual play-testing rather
+  than a blind flag flip.
+- **Open — `firstMoveColor` is unset; it should be `White`.** `RussianRules.asset` has no
+  `firstMoveColor` line, so it falls back to `PieceType.None` and player 1 opens regardless of color.
+  Sources agree White moves first in Russian draughts. Third instance of this same bug class, after
+  Brazilian and Turkish (both fixed) and International (open). Since color is player-selectable
+  offline, a player who picks Black currently still moves first.
+- **Known — the bot's minimax search never models mid-chain promotion.** From the second independent
+  audit: `AIRules` has no `MidChainPromotionRule` field, so a piece that would crown partway through
+  a hypothetical search line keeps man-only movement for the rest of that search. Doesn't produce
+  illegal moves — live execution crowns for real, hop-by-hop, independent of the search — but makes
+  the bot slightly blind to king-power lines specific to Russian's `ContinueAsKing` rule. This is the
+  variant where that gap costs the most, since `ContinueAsKing` is unique to it.
 
 ## Brazilian Checkers
 
-- Effectively International draughts rules played on an 8×8 board (12 pieces/side, 3 rows) instead
-  of 10×10.
-- Same movement/capture/flying-king/no-removal/deferred-promotion rules as International.
-- Mandatory maximum capture, with no further tiebreak beyond quantity: if multiple paths tie on the
-  number of pieces taken, any of them may be played, regardless of whether the pieces are men or
-  Kings.
-- Win by elimination or blockade.
+Natively **Jogo de Damas** — International draughts' rulebook on American's 8×8 board. Structurally
+it is International scaled down, not a variant with rules of its own: every mechanic below is
+inherited, and the only differences from the 10×10 game are board size, piece count, and the draw
+counter.
 
-**Caveats:** none known. The no-removal live-play fix described under International applies here
-too (inherited, not variant-specific). The second independent audit (see that section near the end)
-found and fixed two issues not caught by the original per-variant pass:
+### Board and setup
+
+- 8×8 board, 32 dark squares only, 12 pieces per side on the nearest 3 rows.
+- Oriented with a dark square in each player's nearest bottom-left corner — the engine's shared
+  default.
+- **White moves first** (`firstMoveColor: 1`, fixed by the second independent audit).
+
+### Movement
+
+- **Men** move one square diagonally forward only, never backward.
+- **Flying kings** (`flyingKings: 1`): slide any number of empty squares along a diagonal in either
+  direction, like a chess bishop.
+
+### Capturing
+
+- **Mandatory**, always.
+- **Men capture backward** (`menCaptureBackward: 1`) — forward-only movement, all-directions
+  capture.
+- **Long-range king jumps**, landing on any empty square beyond the victim — the same flying
+  machinery described under International.
+- **Maximum capture, quantity only.** The longest path is compulsory, and *nothing else* breaks
+  ties. Worth spelling out, because this collapses two separate tiers the engine supports and
+  Brazilian deliberately doesn't use:
+  - A king's sequence does **not** outrank a man's sequence of equal length — either may be played
+    (`preferKingMover: 0`).
+  - A path capturing more *kings* does **not** outrank an equal-length path capturing fewer
+    (`preferKingCaptures: 0`). Raw piece count is the only criterion.
+
+  Both flags are off, so `ApplyMandatoryCaptureTiers` filters on count and stops. Contrast Italian,
+  which uses all four tiers, and Spanish, which uses the second of these two.
+- **Delayed removal** (`deferCaptureRemoval: 1`): jumped pieces stay on the board, still blocking
+  their squares, until the turn completes; the same piece can never be jumped twice. Load-bearing
+  here, as in International, because kings fly.
+
+### Kings (promotion)
+
+- A man crowns **only if it finishes its turn** on the opponent's back row. Jumping through the back
+  row mid-chain and landing elsewhere leaves it a man
+  (`midChainPromotionRule: 0` = `MidChainPromotionRule.DeferUntilChainEnds`).
+
+### Win conditions
+
+1. **Total elimination** — all 12 enemy pieces captured.
+2. **Total immobilization** — the opponent has zero legal moves on their turn.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| 20-move rule | 20 consecutive moves using only kings, no capture and no man advanced | **Approximated** — generic counter at `noProgressMoveLimit: 25` |
+| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+
+Same limitations as everywhere else: the counter is set to 25 rather than 20, counts plies rather
+than move-pairs, and never checks the "using only kings" precondition
+([Player.cs:304](Assets/Script/Gameplay/Player.cs:304)).
+
+**Caveats:** none known — and unlike American/International/Turkish/Russian, the documentation pass
+that expanded this section found **no new discrepancies**: every field matches the published rules,
+including both mandatory-capture tiers being correctly disabled. The no-removal live-play fix
+described under International applies here too (inherited, not variant-specific). The second
+independent audit (see that section near the end) found and fixed two issues not caught by the
+original per-variant pass:
 - `firstMoveColor` was unset — real Brazilian draughts has White (the light pieces) always moving
   first, same class of rule as Italian/Spanish/Canadian's fix, just missed for this variant.
   `BrazilianRules.asset` now sets `firstMoveColor: 1` (White).
@@ -126,26 +467,98 @@ found and fixed two issues not caught by the original per-variant pass:
 
 ## Italian Checkers (Dama Italiana)
 
-- 8×8 board, 32 dark squares, 12 pieces/side on the first 3 rows.
-- Men move diagonally forward only, and can never capture backward.
-- Kings do **not** fly — they move/capture exactly one square diagonally, forward or backward.
-- **Immunity:** a man can never capture a King at all; only an opposing King may capture a King.
-  This is checked both in actual capture-legality and in the AI's "is this piece safe" heuristic
-  (an enemy man poses no threat to a King).
-- Capturing is mandatory, with a strict 4-tier tiebreak cascade applied in order whenever multiple
-  paths are available:
-  1. **Maximum Quantity** — the path capturing the most pieces.
-  2. **King Dominance** — among paths tied on quantity, a King's capture sequence beats a man's.
-  3. **Target Kings** — among what's left, whichever captures the most Kings.
-  4. **First Blood** — among what's still left, whichever captures its first King soonest in the
-     sequence.
-- No-removal: a captured piece stays on the board until the whole turn finishes; you can't jump the
-  same piece twice.
-- A piece that reaches the back row mid-capture crowns immediately and its turn ends right there,
-  same as American.
-- Win by elimination or blockade.
+**Dama Italiana** — American's board and short-range kings, plus the most formalized capture
+hierarchy of any variant here. Its two signatures are the king immunity shield (men cannot touch
+kings at all) and a four-law priority cascade that removes almost all player choice from capturing.
 
-**Caveats:** none known. All three open items below were fixed:
+### Board and setup
+
+- 8×8 board, 32 dark squares only, 12 pieces per side on the nearest 3 rows.
+- **The cantone (bottom-right rule):** the board is rotated so each player has a dark square in
+  their nearest **bottom-right** corner — the opposite of American — and that dark corner is a
+  playing square. This is the only ruleset setting `darkSquareBottomRight: 1`, **and that flag does
+  not correctly express the rule**: it recolors squares without moving the pieces, so Italian
+  currently renders with its pieces on the light-colored squares and a dark *unplayable* corner —
+  the inverse of the intended look. See the cross-cutting notes for the full trace. Cosmetic only:
+  it does not affect legality, since a mirrored checkers board is an isomorphic game.
+- **White always moves first** (`firstMoveColor: 1`).
+
+### Movement
+
+- **Men (*pedine*)** move one square diagonally forward only; never backward.
+- **Short-range kings** (`flyingKings: 0`) — a *dama* moves and captures exactly one square
+  diagonally, forward or backward. No sliding, unlike International/Russian/Brazilian.
+
+### Capturing (the hierarchy)
+
+Capturing is mandatory, and men capture **diagonally forward only** (`menCaptureBackward: 0`). When
+several paths exist, four laws are applied in strict order, each narrowing the survivors from the
+last — implemented as the tier cascade in `MoveGenerator.ApplyMandatoryCaptureTiers`:
+
+| # | Law | Field |
+|---|---|---|
+| 1 | **Maximum Quantity** — take the path capturing the most pieces | `mustCaptureMaximum: 1` |
+| 2 | **King Execution** — among ties, a king's sequence must be played over a man's | `preferKingMover: 1` |
+| 3 | **Target Quality** — among what remains, take the path capturing the most kings | `preferKingCaptures: 1` |
+| 4 | **First King Eaten** — among what still remains, take the path capturing a king earliest | `preferEarlierKingCapture: 1` |
+
+Italian is the only ruleset that enables all four. (Spanish uses laws 1 and 3; Brazilian and
+International use law 1 alone.)
+
+- **The King Immunity Shield** (`menCannotCaptureKings: 1`): a man can never jump or capture a king
+  under any circumstance — only a king may capture a king. Enforced both in capture legality
+  ([MoveGenerator.cs:362](Assets/Script/Gameplay/MoveGenerator.cs:362)) and in the AI's "is this
+  piece safe" heuristic, so the bot correctly treats an enemy man as no threat to its kings.
+- **Delayed removal** (`deferCaptureRemoval: 1`): captured pieces stay on the board until the turn
+  ends. See the caveats — this setting is behaviorally inert for Italian.
+
+### Kings (promotion)
+
+- A man reaching the opponent's back row crowns immediately, and **its turn ends right there**
+  (`midChainPromotionRule: 1` = `MidChainPromotionRule.EndsTurnOnPromotion`) — same as American, and
+  shared only with it.
+
+### Win conditions
+
+1. **Total elimination** — all 12 enemy pieces captured.
+2. **Total immobilization** — the opponent has no legal move on their turn.
+
+### Draw conditions
+
+Italian's published draw rules are unusual here in that **neither is a move counter**:
+
+| Rule | Real game | This engine |
+|---|---|---|
+| No forceable win | Remaining material means neither side can engineer a finishing sequence | **Not implemented** — requires endgame theory, not a counter |
+| Mutual agreement | Both players agree the position is unbreakable | **Not implemented** — no draw-offer UI or RPC |
+
+This makes Italian the one variant where the engine's draw behavior is not merely an approximation
+but an *addition*: `noProgressMoveLimit: 40` (the highest of any ruleset, tied with American) will
+declare a draw after 40 no-progress plies even though nothing in Italian's own rules calls for a
+move limit. In practice it is a reasonable safety valve — short-range kings plus no-removal make
+endless shuffling entirely possible, and the counter is a crude proxy for exactly the "no forceable
+win" judgment the real rules ask a human to make — but it can fire in positions where the published
+rules would let play continue.
+
+**Caveats:** none known, and the documentation pass that expanded this section found no new
+discrepancies — every field matches the published rules, including all four priority laws in the
+correct order. Two notes on the *evidence* behind existing settings, though:
+
+- **`deferCaptureRemoval: 1` is behaviorally inert here** — and it remains single-sourced. The
+  second independent audit set it on one source (mindsports.nl) and filed it under "Likely" rather
+  than "Confirmed"; nothing in this pass corroborated it either way, since the rule description used
+  did not mention removal timing at all. That matters less than it might, because the parity
+  argument given in American's section applies verbatim to Italian: with non-flying kings every hop
+  moves the piece exactly ±2 rows and ±2 columns, so `(row % 2, col % 2)` is invariant across the
+  chain while captured squares sit at the opposite parity — a captured square can never be a landing
+  square, and as a later hop's midpoint both settings refuse the jump anyway. **Immediate and
+  deferred removal produce identical legal moves for Italian.** The low-confidence fix therefore
+  carries no risk, and equally no benefit; it is not worth further sourcing effort.
+- **`midChainPromotionRule: 1` was likewise not re-confirmed** by this pass — the description used
+  was silent on mid-chain promotion. It dates from the original per-variant audit and stands
+  unchallenged, not re-verified.
+
+All three items below were found and fixed by earlier passes:
 - **Board orientation ("cantone").** `RuleSetSO`/`IRuleSet` now expose a `DarkSquareBottomRight`
   flag (`ItalianRules.asset` is the only ruleset with it set); `BoardGenerator.GenerateBoard`
   flips every square's color when it's set, landing a dark square in the bottom-right corner
@@ -163,95 +576,347 @@ found and fixed two issues not caught by the original per-variant pass:
 
 ## Spanish Checkers (Damas Españolas)
 
-- 8×8 board, 32 dark squares, 12 pieces/side on the first 3 rows.
-- Men move diagonally forward only, and cannot move or capture backward under any circumstance.
-- Flying kings, same as International.
-- Mandatory maximum capture, with a "most Kings captured" tiebreak when tied on quantity (same
-  mechanism as Brazilian, but without Italian's extra King-mover/First-Blood tiers).
-- No-removal, same as International: captured pieces stay on the board until the turn ends.
-- A piece only becomes a king if it finishes its turn on the back row — jumping through mid-chain
-  doesn't promote it.
-- Win by elimination or blockade.
+**Dama Española** — traditionally played across the Iberian Peninsula, North Africa, and parts of
+South America. Same 12-piece 8×8 footprint as American, but with flying kings, a mirrored board, and
+men strictly forbidden from capturing backward.
 
-**Caveats:** none known. The no-removal live-play gap is fixed (see under International), and
-"White always moves first" is fixed (see under Italian) — `SpanishRules.asset` sets
-`FirstMoveColor: White`. Its own bottom-right corner convention is *white*, which was already the
-engine's shared default, so `DarkSquareBottomRight` didn't need to be set here.
+### Board and setup
+
+- 8×8 board, 32 playing squares, 12 pieces per side on the nearest 3 rows.
+- **The mirrored board:** Spanish is conventionally described as playing on the *light* squares, with
+  a light square in each player's nearest **bottom-right** corner — the mirror of American's
+  arrangement. This is **not modeled**; see the caveats. It has no effect on outcomes (a left-right
+  mirror of a checkers position is an isomorphic game), but the board does not look the way the
+  convention describes.
+- **White always moves first** (`firstMoveColor: 1`).
+
+### Movement
+
+- **Men** move one square diagonally forward only; never backward.
+- **Flying kings** (`flyingKings: 1`): slide any number of empty squares along a diagonal in either
+  direction, like a chess bishop.
+
+### Capturing
+
+- **Mandatory**, always.
+- **No backward capture by men** (`menCaptureBackward: 0`) — unlike Russian/International/Brazilian,
+  a Spanish man jumps diagonally forward only. Together with flying kings, this is what gives the
+  variant its character: weak men, dominant kings.
+- **Long-range king jumps**, landing on any empty square beyond the victim.
+- **Two-law priority cascade**, applied in order:
+  1. **Maximum Quantity** — take the path capturing the most pieces (`mustCaptureMaximum: 1`).
+  2. **Quality tiebreak** — among equal-length paths, take the one capturing the most kings
+     (`preferKingCaptures: 1`).
+
+  Spanish sits between Brazilian (law 1 only) and Italian (all four): `preferKingMover` and
+  `preferEarlierKingCapture` are both `0`, so a king's sequence does not outrank a man's, and
+  *when* a king is taken in the sequence is irrelevant.
+- **Delayed removal** (`deferCaptureRemoval: 1`): captured pieces stay on the board, still blocking
+  their squares, until the turn ends. Load-bearing here, as in International, because kings fly.
+
+### Kings (promotion)
+
+- A man crowns **only if it finishes its turn** on the opponent's back row; jumping through mid-chain
+  and landing elsewhere leaves it a man
+  (`midChainPromotionRule: 0` = `MidChainPromotionRule.DeferUntilChainEnds`).
+
+### Win conditions
+
+1. **Total elimination** — all 12 enemy pieces captured.
+2. **Total immobilization** — the opponent has zero legal moves on their turn.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+
+As with Italian, the published rules used here list **no move-limit draw at all**, yet the engine
+applies `noProgressMoveLimit: 30`. So Spanish's draw behavior is an *addition* rather than an
+approximation — a pragmatic safety valve against endless king shuffling, but capable of ending a
+game the real rules would let continue.
+
+**Caveats:** every *rule* field matches the published rules — the documentation pass found no
+discrepancy in movement, capturing, promotion, or win conditions. The board-orientation modeling,
+however, is weaker than this document previously claimed:
+
+- **The mirrored board is not modeled, and the earlier reasoning for that was wrong.** This document
+  used to state that Spanish's "bottom-right corner convention is *white*, which was already the
+  engine's shared default, so `DarkSquareBottomRight` didn't need to be set." That matched on the
+  *color word* without checking whether that white square is one you play on. The engine's default
+  puts a light square in the bottom-right corner that is **not** a playing square; Spanish's
+  convention wants a light square there that **is**. Those are opposite arrangements that happen to
+  share a color name.
+- **Consequence:** none for gameplay. Checkers is symmetric under left-right reflection, and
+  mirroring maps one square-parity class onto the other, so the mirrored and unmirrored boards are
+  isomorphic — identical game trees under relabeling. The cost is purely visual/notational: the
+  board doesn't match the convention players of this variant expect.
+- **The flag that would express this is itself broken** — see the cross-cutting notes below. Setting
+  `DarkSquareBottomRight` would not actually fix Spanish, because that flag only recolors squares
+  and never moves the pieces.
+
+The no-removal live-play gap is fixed (see under International), and "White always moves first" is
+fixed (see under Italian).
 
 ## Canadian Checkers (Grand jeu de dames)
 
-- 12×12 board, 72 dark squares, 30 pieces/side on the first 5 rows from each edge, leaving the
-  middle two rows empty.
-- Men move diagonally forward only, but capture in any diagonal direction (backward included).
-- Flying kings, mandatory maximum capture (no further tiebreak beyond quantity), no-removal,
-  deferred promotion — otherwise identical in mechanics to International, just scaled up to a much
-  larger board.
-- Win by elimination or blockade.
+**Grand jeu de dames** — International draughts' rulebook scaled up to 12×12, developed by French
+settlers in Canada and still played in Quebec. Like Brazilian, it is International with the board
+resized rather than a variant with mechanics of its own; unlike Brazilian, it scales *up*.
 
-**Caveats:** none known. The no-removal live-play gap is fixed (see under International), and
-"White always moves first" is fixed (see under Italian) — `CanadianRules.asset` sets
+### Board and setup
+
+- 12×12 board = 144 squares, using only the **72 dark squares**.
+- Oriented with a dark square in each player's nearest **bottom-left** corner — which the engine
+  gets right by default. Worth stating explicitly given the orientation defect affecting
+  Italian/Spanish: for a 12×12 board, the bottom-left square (11,0) has parity
+  `(11 + 0) % 2 = 1`, so it is both a playing square and rendered dark, exactly as the convention
+  requires. Canadian needs no orientation flag and is unaffected by that defect.
+- 30 pieces per side on the nearest 5 rows (5 rows × 6 dark squares per 12-wide row = 30), leaving
+  the middle two rows empty at setup.
+- **White moves first** (`firstMoveColor: 1`), matching International.
+
+### Movement
+
+- **Men** move one square diagonally forward only, never backward.
+- **Flying kings** (`flyingKings: 1`): slide any number of empty squares along a diagonal in either
+  direction, like a chess bishop.
+
+### Capturing
+
+- **Mandatory**, always.
+- **Men capture backward** (`menCaptureBackward: 1`) — forward-only movement, all-directions
+  capture.
+- **Long-range king jumps**, landing on any empty square beyond the victim.
+- **Maximum capture, quantity only** (`mustCaptureMaximum: 1`, all three `prefer*` tiebreak flags at
+  `0`) — the longest path is compulsory and nothing else breaks ties, identical to International and
+  Brazilian.
+- **Delayed removal** (`deferCaptureRemoval: 1`): jumped pieces stay on the board, still blocking
+  their squares, until the turn completes; the same piece can never be jumped twice. Load-bearing,
+  since kings fly.
+
+### Kings (promotion)
+
+- A man crowns **only if it finishes its turn** on the opponent's back row; jumping through the back
+  row mid-chain and landing elsewhere leaves it a man
+  (`midChainPromotionRule: 0` = `MidChainPromotionRule.DeferUntilChainEnds`).
+
+### Win conditions
+
+1. **Total elimination** — all 30 enemy pieces captured.
+2. **Total immobilization** — the opponent has zero legal moves on their turn.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+
+The description used here lists no move-limit rule, yet the engine applies
+`noProgressMoveLimit: 35` — the third variant (after Italian and Spanish) where the engine's draw
+behavior is an *addition* rather than an approximation. Note also that as International's scaled-up
+sibling, Canadian most likely inherits International's material-specific endgame draws (the
+king-count rules) even though the description used doesn't mention them; those are unimplemented
+too, for the same reason given under International — they need piece-composition tracking that
+doesn't exist anywhere in the codebase.
+
+**Caveats:** none known, and the documentation pass that expanded this section found **no
+discrepancies of any kind** — every rule field matches, and unlike Italian and Spanish, its board
+orientation is correct as shipped. The no-removal live-play gap is fixed (see under International),
+and "White always moves first" is fixed (see under Italian) — `CanadianRules.asset` sets
 `FirstMoveColor: White`.
 
 ## Pool Checkers
 
-- 8×8 board, 32 dark squares, 12 pieces/side on the first 3 rows — same footprint as American.
-- Men move diagonally forward only, but capture in any diagonal direction (backward included).
-- Flying kings, same as International/Russian.
-- Capturing is mandatory, but *not* maximum — any legal capture path may be chosen freely (like
-  Russian).
-- No-removal: a captured piece stays on the board until the whole turn finishes; you can't jump the
-  same piece twice. (Originally implemented as immediate removal, matching Russian — corrected by
-  the second independent audit below; unlike Russian, in real Pool Checkers this is deferred.)
-- Unlike Russian, a piece that reaches the back row mid-capture with a further legal capture
-  available does **not** promote — it keeps playing as a man, only crowning if the chain truly ends
-  on the back row. (This is the one place Pool Checkers explicitly differs from Russian.)
-- Win by elimination or blockade.
+Historically popular in the American South. American's board and setup, but with International's
+flying kings and backward-capturing men grafted on — and then, unlike International or Brazilian, the
+maximum-capture rule thrown out entirely, giving the player free choice of capture path.
 
-**Caveats:** none known. "Black moves first" is fixed — `PoolCheckersRules.asset` sets
+### Board and setup
+
+- 8×8 board, 32 dark squares only, 12 pieces per side on the nearest 3 rows — identical footprint to
+  American.
+- Oriented with a dark square in each player's nearest bottom-left corner — the engine's default,
+  correct as shipped (same as American and Canadian; unaffected by the orientation defect that hits
+  Italian and Spanish).
+- **Black moves first**, matching American rather than the White-first continental variants.
+  `firstMoveColor: 2` — and `PieceType` is `None = 0, White = 1, Black = 2`
+  ([Piece.cs:231](Assets/Script/Gameplay/Piece.cs:231)), so `2` is indeed Black. This is the only
+  ruleset in the project that names Black.
+
+### Movement
+
+- **Men** move one square diagonally forward only, never backward.
+- **Flying kings** (`flyingKings: 1`): slide any number of empty squares along a diagonal in either
+  direction, like a chess bishop.
+
+### Capturing
+
+- **Mandatory but never maximum.** Capture is compulsory, but path choice is entirely free — a
+  1-piece capture may be played over an available 3-piece capture (`mustCaptureMaximum: 0`, with all
+  three `prefer*` tiebreak flags also `0`, so `ApplyMandatoryCaptureTiers` returns every candidate
+  untouched). Pool Checkers shares this only with American and Russian.
+- **Men capture backward** (`menCaptureBackward: 1`).
+- **Long-range king jumps**, landing on any empty square beyond the victim.
+- **Delayed removal** (`deferCaptureRemoval: 1`): jumped pieces stay on the board, still blocking
+  their squares, until the turn completes; the same piece can never be jumped twice. Load-bearing
+  here, since kings fly.
+
+### Kings (promotion)
+
+- A man crowns **only if it finishes its turn** on the back row; a piece landing there mid-chain with
+  a further legal capture keeps playing as a man
+  (`midChainPromotionRule: 0` = `MidChainPromotionRule.DeferUntilChainEnds`).
+- **This is now the sole mechanical difference from Russian.** Both share the 8×8 board, flying
+  kings, backward-capturing men, free capture choice, and — pending the open Russian fix — delayed
+  removal. Only the promotion rule genuinely separates them: Russian crowns mid-chain and continues
+  with king powers (`ContinueAsKing`); Pool Checkers does not crown until the chain ends.
+
+### Win conditions
+
+1. **Total elimination** — all 12 enemy pieces captured.
+2. **Total immobilization** — the opponent has zero legal moves on their turn.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+
+`noProgressMoveLimit: 30` applies regardless — the fourth variant (after Italian, Spanish, and
+Canadian) where the engine's draw behavior is an *addition* to the published rules rather than an
+approximation of them.
+
+**Caveats:** none known, and the documentation pass that expanded this section found no
+discrepancies — every field matches, including board orientation. That pass also **independently
+corroborated the second audit's `deferCaptureRemoval: 1` fix** (a fourth source agreeing captures are
+delayed here), and, taken together with the same pass's Russian finding, resolved how these two
+variants relate: both use delayed removal, so they agree rather than differ, and it is Russian's
+asset that is still wrong. See Russian's caveats.
+
+"Black moves first" is fixed — `PoolCheckersRules.asset` sets
 `FirstMoveColor: Black` (same mechanism as Italian/Spanish/Canadian's `White`, just the other
 color). The second independent audit (see that section near the end) also found and fixed a
 removal-timing bug: `deferCaptureRemoval` was `0` (immediate removal), but three independent
 sources (Wikipedia, boardgamecentral.com, gambiter.com) agree captured pieces "are not removed
 until all jumps are completed" — real Pool Checkers is no-removal, despite otherwise resembling
 Russian. `PoolCheckersRules.asset` now sets `deferCaptureRemoval: 1`, and its in-app rules text was
-updated to match.
+updated to match. (A later documentation pass found the "despite otherwise resembling Russian"
+framing was probably backwards — Russian appears to use delayed removal as well, meaning the two
+variants agree and it's Russian's setting that's still wrong. The fix applied here was right
+regardless; only the stated reasoning was off. See Russian's caveats.)
 
 ## Turkish Checkers (Dama)
 
-- 8×8 board, but **all 64 squares are used**, not just the dark ones — color doesn't matter for
-  movement.
-- 16 pieces/side, filling the 2nd and 3rd rows from each player's edge; **the very back row (1st
-  row) is left empty** at setup.
-- **Orthogonal movement only** — no diagonals at all. Men move one square forward, left, or right
-  (never backward); they may *capture* in all four orthogonal directions including backward.
-- Captures are jumps over an adjacent enemy piece in a straight line (forward/left/right/backward
-  for capturing), landing in the empty square directly behind it.
-- **No 180-degree turn:** within a single multi-jump turn, a piece cannot immediately reverse
-  direction — hop N+1 can't be the exact opposite direction of hop N, since that would fly back
-  through the square it just left.
-- Mandatory maximum capture.
-- Captured pieces are removed immediately as they're jumped, which can open up new paths mid-turn.
-- The Dama (king) slides any number of empty squares in a straight line (forward/backward/
-  left/right, like a rook), and can fly across empty squares to jump a distant enemy piece, landing
-  on any empty square behind it.
-- A piece that reaches the back row mid-capture, with a further legal capture available, does not
-  promote yet — same deferred-promotion behavior as International/Pool Checkers, just orthogonal.
-- Win by elimination/blockade, **or instantly** if one player is reduced to exactly one regular
-  (non-king) piece while the other still has at least one Dama.
+Natively **Türk Daması**, or just **Dama**. The one variant here that abandons diagonal movement
+entirely: play runs along ranks and files (orthogonally) across **all 64 squares**, so square color
+is decorative rather than structural.
+
+### Board and setup
+
+- 8×8 board, **every square used**, not just the dark ones (`piecesOnAllSquares: 1`).
+- 16 pieces per side, in two full rows of 8 — the **2nd and 3rd rows** from each player's edge
+  (`pieceRowsPerSide: 2` with `leaveBackRowEmpty: 1`).
+- The **back row (King's Row) starts empty**, as do the two middle rows — four empty ranks in total
+  at setup.
+- **White moves first** (`firstMoveColor: 1`, fixed by the second independent audit).
+
+### Movement
+
+- **Orthogonal only** (`movementScheme: 1`) — no diagonals exist in this variant.
+- **Men** move exactly one square forward, left, or right. Never backward.
+- **The Dama (king)** slides any number of empty squares forward, backward, left, or right in a
+  straight line — a chess rook (`flyingKings: 1`).
+
+Both fall out of `MoveGenerator.GetMoveDirections`, which drops only the straight-backward direction
+for a non-king; under the orthogonal direction set that leaves forward plus both sideways
+([MoveGenerator.cs:52](Assets/Script/Gameplay/MoveGenerator.cs:52)).
+
+### Capturing
+
+- **Mandatory and maximum** — capture is compulsory, and among available paths the one taking the
+  most pieces must be played (`mustCaptureMaximum: 1`, no further tiebreak tiers).
+- **Jump mechanic:** hop orthogonally over an adjacent enemy piece into the empty square directly
+  beyond it.
+- **Long-range Dama captures:** a king glides across any number of empty squares to reach a distant
+  victim and may land on **any** empty square beyond it, same flying machinery International uses.
+- **Immediate removal ("sweep rule")** (`deferCaptureRemoval: 0`): captured pieces come off the
+  board the instant they're jumped, which genuinely changes the board mid-turn and can open fresh
+  squares that extend the same chain. Unlike American — where immediate vs. deferred removal is
+  provably equivalent — this matters here, because flying kings make vacated squares reachable.
+- **No 180-degree turns:** within one multi-jump, hop N+1 cannot be the exact reverse of hop N, since
+  that would send the piece straight back through the square it just left
+  (`forbidImmediateReversal: 1`, enforced at
+  [MoveGenerator.cs:332](Assets/Script/Gameplay/MoveGenerator.cs:332)).
+- **Men capturing backward:** the engine currently allows it; published rules say it should not.
+  See the caveats below — this is an open discrepancy.
+
+### Kings (promotion)
+
+- A man reaching the opponent's back row is promoted to a **Dama**, gaining rook-like movement.
+- **What happens mid-chain is the one genuinely unresolved question in this document.** The engine
+  uses `midChainPromotionRule: 0` (`DeferUntilChainEnds`): a man landing on the back row with a
+  further legal capture keeps playing as a man and only crowns if the chain ends there. Sources split
+  three ways on whether that is right — see the caveats below for the full breakdown.
+
+### Win conditions
+
+1. **Total elimination** — all 16 enemy pieces captured.
+2. **Total immobilization** — the opponent has no legal move on their turn.
+3. **Total dominance (*fish-tail* / *kedi köşesi*)** — reducing the opponent to a single regular man
+   while you still hold at least one Dama wins instantly, since a lone man can never escape a king.
+   This one is real and implemented: `singleManLosesToKing: 1`, checked every turn transition by
+   `GameManager.TryEndGameOnSingleManVsKing`, ending the match with reason
+   `"reduced to a single man against a Dama"`. It's the only variant here that sets the flag.
+
+### Draw conditions
+
+| Rule | Real game | This engine |
+|---|---|---|
+| Mutual agreement | Both players agree neither can force a win | **Not implemented** — no draw-offer UI or RPC |
+| 1 vs. 1 | Exactly one piece against one piece is an automatic draw | **Not implemented** — no piece-count draw check exists |
+
+As with every other variant, the only draw that can actually fire is the generic no-progress rule,
+here set to `noProgressMoveLimit: 30`. Note the asymmetry the missing 1-vs-1 rule creates: a lone man
+against a Dama ends instantly in a win (rule 3 above, implemented), but a Dama against a Dama —
+which should be an immediate draw — instead grinds on until the 30-turn no-progress counter expires.
 
 **Caveats:** this variant received the most correction passes in the original audit (setup bug,
 mandatory capture, removal timing, the 180°-turn rule, and the single-man-vs-Dama win condition were
-all found missing or wrong and then fixed) — but the second independent audit (see that section near
-the end) found that confidence was overstated:
+all found missing or wrong and then fixed), and the second independent audit still found that
+confidence overstated. A later documentation pass found more:
+
 - **Fixed:** `firstMoveColor` was unset, but three independent sources (Wikipedia, gambiter.com,
   mindsports.nl) agree White always moves first in Turkish draughts. Since piece color is
   player-selectable in offline modes, a player who picked Black used to still move first.
   `TurkishRules.asset` now sets `firstMoveColor: 1` (White).
-- **Still unresolved:** the mid-chain promotion rule above (`DeferUntilChainEnds`, matching
-  International/Pool Checkers) is contradicted by two of the three sources checked (which describe
-  Russian-style `ContinueAsKing` instead) and confirmed by only one (mindsports.nl, via a specific
-  worked example). Genuinely unresolved — sources disagree, and this isn't something a code trace
-  alone can settle. Left as-is.
+- **Open — `menCaptureBackward` should almost certainly be `0`, not `1`.** The asset currently lets a
+  man capture in all four orthogonal directions, and `GetCaptureDirections` duly returns the full
+  direction set for any man when the flag is on
+  ([MoveGenerator.cs:66](Assets/Script/Gameplay/MoveGenerator.cs:66)). But three sources — including
+  the **FMJD's own Turkish draughts rules PDF**, i.e. the governing body — state men capture forward
+  and sideways only, never backward. The fix is a one-liner (`menCaptureBackward: 0`), and the code
+  already does the right thing with it: `GetCaptureDirections` falls through to `GetMoveDirections`,
+  which for an orthogonal man yields exactly forward/left/right. Not applied, since this pass was
+  scoped to documentation; the in-app `longDescription` (which explicitly advertises "capture in all
+  four directions, including backward") would need updating alongside it.
+- **Still unresolved, and now three-way — mid-chain promotion.** The setting is
+  `midChainPromotionRule: 0` (`DeferUntilChainEnds`: keep capturing as a man, crown only if the chain
+  ends on the back row). Sources split three ways rather than two:
+  - `DeferUntilChainEnds` (current setting) — mindsports.nl, via a specific worked example. **One
+    source.**
+  - `ContinueAsKing` (crown immediately, keep capturing with king powers) — gambiter.com,
+    draughts.github.io. **Two sources.**
+  - `EndsTurnOnPromotion` (crown immediately, turn ends on the spot — American/Italian behavior) —
+    the FMJD rules PDF and washburn.edu. **Two sources, one of them the governing body.**
+
+  So the current setting is now the *least*-supported of the three options, and the best-credentialed
+  single source points at a third answer neither earlier audit had considered. Still not something a
+  code trace can settle, so it's left as-is and flagged — but if this is ever resolved by fiat, the
+  FMJD reading is the one to reach for.
 
 ---
 
@@ -286,7 +951,10 @@ are now fixed:
    previous behavior" so rulesets that don't need them are untouched. (At the time this fix shipped,
    American/International/Russian/Brazilian/Turkish were believed to be in that "untouched" group —
    the second independent audit below found Brazilian and Turkish actually do need `FirstMoveColor`
-   set too; both have since been corrected, see that section.)
+   set too; both have since been corrected, see that section. A later documentation pass found
+   **International and Russian both need it as well** — White moves first in each — and those are
+   still unfixed; see their caveats. American is the only variant now believed genuinely
+   indifferent.)
    - `FirstMoveColor` (`PieceType`, default `None`): `GameManager.StartFirstTurn` now calls
      `DetermineFirstTurnPlayer`, which returns player 1 unchanged when this is `None`, or whichever
      seat currently holds the named color otherwise. Set to `White` on Italian/Spanish/Canadian and
@@ -300,6 +968,29 @@ are now fixed:
      corner. Set only on Italian (the only ruleset whose own description calls for a dark corner —
      Spanish/Pool Checkers/Canadian's own descriptions already match the engine's existing light-
      corner default, so they didn't need this flag, only `FirstMoveColor`).
+
+     **Correction, from a later documentation pass — this flag does not do what the paragraph above
+     claims.** It changes *square colors only*. Piece placement is hardcoded to the parity
+     `(i + j) % 2 != 0` in `BoardGenerator.GeneratePieces`
+     ([BoardGenerator.cs:128](Assets/Script/Gameplay/BoardGenerator.cs:128)) and never consults the
+     flag, so the set of squares actually played on is the same for every diagonal ruleset. Setting
+     the flag therefore recolors the board *underneath* unmoved pieces, which inverts the intended
+     result rather than producing it:
+     - For Italian on 8×8, piece squares (parity 1) evaluate to
+       `isWhiteSquare = (false) != true = true` → the pieces end up sitting on the **light**-colored
+       squares, when Italian plays on the dark ones.
+     - The bottom-right corner (7,7) is parity 0, so it does turn dark as intended — but it is **not
+       a playing square**, whereas Italian's *cantone* is by definition a playing square.
+
+     So Italian currently renders as "pieces on light squares, with a dark unplayable corner," the
+     photographic negative of its actual convention. Expressing either Italian's or Spanish's board
+     properly requires flipping the **piece-placement parity**, not the square coloring — i.e. a
+     change in `GeneratePieces`, with `GenerateBoard` following it rather than the reverse.
+
+     **Severity: cosmetic only.** Checkers is symmetric under left-right reflection, and reflection
+     maps one parity class onto the other, so every arrangement discussed here yields an isomorphic
+     game — identical legal moves and outcomes under relabeling. Nothing here can produce a wrong
+     result on the board; it only makes two variants look unlike themselves.
 
 ---
 
@@ -325,6 +1016,12 @@ the genuinely unresolved Turkish question remain open.
   vacated earlier in the same multi-jump turn, when it should stay blocked. **Fixed:**
   `PoolCheckersRules.asset` now sets `deferCaptureRemoval: 1`, and its in-app rules text (which used
   to say "Immediate Removal") was updated to describe the no-removal rule instead.
+
+  **Since corroborated by a fourth source**, in the third pass. That pass also resolved the framing:
+  this entry treated Pool Checkers as *differing* from Russian, but Russian appears to use delayed
+  removal as well, so the two agree and it is Russian's asset that is still wrong. The fix applied
+  here was correct; only the stated contrast was not. With removal timing settled the same way for
+  both, mid-chain promotion is the sole mechanical difference left between the two variants.
 - **Turkish: `firstMoveColor` was unset; should be `White`.** Three independent sources (Wikipedia,
   gambiter.com, mindsports.nl) agree White always moves first. Since piece color is player-selectable
   in offline modes (not tied to player number), a player who picked Black in a solo Turkish match used
@@ -343,6 +1040,12 @@ the genuinely unresolved Turkish question remain open.
   Spanish) leaking into Brazilian's configuration by copy/paste. Only one source was checked before
   fixing. **Fixed:** `BrazilianRules.asset` now sets `preferKingCaptures: 0`, and its in-app rules
   text (which used to describe a "King Priority" tier) was updated to match.
+
+  **Since corroborated.** This was the weakest-evidenced of the fixes applied (one source, hence
+  "Likely" rather than "Confirmed"). A later documentation pass independently described Brazilian's
+  capture priority the same way — equal-length paths are freely chosen whether the mover is a king or
+  a man, and a path taking more kings carries no precedence — confirming both `preferKingMover: 0`
+  and `preferKingCaptures: 0`. This finding can now be treated as Confirmed rather than Likely.
 - **Italian: `deferCaptureRemoval` needed to be `1`, not `0`.** mindsports.nl states a Dama Italiana
   multiple capture "must be completed before the captured pieces are removed from the board" — the
   same no-removal semantics as International/Brazilian/Spanish/Canadian, contradicting the previous
@@ -350,6 +1053,14 @@ the genuinely unresolved Turkish question remain open.
   Checkers' three), so this carried lower confidence than that finding despite the identical failure
   mode. **Fixed:** `ItalianRules.asset` now sets `deferCaptureRemoval: 1`, and its in-app rules text
   was updated to mention the no-removal rule.
+
+  **Still single-sourced, but now known to be harmless either way.** A later documentation pass did
+  not corroborate it (the rule description used was silent on removal timing), but did establish that
+  the setting is *behaviorally inert* for Italian: with non-flying kings, the parity argument in
+  American's section shows a captured square can never be a landing square, so immediate and deferred
+  removal generate identical legal moves. Unlike Pool Checkers — where the identical-looking fix was
+  load-bearing because kings fly — this one changes nothing on the board. Not worth chasing further
+  sources for.
 
 ### Unresolved — sources disagree, not something a code trace can settle alone
 
@@ -359,6 +1070,13 @@ the genuinely unresolved Turkish question remain open.
   mindsports.nl's specific worked example. But two other sources (gambiter.com, draughts.github.io)
   describe Russian-style behavior instead: crown immediately and keep capturing with new king powers
   the same turn (`ContinueAsKing`). Genuinely conflicting testimony; flagged rather than guessed at.
+
+  **Updated by a later documentation pass:** the split is three-way, not two-way. The FMJD's own
+  Turkish draughts rules PDF (plus washburn.edu) describes a third behavior neither of the above —
+  crown immediately *and end the turn on the spot*, i.e. `EndsTurnOnPromotion`, the American/Italian
+  rule. That leaves the current setting supported by one source, `ContinueAsKing` by two, and
+  `EndsTurnOnPromotion` by two including the sport's governing body. Still left as-is, but the
+  FMJD reading now has the strongest claim. See Turkish's caveats for the full breakdown.
 
 ### Lower severity — doesn't affect legal play
 
@@ -371,3 +1089,72 @@ the genuinely unresolved Turkish question remain open.
   that cross the promotion row mid-chain) but does **not** produce illegal moves on the actual board:
   live execution always crowns for real and re-queries legal continuations hop-by-hop, independent of
   whatever the search decided, for both human and bot turns.
+
+---
+
+## Open items
+
+Everything still unresolved across all three passes, consolidated. Nothing here has been applied —
+each earlier pass was scoped to its own findings, and the third pass was scoped to documentation.
+
+### Rule discrepancies — one-line asset edits
+
+| Variant | Field | Current | Should be | Confidence |
+|---|---|---|---|---|
+| International | `firstMoveColor` | *(unset)* | `1` (White) | High — FMJD rules; 5 sibling assets already carry this fix |
+| Russian | `firstMoveColor` | *(unset)* | `1` (White) | High — same bug class, third instance |
+| Turkish | `menCaptureBackward` | `1` | `0` | High — 3 sources incl. the FMJD rules PDF |
+
+The first two are the same bug the second audit already fixed for Brazilian and Turkish; American is
+now the only variant believed genuinely indifferent to starting color. The Turkish change also needs
+its in-app `longDescription` updated, which currently advertises capturing "in all four directions,
+including backward."
+
+### Rule discrepancy — needs play-testing, not a blind flag flip
+
+| Variant | Field | Current | Should be |
+|---|---|---|---|
+| Russian | `deferCaptureRemoval` | `0` | `1` |
+
+Russian draughts uses delayed removal (the *Turkish strike* rule), corroborated indirectly by Pool
+Checkers' matching setting. But applying it would create the **first pairing anywhere in the project
+of `ContinueAsKing` with `deferCaptureRemoval: 1`** — mid-chain crowning while captured pieces still
+occupy their squares. Nothing has exercised that combination, and Russian is also the variant where
+the bot's unmodelled mid-chain promotion already bites hardest. Worth actually playing before
+shipping.
+
+### Genuinely unresolved — sources disagree
+
+- **Turkish mid-chain promotion.** Three-way split: `DeferUntilChainEnds` (current, 1 source),
+  `ContinueAsKing` (2 sources), `EndsTurnOnPromotion` (2 sources, including the FMJD). The current
+  setting is the least-supported; the FMJD reading has the strongest claim if this is ever settled by
+  fiat.
+
+### Cosmetic — no effect on outcomes
+
+- **`DarkSquareBottomRight` recolors squares without moving pieces.** Piece placement is hardcoded to
+  parity `(i + j) % 2 != 0` in `GeneratePieces`, so the flag inverts Italian's board (pieces end up on
+  light squares, with a dark *unplayable* corner) and cannot express Spanish's mirrored board at all.
+  A correct fix flips piece-placement parity, with coloring following. Harmless to outcomes, since a
+  mirrored checkers board is isomorphic.
+
+### Engine-wide gaps in draw handling
+
+The single generic `noProgressMoveLimit` counter is the only draw the engine can ever declare. It
+counts plies rather than move-pairs, treats only captures and promotions as progress, and never
+checks any variant's preconditions. Consequently:
+
+- **Draw by mutual agreement** — absent everywhere (no draw-offer path, no RPC, no UI).
+- **Draw by threefold repetition** — absent everywhere (no position history is kept).
+- **Material-specific endgame draws** — absent: International's king-count rules (3 kings vs 1 → 16
+  moves; 2 kings or king+man vs 1 → 5 moves), Turkish's 1-vs-1 draw, Italian's "no forceable win".
+  These need piece-composition tracking that doesn't exist in the codebase.
+- **Four variants get a draw rule they shouldn't have.** Italian, Spanish, Canadian, and Pool
+  Checkers have no move-limit draw in their published rules, but the counter applies anyway and can
+  end a game those rules would let continue. Pragmatically defensible as a safety valve against
+  endless king shuffling — worth a deliberate decision rather than leaving it implicit.
+
+### AI-quality gap — no illegal moves
+
+- **The bot's minimax search never models mid-chain promotion** (`AIRules` has no
+  `MidChainPromotionRule` field). Costs the most in Russian, the only variant using `ContinueAsKing`.
