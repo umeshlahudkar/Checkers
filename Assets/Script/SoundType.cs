@@ -7,5 +7,10 @@ public enum SoundType
     CrownKing,
     Coin,
     TimerTick,
-    BackgroundMusic
+    BackgroundMusic,
+    PieceShrink,
+    GameOver,
+    GameWin,
+    GameLose,
+    GameDraw
 }

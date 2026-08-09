@@ -112,6 +112,31 @@ public class AudioManager : Service<AudioManager>, IInitializable
         PlaySfx(SoundType.CrownKing);
     }
 
+    public void PlayPieceShrinkSound()
+    {
+        PlaySfx(SoundType.PieceShrink);
+    }
+
+    public void PlayGameOverSound()
+    {
+        PlaySfx(SoundType.GameOver);
+    }
+
+    public void PlayGameWinSound()
+    {
+        PlaySfx(SoundType.GameWin);
+    }
+
+    public void PlayGameLoseSound()
+    {
+        PlaySfx(SoundType.GameLose);
+    }
+
+    public void PlayGameDrawSound()
+    {
+        PlaySfx(SoundType.GameDraw);
+    }
+
     public void PlayBackgroundMusic()
     {
         if (musicAudioSource.clip == null)

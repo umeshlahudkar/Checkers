@@ -66,6 +66,7 @@ public class Piece : MonoBehaviour
         ServiceLocator.Get<AudioManager>().PlayCrownKingSound();
         HapticFeedback.TriggerKingPromotionVibration();
         ServiceLocator.Get<GameManager>().ShowFloatingText("CROWNED KING!", KingTextColor);
+        PlayCrownEffectAnimation();
     }
 
     // Silent version of SetCrownKing, with no sound/floating-text fanfare - used when restoring a
@@ -94,11 +95,6 @@ public class Piece : MonoBehaviour
     // than just vanishing.
     public void Destroy()
     {
-        // MarkCaptured already fired the kill sound/capture-flash and started the shrink at the
-        // moment this piece was actually captured - if this is the deferred final removal for a
-        // piece that went through that path, don't repeat those "just captured" cues, just finish
-        // the job (board/list bookkeeping + the real disappear/destroy).
-        bool alreadyMarked = isCaptured;
         isCaptured = true;
 
         ServiceLocator.Get<GameplayController>().SetSquare(rowID, columID, null);
@@ -117,13 +113,15 @@ public class Piece : MonoBehaviour
 
         ServiceLocator.Get<GamePageManager>().GamePage.UpdatePiecesLeft(gameplayController.blackPieces.Count, gameplayController.whitePieces.Count);
 
-        if (!alreadyMarked)
-        {
-            ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
-            HapticFeedback.TriggerCaptureVibration();
-            ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
-            PlayCaptureFlashAnimation();
-        }
+        // All "just captured" cues (sound/haptics/card-punch/flash) fire here rather than back in
+        // MarkCaptured - for DeferCaptureRemoval rulesets the piece is still sitting on the board
+        // (just marked) until this real Destroy() runs, so firing them at MarkCaptured time would
+        // show them well before the piece actually disappears. Always firing them here keeps the
+        // feedback in sync with the piece really going away.
+        ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
+        HapticFeedback.TriggerCaptureVibration();
+        ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+        PlayCaptureFlashAnimation();
 
         // Stops MarkCaptured's idle pulse (if this piece went through that path) so it doesn't
         // fight the final shrink-to-nothing tween started below.
@@ -142,10 +140,7 @@ public class Piece : MonoBehaviour
         isCaptured = true;
         button.interactable = false;
 
-        ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
-        HapticFeedback.TriggerCaptureVibration();
-        ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
-        PlayCaptureFlashAnimation();
+        ServiceLocator.Get<AudioManager>().PlayPieceShrinkSound();
 
         // Shrinks to half size and stays there - it has to keep occupying its square as a
         // rules-required obstacle until the whole capture chain ends (see class comment above).
@@ -163,9 +158,8 @@ public class Piece : MonoBehaviour
 
     // Routed through GamePage (which owns the captureEffectPrefab reference, same as
     // floatingTextPrefab) rather than instantiating here, so the prefab only needs to be wired in
-    // one place instead of on every Piece. Only fired once per piece (see the
-    // !alreadyMarked/first-hit callers), same as the kill sound/haptics/card-punch it plays
-    // alongside.
+    // one place instead of on every Piece. Only called from Destroy() (see its comment) so the
+    // flash always lands when the piece actually disappears, not when it's merely marked.
     //
     // [ContextMenu] lets this be triggered directly from a live Piece's inspector while in Play
     // mode, to preview the effect (through the real GamePage call chain) without a real capture.
@@ -174,6 +168,14 @@ public class Piece : MonoBehaviour
     {
         Block currentBlock = ServiceLocator.Get<GameplayController>().board[rowID, columID];
         ServiceLocator.Get<GamePageManager>().GamePage.PlayCaptureEffect(currentBlock.ThisTransform.position, currentBlock.ThisTransform.sizeDelta);
+    }
+
+    // Same routing as PlayCaptureFlashAnimation, through GamePage's own crownEffectPrefab reference.
+    [ContextMenu("Play Crown Effect")]
+    private void PlayCrownEffectAnimation()
+    {
+        Block currentBlock = ServiceLocator.Get<GameplayController>().board[rowID, columID];
+        ServiceLocator.Get<GamePageManager>().GamePage.PlayCrownEffect(currentBlock.ThisTransform.position, currentBlock.ThisTransform.sizeDelta);
     }
 
     public bool IsCaptured => isCaptured;

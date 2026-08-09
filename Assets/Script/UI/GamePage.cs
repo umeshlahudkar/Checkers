@@ -30,6 +30,10 @@ public class GamePage : Page
     [SerializeField] private RectTransform captureEffectParent;
     [SerializeField] private CaptureEffect captureEffectPrefab;
 
+    [Header("Crown Effect")]
+    [SerializeField] private RectTransform crownEffectParent;
+    [SerializeField] private CrownEffect crownEffectPrefab;
+
     private readonly Queue<(string text, Color color)> floatingTextQueue = new();
     private bool isShowingFloatingText;
 
@@ -164,6 +168,22 @@ public class GamePage : Page
         //Vector2 pos = boardBorder.TransformPoint(anchoredPosition);
 
         CaptureEffect effect = Instantiate(captureEffectPrefab, captureEffectParent);
+        effect.ThisTransform.position = anchoredPosition;
+        effect.ThisTransform.sizeDelta = blockSize;
+        effect.ThisTransform.SetAsLastSibling();
+        effect.Play();
+    }
+
+    // Same spawn/position pattern as PlayCaptureEffect - lands on the promoted piece's square and
+    // plays out independently of it.
+    public void PlayCrownEffect(Vector2 anchoredPosition, Vector2 blockSize)
+    {
+        if (crownEffectPrefab == null || crownEffectParent == null)
+        {
+            return;
+        }
+
+        CrownEffect effect = Instantiate(crownEffectPrefab, crownEffectParent);
         effect.ThisTransform.position = anchoredPosition;
         effect.ThisTransform.sizeDelta = blockSize;
         effect.ThisTransform.SetAsLastSibling();

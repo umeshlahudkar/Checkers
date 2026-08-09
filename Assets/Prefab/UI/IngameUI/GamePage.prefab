@@ -317,6 +317,41 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &2222222222222222001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2222222222222222002}
+  m_Layer: 5
+  m_Name: CrownEffectParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2222222222222222002
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2222222222222222001}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4746660037890948615}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1344983518097614650
 GameObject:
   m_ObjectHideFlags: 0
@@ -1424,6 +1459,8 @@ MonoBehaviour:
   floatingTextPrefab: {fileID: 100004, guid: d713469e58f6a57f2a7023fb0b36337a, type: 3}
   captureEffectParent: {fileID: 1948247626485681656}
   captureEffectPrefab: {fileID: 4231274877163131118, guid: e464f5f846ef0694db595e66492a2ac1, type: 3}
+  crownEffectParent: {fileID: 2222222222222222002}
+  crownEffectPrefab: {fileID: 1111111111111111011, guid: 8894f8de8a432cac61ab9d1346813420, type: 3}
 --- !u!1 &7474830683877705305
 GameObject:
   m_ObjectHideFlags: 0
@@ -1875,6 +1912,7 @@ RectTransform:
   - {fileID: 2429666907259517869}
   - {fileID: 1948247626485681656}
   - {fileID: 406365616497085632}
+  - {fileID: 2222222222222222002}
   m_Father: {fileID: 1655321317804560595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

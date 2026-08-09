@@ -526,6 +526,17 @@ public class GameManager : Service<GameManager>
             OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
             MatchDuration = GetMatchDurationText()
         };
+
+        ServiceLocator.Get<AudioManager>().PlayGameOverSound();
+        if (isLocalWin)
+        {
+            ServiceLocator.Get<AudioManager>().PlayGameWinSound();
+        }
+        else
+        {
+            ServiceLocator.Get<AudioManager>().PlayGameLoseSound();
+        }
+
         ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
     }
 
@@ -558,6 +569,10 @@ public class GameManager : Service<GameManager>
             OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
             MatchDuration = GetMatchDurationText()
         };
+
+        ServiceLocator.Get<AudioManager>().PlayGameOverSound();
+        ServiceLocator.Get<AudioManager>().PlayGameDrawSound();
+
         ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
     }
 
