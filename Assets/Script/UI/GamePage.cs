@@ -26,6 +26,10 @@ public class GamePage : Page
     [SerializeField] private RectTransform floatingTextParent;
     [SerializeField] private FloatingText floatingTextPrefab;
 
+    [Header("Capture Effect")]
+    [SerializeField] private RectTransform captureEffectParent;
+    [SerializeField] private CaptureEffect captureEffectPrefab;
+
     private readonly Queue<(string text, Color color)> floatingTextQueue = new();
     private bool isShowingFloatingText;
 
@@ -143,6 +147,27 @@ public class GamePage : Page
     public void PlayPieceCapturedAnimation(int playerNumber)
     {
         GetPlayerCard(playerNumber).PlayPieceCapturedAnimation();
+    }
+
+    // Spawned under the dedicated captureEffectParent (not the captured piece's own parent) and
+    // positioned/sized to match the captured square, so the burst lands on the actual board square
+    // rather than a fixed screen spot, regardless of the prefab's own default RectTransform size.
+    // Left to play out and destroy itself independently of the piece, which may finish its own
+    // shrink-and-destroy first.
+    public void PlayCaptureEffect(Vector2 anchoredPosition, Vector2 blockSize)
+    {
+        if (captureEffectPrefab == null || captureEffectParent == null)
+        {
+            return;
+        }
+
+        //Vector2 pos = boardBorder.TransformPoint(anchoredPosition);
+
+        CaptureEffect effect = Instantiate(captureEffectPrefab, captureEffectParent);
+        effect.ThisTransform.position = anchoredPosition;
+        effect.ThisTransform.sizeDelta = blockSize;
+        effect.ThisTransform.SetAsLastSibling();
+        effect.Play();
     }
 
     public void UpdateMissIndicators(int playerNumber, int missCount)

@@ -114,6 +114,7 @@ public class Piece : MonoBehaviour
             ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
             HapticFeedback.TriggerCaptureVibration();
             ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+            PlayCaptureFlashAnimation();
         }
 
         // Stops MarkCaptured's idle pulse (if this piece went through that path) so it doesn't
@@ -136,6 +137,7 @@ public class Piece : MonoBehaviour
         ServiceLocator.Get<AudioManager>().PlayPieceKillSound();
         HapticFeedback.TriggerCaptureVibration();
         ServiceLocator.Get<GamePageManager>().GamePage.PlayPieceCapturedAnimation(playerID);
+        PlayCaptureFlashAnimation();
 
         // Shrinks to half size and stays there - it has to keep occupying its square as a
         // rules-required obstacle until the whole capture chain ends (see class comment above).
@@ -149,6 +151,21 @@ public class Piece : MonoBehaviour
     private void OnDestroy()
     {
         thisTransform.DOKill();
+    }
+
+    // Routed through GamePage (which owns the captureEffectPrefab reference, same as
+    // floatingTextPrefab) rather than instantiating here, so the prefab only needs to be wired in
+    // one place instead of on every Piece. Only fired once per piece (see the
+    // !alreadyMarked/first-hit callers), same as the kill sound/haptics/card-punch it plays
+    // alongside.
+    //
+    // [ContextMenu] lets this be triggered directly from a live Piece's inspector while in Play
+    // mode, to preview the effect (through the real GamePage call chain) without a real capture.
+    [ContextMenu("Play Capture Effect")]
+    private void PlayCaptureFlashAnimation()
+    {
+        Block currentBlock = ServiceLocator.Get<GameplayController>().board[rowID, columID];
+        ServiceLocator.Get<GamePageManager>().GamePage.PlayCaptureEffect(currentBlock.ThisTransform.position, currentBlock.ThisTransform.sizeDelta);
     }
 
     public bool IsCaptured => isCaptured;

@@ -26,7 +26,7 @@ MonoBehaviour:
     modeDescription: Pass and play on one device
     modeIcon: {fileID: 21300000, guid: 399252938b4ec8548bd276e4ce6bdfbb, type: 3}
     showOnlineBadge: 0
-    enableTurnTimer: 1
+    enableTurnTimer: 0
   - isActive: 1
     mode: 1
     modeName: Multiplayer
