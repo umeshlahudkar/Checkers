@@ -15,10 +15,18 @@ namespace Gameplay
         // Deliberately doesn't reuse OnHighlightedPieceClick - once already mid-chain with this
         // piece, only further captures may be offered (never a quiet move, which would let the
         // player illegally bail out of a still-mandatory continuation).
-        protected override void ContinueAfterKill(Piece selectedPiece)
+        protected override void ContinueAfterKill(Piece selectedPiece, BoardPosition lastCapturedPosition)
         {
             selectedPiece.ResetAllList();
-            selectedPiece.captureSequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece);
+
+            // The direction of the hop just played, so a ForbidImmediateReversal ruleset (Turkish)
+            // can't offer a next hop that reverses straight back through the square just jumped -
+            // the captured square and selectedPiece's current (post-hop) position are always
+            // exactly one direction apart, regardless of how far a flying king actually traveled.
+            (int dRow, int dCol) lastDirection = (
+                System.Math.Sign(selectedPiece.Row_ID - lastCapturedPosition.row_ID),
+                System.Math.Sign(selectedPiece.Coloum_ID - lastCapturedPosition.col_ID));
+            selectedPiece.captureSequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece, lastDirection);
 
             Block block = ServiceLocator.Get<GameplayController>().board[selectedPiece.Row_ID, selectedPiece.Coloum_ID];
             block.HighlightPieceBlock();
@@ -41,9 +49,22 @@ namespace Gameplay
         // regardless of this match's actual bot difficulty - runs the same minimax search (see
         // BotAISettingsSO.hardDepth) on a background thread, same as BotPlayer's own turn. Only
         // meaningful at the start of a turn, before a piece is selected (see
-        // GamePage.RefreshHintUndoButtons, which gates the button to that same window).
+        // GamePage.RefreshHintUndoButtons, which gates the button to that same window) - and, unlike
+        // that button-side gate, enforced here too rather than trusted to it alone.
+        //
+        // BotMinimax's search has no concept of "mid-chain" (that's Player-instance-only state, not
+        // part of the board it searches), so a hint requested while IsChainInProgress could suggest
+        // an unrelated piece/move entirely. Worse, ShowHintRoutine's own SelectPieceForNewMove call
+        // below unconditionally resets chainCaptureCount and clears capturedThisChain - exactly the
+        // same corruption OnHighlightedPieceClick's own IsChainInProgress guard exists to prevent for
+        // a piece click, just reached through this method instead: any DeferCaptureRemoval piece
+        // already marked-captured earlier this chain would be leaked (still on the board, still
+        // shrunk, never actually destroyed) since nothing else still holds a reference to it once
+        // capturedThisChain is cleared out from under it.
         public void ShowHint()
         {
+            if (IsChainInProgress) { return; }
+
             StartCoroutine(ShowHintRoutine());
         }
 
@@ -119,6 +140,29 @@ namespace Gameplay
         public override void OnHighlightedPieceClick(Piece clickedPiece)
         {
             ServiceLocator.Get<GameplayController>().ClearHintHighlight();
+
+            // Mid-chain, the only legal click is on one of selectedPiece's highlighted continuation
+            // targets (handled by OnHighlightedTargetBlockClick, not here) - any piece click at all,
+            // this method's only job, must not be allowed through to SelectPieceForNewMove below.
+            // movablePieces is a start-of-turn snapshot and can still contain a different piece that
+            // also had its own capture available, and falling through for THAT piece would silently
+            // abandon the still-mandatory chain with an illegal partial capture left standing.
+            // Falling through for selectedPiece itself (a re-click) is just as unsafe in a quieter
+            // way - SelectPieceForNewMove would reset chainCaptureCount and clear capturedThisChain
+            // without ever destroying whatever it was tracking, leaking those pieces the same way a
+            // genuine abandoned chain would. Re-showing the same forced continuation instead of
+            // touching any selection state handles both cases correctly with one check.
+            if (IsChainInProgress)
+            {
+                ResetHighlightedBlocks();
+                if (clickedPiece != selectedPiece)
+                {
+                    clickedPiece.PlayShakeAnimation();
+                }
+                ContinueAfterKill(selectedPiece, lastCapturedPosition);
+                return;
+            }
+
             ResetHighlightedBlocks();
 
             // Checking the turn's own movablePieces (computed once via CheckMovablePieces, which

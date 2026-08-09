@@ -5,6 +5,7 @@ public class GamePageManager : PageManager<GamePageManager, GamePageType>
     public VictoryPage VictoryPage => GetPage(GamePageType.VictoryPage) as VictoryPage;
     public DefeatPage DefeatPage => GetPage(GamePageType.DefeatPage) as DefeatPage;
     public DrawPage DrawPage => GetPage(GamePageType.DrawPage) as DrawPage;
+    public DrawOfferPage DrawOfferPage => GetPage(GamePageType.DrawOfferPage) as DrawOfferPage;
 
     // Single entry point for every match-end path (decisive win/loss, draw, forfeit) - GameManager
     // builds the GameResult, this picks and populates the matching page.

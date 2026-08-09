@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: International
   description: 10x10 draughts - flying kings, mandatory maximum capture, men can capture backward, and captures stay on the board until the turn ends.
-  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on a 10x10 board. Each player starts with 20 pieces filling the first four rows on their side.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory, and men may capture in any diagonal direction, including backward. If more than one path is available, you must play the one that captures the most pieces.\n\n<b><color=#D4AF37>No-Removal:</color></b>\nA captured piece stays on the board - still blocking its square - until your turn ends; you can't jump the same piece twice.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece only crowns if it finishes its turn on the back row - jumping through mid-capture and landing elsewhere leaves it a man.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move."
+  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on a 10x10 board. Each player starts with 20 pieces filling the first four rows on their side.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory, and men may capture in any diagonal direction, including backward. If more than one path is available, you must play the one that captures the most pieces.\n\n<b><color=#D4AF37>No-Removal:</color></b>\nA captured piece stays on the board - still blocking its square - until your turn ends; you can't jump the same piece twice.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece only crowns if it finishes its turn on the back row - jumping through mid-capture and landing elsewhere leaves it a man.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move.\n\n<b><color=#D4AF37>Draw:</color></b>\nEither player may offer a draw at any time; if accepted, the match ends level. The match is also drawn if the same position, with the same side to move, repeats three times, or if material is reduced to 3 Kings vs 1 King for 16 further moves, or 2 Kings (or a King and a man) vs 1 King for 5 further moves, without a result."
   rows: 10
   columns: 10
   pieceRowsPerSide: 4
@@ -31,5 +31,9 @@ MonoBehaviour:
   midChainPromotionRule: 0
   deferCaptureRemoval: 1
   forbidImmediateReversal: 0
-  noProgressMoveLimit: 25
+  noProgressMoveLimit: 0
   singleManLosesToKing: 0
+  threefoldRepetitionEnabled: 1
+  threeVsOneKingDrawLimit: 16
+  twoVsOneKingDrawLimit: 5
+  oneVsOneIsDraw: 0

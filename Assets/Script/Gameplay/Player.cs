@@ -19,15 +19,39 @@ namespace Gameplay
         protected readonly List<Piece> movablePieces = new();
         protected Piece selectedPiece;
 
+        // The square jumped over by the most recent hop actually played this move. Only meaningful
+        // while a capture chain is in progress (see IsChainInProgress below) - a subclass's
+        // ContinueAfterKill uses it to derive that hop's direction for ForbidImmediateReversal
+        // rulesets (Turkish), and OnHighlightedPieceClick's mid-chain guard re-reads it to redisplay
+        // the same continuation without this method needing to run again.
+        protected BoardPosition lastCapturedPosition;
+
         // Counts captures across an entire move (including every hop of a capture chain) - reported
-        // via ReportChainLength for longestChainCount tracking. Reset only when a fresh piece is
-        // picked up (see SelectPieceForNewMove), not between individual hops.
+        // via ReportChainLength for longestChainCount tracking. Not reset between individual hops.
+        // Reset to 0 by SelectPieceForNewMove (a fresh piece picked up), by
+        // HandlePieceMovementAndPieceDelete's end-of-chain branch (the chain reaching its natural
+        // end), and by ResetChainState (a timed-out mid-chain sweep, via GameManager.ChangeTurn) -
+        // all three points where a chain can genuinely be over. Every one of them must actually run
+        // this reset: skipping any of them leaves IsChainInProgress permanently true from that point
+        // on, since OnHighlightedPieceClick's own mid-chain guard (below) is what would otherwise
+        // call SelectPieceForNewMove - the reset and the only path back to it are mutually gated.
         private int chainCaptureCount;
+
+        // True once selectedPiece has already played at least one hop of a capture chain this move -
+        // capturing is mandatory, so once a chain has started, only that same piece may act again
+        // until it naturally ends; nothing else on the board is a legal alternative in the meantime,
+        // even a different piece that also had its own capture available at the start of the turn.
+        // Same reset lifetime as chainCaptureCount itself (see its own comment) - not just
+        // SelectPieceForNewMove. Public (not just protected) so GamePage.RefreshHintUndoButtons can
+        // gate the Hint/Undo buttons on it too - both would corrupt this same chain state exactly
+        // like an abandoned chain does if invoked mid-chain (see HumanPlayer.ShowHint's own guard).
+        public bool IsChainInProgress => chainCaptureCount > 0;
 
         // DeferCaptureRemoval rulesets only: pieces captured so far this same capture-chain move,
         // merely marked (Piece.MarkCaptured) rather than actually destroyed, so they keep blocking
         // their square until the chain truly ends. Same reset lifetime as chainCaptureCount - swept
-        // and really destroyed in FinalizeCapturedChain, right before the turn is handed over.
+        // and really destroyed by the inline sweep at the end of HandlePieceMovementAndPieceDelete,
+        // right before the turn is handed over.
         private readonly List<Piece> capturedThisChain = new();
 
         public PieceType PieceType { get { return pieceType; } }
@@ -158,44 +182,83 @@ namespace Gameplay
             capturedThisChain.Clear();
         }
 
+        // Called by GameManager when this player's turn is forcibly ended by a timeout while a
+        // DeferCaptureRemoval capture chain is mid-way through - i.e. between hops, with no
+        // HandlePieceMovementAndPieceDelete coroutine left running to ever reach its own
+        // end-of-chain sweep. Runs that same real-destroy sweep here instead, then resets the same
+        // chain-tracking state SelectPieceForNewMove normally resets: without this, the marked
+        // pieces would stay on the board (still blocking their squares, still counted in the
+        // remaining-piece totals) forever.
+        //
+        // Only ever called locally by GameManager.HandleTurnMissCount, which only runs on the master
+        // client - every client keeps its own independent Player instances, so this sweep (and the
+        // capturedThisChain/chainCaptureCount reset baked into it) only ever actually touches the
+        // master's own local copy of this seat, never a remote client's. That's fine for the
+        // DestroyPieceAt RPCs above (broadcast to RpcTarget.All, so every client's board ends up
+        // correct regardless of who sent them) but not for chainCaptureCount, which is never RPC'd
+        // anywhere - only ResetChainState below, called from GameManager.ChangeTurn (which DOES run
+        // identically on every client), actually reaches the timed-out player's own device.
+        public void FlushIncompleteChain()
+        {
+            for (int i = 0; i < capturedThisChain.Count; i++)
+            {
+                Piece piece = capturedThisChain[i];
+                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, piece.Row_ID, piece.Coloum_ID);
+            }
+            ResetChainState();
+        }
+
+        // Clears this player's capture-chain bookkeeping without destroying anything - safe to call
+        // on every client identically, unlike FlushIncompleteChain above (which sends RPCs and must
+        // only ever run once, from whichever single client decided the sweep). Called from
+        // GameManager.ChangeTurn for the outgoing player on every client: a remote client that never
+        // ran FlushIncompleteChain itself (e.g. the timed-out player's own device, when it isn't also
+        // the master) still receives every DestroyPieceAt broadcast that sweep sent - so its board is
+        // correct - but its own local capturedThisChain/chainCaptureCount fields are untouched by
+        // those broadcasts and need this separate, RPC-free reset to actually reach zero. Also a
+        // harmless no-op after a normal completed move, since HandlePieceMovementAndPieceDelete's own
+        // end-of-chain sweep already cleared both fields before ChangeTurn ever runs.
+        public void ResetChainState()
+        {
+            capturedThisChain.Clear();
+            chainCaptureCount = 0;
+        }
+
         public void OnHighlightedTargetBlockClick(Block block)
         {
             StartCoroutine(HandlePieceMovementAndPieceDelete(block));
         }
 
-        // Mirrors the "does this piece have anywhere further to capture" half of the canContinue
-        // check HandlePieceMovementAndPieceDelete runs after its settle wait - minus that check's
-        // ContinueAsKing crowning side effect, which is safe to drop here because no
-        // DeferCaptureRemoval ruleset (the only caller of this method) ever sets
-        // MidChainPromotionRule to ContinueAsKing (only Russian does, and it doesn't defer capture
-        // removal). Used to let a capture decide immediately whether it's this chain's last hop.
-        private bool WouldChainContinue(Piece piece)
-        {
-            IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
-            bool reachedPromotionRow = !piece.IsCrownedKing && ruleSet.IsPromotionRow(piece.Row_ID, piece.Player_ID);
-            bool blocksContinuation = reachedPromotionRow && ruleSet.MidChainPromotionRule == MidChainPromotionRule.EndsTurnOnPromotion;
-            return !blocksContinuation && ServiceLocator.Get<MoveGenerator>().CanPieceKill(piece);
-        }
-
         private IEnumerator HandlePieceMovementAndPieceDelete(Block block)
         {
+            // A legal move is being committed from this instant on - freeze the turn timer for the
+            // whole commit animation (the settle waits below) so it can never independently declare
+            // a timeout for a turn that has, in fact, already been decided in time. Resumed right
+            // before ContinueAfterKill if a further hop is forced, or left paused if the turn is
+            // ending here (StartTurn's own ResetTimer/StartTimer takes over for whoever moves next).
+            // Broadcast rather than a direct local call - see GameManager.PauseTurnTimer for why the
+            // master's own timer instance needs this too, not just the mover's.
+            ServiceLocator.Get<GameManager>().PauseTurnTimer();
+
             ServiceLocator.Get<GameplayController>().ClearHintHighlight();
             ServiceLocator.Get<GamePageManager>().GamePage.SetHintUndoInteractable(false);
             ResetHighlightedBlocks();
 
             bool hasDeleted = false;
-            BoardPosition capturedPosition = default;
 
             if (block.IsNextToNextHighlighted)
             {
                 // Read the captured piece's position from the block rather than deriving it
                 // geometrically from the landing square - a flying king can capture from any
-                // distance along the diagonal, so the two aren't a fixed offset apart.
-                capturedPosition = block.CapturedPosition;
+                // distance along the diagonal, so the two aren't a fixed offset apart. Kept as a
+                // field, not a local, so a mid-chain re-click that re-displays this same
+                // continuation (see OnHighlightedPieceClick's IsChainInProgress guard) can still
+                // derive the same ForbidImmediateReversal direction without this method re-running.
+                lastCapturedPosition = block.CapturedPosition;
 
                 // DestroyPieceAt itself decides whether this is a real destroy or (for no-removal
                 // rulesets) just a mark-as-captured - see there.
-                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, capturedPosition.row_ID, capturedPosition.col_ID);
+                thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, lastCapturedPosition.row_ID, lastCapturedPosition.col_ID);
                 hasDeleted = true;
                 chainCaptureCount++;
                 block.IsNextToNextHighlighted = false;
@@ -203,28 +266,20 @@ namespace Gameplay
 
             UpdateGrid(block.Row_ID, block.Coloum_ID, selectedPiece, hasDeleted);
 
-            // GameplayController.SetSquare (called from inside UpdateGrid) updates row/col/occupancy
-            // synchronously regardless of how long the slide animation takes to visually finish, so
-            // this doesn't need to wait for that - a DeferCaptureRemoval capture can find out RIGHT
-            // NOW whether it's this chain's last hop, instead of only after the settle wait below.
-            // Only actually acted on when capturedThisChain.Count == 1 (this hop is the chain's
-            // ONLY capture so far, i.e. it's a plain single capture, not part of a multi-kill) - a
-            // lone capture gets one clean destroy animation immediately instead of marking-and-
-            // pulsing only to throw that away a moment later. A multi-kill still leaves every piece
-            // marked-and-waiting so the whole chain's captures are swept and destroyed together,
-            // simultaneously, once the chain truly ends - not the last one immediately and the rest
-            // staggered in later.
-            if (hasDeleted && capturedThisChain.Count == 1 && ServiceLocator.Get<GameManager>().RuleSet.DeferCaptureRemoval)
-            {
-                Piece movedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
-                if (!WouldChainContinue(movedPiece))
-                {
-                    Piece justCapturedPiece = ServiceLocator.Get<GameplayController>().pieces[capturedPosition.row_ID, capturedPosition.col_ID];
-                    thisPhotonView.RPC(nameof(DestroyPieceAt), RpcTarget.All, capturedPosition.row_ID, capturedPosition.col_ID);
-                    capturedThisChain.Remove(justCapturedPiece);
-                }
-            }
-
+            // A DeferCaptureRemoval capture always stays merely marked (Piece.MarkCaptured) - still
+            // occupying its square, still blocking a flying king's path - through this whole settle
+            // wait, uniformly whether this turns out to be a lone capture or one hop of a longer
+            // chain. It used to be possible to destroy a lone capture for real immediately, right
+            // here, as a purely cosmetic optimisation (skipping the mark-and-pulse animation for the
+            // common single-capture case) - but that ran its own "is this the chain's last hop"
+            // check against a board where the piece was still blocking, then genuinely removed it
+            // before the authoritative canContinue check below ever ran. For a flying king, a square
+            // that was closed a moment ago can become an open ray the instant that early destroy
+            // fires, letting canContinue find (and force) a further capture the no-removal rule
+            // should still have blocked. Always waiting for the authoritative check - and only ever
+            // destroying via the end-of-chain sweep below - closes that gap; the cost is that a lone
+            // capture no longer gets a single clean destroy animation, only the same mark-then-sweep
+            // sequence a real multi-kill already used.
             yield return new WaitForSeconds(0.5f);
 
             selectedPiece = ServiceLocator.Get<GameplayController>().pieces[block.Row_ID, block.Coloum_ID];
@@ -256,7 +311,12 @@ namespace Gameplay
 
             if (canContinue)
             {
-                ContinueAfterKill(selectedPiece);
+                // Control is handing back to the player (human) or immediately back into another
+                // commit (bot, which will pause it again right at that coroutine's own top) - either
+                // way this is the point the paused countdown should start running again, resuming
+                // from wherever it was frozen rather than granting a fresh 15 seconds.
+                ServiceLocator.Get<GameManager>().ResumeTurnTimer();
+                ContinueAfterKill(selectedPiece, lastCapturedPosition);
             }
             else
             {
@@ -285,6 +345,14 @@ namespace Gameplay
                     thisPhotonView.RPC(nameof(ReportChainLength), RpcTarget.All, chainCaptureCount);
                 }
 
+                // The move (the whole capture chain, if any) has now fully ended - reset so this
+                // player's *next* turn isn't wrongly treated as still mid-chain. Without this,
+                // IsChainInProgress stays true forever after this player's first-ever capturing
+                // move, and OnHighlightedPieceClick's mid-chain guard would then refuse to call
+                // SelectPieceForNewMove on every subsequent click for the rest of the match -
+                // every click just re-displays the same stale, already-finished continuation.
+                chainCaptureCount = 0;
+
                 // Lets the deferred pieces' final disappear animation actually finish before the
                 // turn visibly switches, instead of both landing in the same frame - only relevant
                 // for DeferCaptureRemoval rulesets, since everyone else already destroyed their
@@ -299,7 +367,13 @@ namespace Gameplay
             }
         }
 
-        protected abstract void ContinueAfterKill(Piece selectedPiece);
+        // lastCapturedPosition is the square jumped over by the hop that was just actually played -
+        // the caller derives that hop's direction from it (relative to selectedPiece's now-current,
+        // post-hop position) so ForbidImmediateReversal rulesets (Turkish) can forbid the very next
+        // hop from reversing straight back through it. Passed as a position rather than a direction
+        // because a flying king's hop can cover more than one square, but the captured square and
+        // the landing square are always exactly one direction apart regardless of that distance.
+        protected abstract void ContinueAfterKill(Piece selectedPiece, BoardPosition lastCapturedPosition);
 
         public void UpdateGrid(int targetRow, int targetCol, Piece pieceToMove, bool isCapture)
         {
@@ -314,8 +388,10 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void UpdateGrid(int targetRow, int targetCol, int sourceRow, int sourceCol, bool isCapture)
+        public void UpdateGrid(int targetRow, int targetCol, int sourceRow, int sourceCol, bool isCapture, PhotonMessageInfo info = default)
         {
+            if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
+
             Piece piece = null;
             bool hasPiece = sourceRow != -1;
             if (hasPiece)
@@ -376,8 +452,10 @@ namespace Gameplay
         // IsCaptured is already true. Every other ruleset always takes the real-destroy branch
         // immediately, exactly as before this fix.
         [PunRPC]
-        public void DestroyPieceAt(int row, int col)
+        public void DestroyPieceAt(int row, int col, PhotonMessageInfo info = default)
         {
+            if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
+
             Piece capturedPiece = ServiceLocator.Get<GameplayController>().pieces[row, col];
             lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
 
@@ -403,8 +481,10 @@ namespace Gameplay
         }
 
         [PunRPC]
-        public void CrownPieceAt(int row, int col)
+        public void CrownPieceAt(int row, int col, PhotonMessageInfo info = default)
         {
+            if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
+
             ServiceLocator.Get<GameplayController>().pieces[row, col].SetCrownKing();
             ServiceLocator.Get<GameManager>().RegisterKingCrowned(Player_ID);
         }
@@ -415,8 +495,9 @@ namespace Gameplay
         // only runs on the client whose turn it is - every other client's GameManager needs this
         // relayed the same way it already gets board-state changes.
         [PunRPC]
-        public void ReportChainLength(int chainLength)
+        public void ReportChainLength(int chainLength, PhotonMessageInfo info = default)
         {
+            if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
             ServiceLocator.Get<GameManager>().RegisterChainLength(Player_ID, chainLength);
         }
 

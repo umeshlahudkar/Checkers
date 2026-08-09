@@ -134,7 +134,8 @@ public class Piece : MonoBehaviour
     // the whole capture turn ends, so this stops short of Destroy()'s board/list bookkeeping. It
     // only flags the piece as consumed (can't be captured again, can't threaten anyone - see
     // MoveGenerator's IsCaptured checks) and shrinks it halfway so it reads as knocked out. The real
-    // Destroy() runs later, once the chain finishes (see Player.FinalizeCapturedChain).
+    // Destroy() runs later, once the chain finishes - the inline sweep at the end of
+    // Player.HandlePieceMovementAndPieceDelete.
     public void MarkCaptured()
     {
         isCaptured = true;
@@ -144,10 +145,12 @@ public class Piece : MonoBehaviour
 
         // Shrinks to half size and stays there - it has to keep occupying its square as a
         // rules-required obstacle until the whole capture chain ends (see class comment above).
-        // The chain's actual last hop never reaches this path any more (see
-        // Player.WouldChainContinue) - it destroys itself for real immediately instead - so this
-        // only ever runs for a genuine mid-chain hop, which is about to be superseded by the next
-        // hop's own move/capture a moment later anyway.
+        // Every DeferCaptureRemoval hop goes through this, including a chain's last hop and even a
+        // capture that turns out to be entirely alone - there's no early-destroy shortcut for any
+        // of those any more (there used to be one, for the lone-capture case; it let a flying king
+        // fly back through a square that should still have been blocked - see Player.cs's capture
+        // settle-wait comment for the full story). So this is always immediately superseded by the
+        // real destroy from the end-of-chain sweep once the settle wait it's mid-way through ends.
         thisTransform.DOScale(0.5f, DisappearDuration).SetEase(Ease.InBack);
     }
 

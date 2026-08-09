@@ -297,9 +297,15 @@ public class MoveGenerator : Service<MoveGenerator>
     // describe a strictly worse total than the sequence a piece was originally chosen for, which
     // can't be true of the current best-known sequence. (PreferKingMover is a no-op here since
     // every candidate shares the same mover.)
-    public List<CaptureSequence> GetLegalContinuations(Piece piece)
+    // lastDirection is the direction of the hop that was just actually played, so
+    // ForbidImmediateReversal rulesets (Turkish) can carry that restriction across into this next
+    // hop's search - SearchCaptures only ever enforces it within its own recursion, so a fresh call
+    // starting from null (as FindCaptureSequences always does) would otherwise forget it the moment
+    // a hop is really committed instead of just searched hypothetically.
+    public List<CaptureSequence> GetLegalContinuations(Piece piece, (int dRow, int dCol)? lastDirection)
     {
-        List<CaptureSequence> sequences = FindCaptureSequences(piece);
+        List<CaptureSequence> sequences = new();
+        SearchCaptures(piece, new List<BoardPosition>(), new List<bool>(), new List<BoardPosition>(), lastDirection, sequences);
         if (sequences.Count == 0) { return sequences; }
 
         List<CaptureCandidate> candidates = new();
@@ -481,7 +487,15 @@ public class MoveGenerator : Service<MoveGenerator>
         int col = piece.Coloum_ID;
         int playerID = piece.Player_ID;
 
-        if (col == 0 || col == ruleSet.Columns - 1 || row == 0 || row == ruleSet.Rows - 1)
+        // Only valid for diagonal movement: a capture always needs both the enemy square and the
+        // landing square in-bounds, and for a diagonal direction those are symmetric around the
+        // piece on both axes at once, so sitting on ANY edge (row or column) makes every diagonal
+        // capture's landing square fall off the opposite edge. For orthogonal movement (Turkish),
+        // each direction only ever touches one axis - a piece on a column edge is still fully
+        // exposed to a vertical capture, and vice versa - so this shortcut would wrongly call it
+        // safe; falling through to the per-direction loop below handles that correctly instead.
+        if (ruleSet.MovementScheme == MovementScheme.Diagonal
+            && (col == 0 || col == ruleSet.Columns - 1 || row == 0 || row == ruleSet.Rows - 1))
         {
             /* safe position */
             return true;
@@ -519,8 +533,13 @@ public class MoveGenerator : Service<MoveGenerator>
                 continue;
             }
 
+            // A backward-moving man poses no threat only for rulesets that don't let men capture
+            // backward at all - MenCaptureBackward rulesets (Russian/International/Brazilian/
+            // Canadian/Turkish/Pool Checkers) let a mere man jump backward just as freely as a
+            // king. GetCaptureDirections already treats it this exact way for the mover's own
+            // capture generation; this heuristic needs the same condition to agree with it.
             bool enemyMovingBackward = dir.dRow != forward;
-            if (enemyMovingBackward && !enemy.IsCrownedKing)
+            if (enemyMovingBackward && !ruleSet.MenCaptureBackward && !enemy.IsCrownedKing)
             {
                 continue;
             }

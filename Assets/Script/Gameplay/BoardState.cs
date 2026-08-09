@@ -467,7 +467,10 @@ public static class BoardState
     {
         AICell piece = cells[row, col];
 
-        if (col == 0 || col == rules.Columns - 1 || row == 0 || row == rules.Rows - 1)
+        // Only valid for diagonal movement - see MoveGenerator.IsSafe's matching comment for why an
+        // orthogonal piece (Turkish) on an edge is still fully exposed along the other axis.
+        if (rules.MovementScheme == MovementScheme.Diagonal
+            && (col == 0 || col == rules.Columns - 1 || row == 0 || row == rules.Rows - 1))
         {
             return true;
         }
@@ -497,8 +500,10 @@ public static class BoardState
                 continue;
             }
 
+            // See MoveGenerator.IsSafe's matching comment - MenCaptureBackward rulesets let a mere
+            // man capture backward too, so this must agree with GetCaptureDirections's own gate.
             bool enemyMovingBackward = dir.dRow != forward;
-            if (enemyMovingBackward && !enemy.IsKing)
+            if (enemyMovingBackward && !rules.MenCaptureBackward && !enemy.IsKing)
             {
                 continue;
             }

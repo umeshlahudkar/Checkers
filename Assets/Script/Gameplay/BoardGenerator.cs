@@ -146,7 +146,16 @@ public class BoardGenerator : MonoBehaviour
         {
             for (int j = 0; j < colums; j++)
             {
-                if (ruleSet.PiecesOnAllSquares || (i + j) % 2 != 0)
+                // Mirrors GenerateBoard's own coloring formula (see there) so playing squares
+                // always land on the dark-colored ones: isWhiteSquare there is
+                // ((i+j)%2==0) != DarkSquareBottomRight, so dark is the negation of that, which
+                // simplifies to ((i+j)%2==0) == DarkSquareBottomRight. For every ruleset except
+                // Italian (the only one with the flag set), DarkSquareBottomRight is false, so
+                // this reduces back to the original (i+j)%2!=0 exactly - only Italian's parity
+                // actually changes. Before this fix, GeneratePieces never consulted the flag at
+                // all, so Italian's pieces landed on the light-rendered squares instead.
+                bool isDarkSquare = ((i + j) % 2 == 0) == ruleSet.DarkSquareBottomRight;
+                if (ruleSet.PiecesOnAllSquares || isDarkSquare)
                 {
                     if (i >= backRowOffset && i < backRowOffset + pieceRowsPerSide)
                     {

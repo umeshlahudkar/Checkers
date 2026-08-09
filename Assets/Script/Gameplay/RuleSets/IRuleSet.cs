@@ -78,10 +78,34 @@ public interface IRuleSet
     // Number of consecutive turns (across both players) without a capture or promotion before the
     // match is called a draw - prevents a shuffle that makes no progress from running forever. A
     // simplified, single-threshold stand-in for the real tournament rule (which shortens the limit
-    // for certain reduced endgame material) - that nuance is out of scope here.
+    // for certain reduced endgame material) - that nuance is out of scope here. 0 disables this rule
+    // entirely - only safe for a ruleset whose ThreefoldRepetitionEnabled already guarantees the
+    // match can't run forever without it (a finite board has finitely many positions, so a
+    // no-progress shuffle must eventually repeat one three times); Italian has neither, so it's the
+    // one ruleset that keeps this as its only automatic safety valve.
     int NoProgressMoveLimit { get; }
 
     // Whether a player instantly loses if reduced to exactly one non-king piece while the opponent
     // still has at least one King (Turkish dama's single-man-vs-Dama rule).
     bool SingleManLosesToKing { get; }
+
+    // Whether the same board position recurring with the same side to move, three times over the
+    // course of the match, is an automatic draw. True for every ruleset except Italian, whose
+    // published rules list no such rule (only "no forceable win" and mutual agreement).
+    bool ThreefoldRepetitionEnabled { get; }
+
+    // International/Canadian's material-specific endgame draws: once one side is reduced to exactly
+    // one King (no men) and the other holds exactly 3 Kings (no men), the match is drawn if that
+    // exact material persists for this many further moves without being resolved. 0 disables the
+    // rule (every ruleset but International/Canadian).
+    int ThreeVsOneKingDrawLimit { get; }
+
+    // Same idea as ThreeVsOneKingDrawLimit, for the tighter "2 Kings, or a King and a man, vs 1 King"
+    // material. 0 disables the rule.
+    int TwoVsOneKingDrawLimit { get; }
+
+    // Whether the match is drawn the instant both sides are reduced to exactly one piece each
+    // (Turkish dama's "1 vs 1" rule). Checked only after SingleManLosesToKing's own win condition has
+    // already had first refusal, so a lone man against a Dama still wins outright rather than drawing.
+    bool OneVsOneIsDraw { get; }
 }

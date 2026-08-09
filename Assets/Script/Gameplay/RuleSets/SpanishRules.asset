@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   displayName: Spanish
   description: 8x8 draughts - flying kings, forward-only men, mandatory maximum capture with a tiebreak for the most Kings taken.
-  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on an 8x8 board, with the bottom-right corner square light for each player. Each player starts with 12 pieces filling the first three rows on their side. White always moves first.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only, and can never move or capture backward under any circumstance. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory. If more than one path is available, you must play the one that captures the most pieces - ties are broken in favor of whichever takes the most Kings.\n\n<b><color=#D4AF37>No-Removal:</color></b>\nA captured piece stays on the board - still blocking its square - until your turn ends; you can't jump the same piece twice.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece only crowns if it finishes its turn on the back row - jumping through mid-capture and landing elsewhere leaves it a man.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move."
+  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on an 8x8 board, with the bottom-right corner square light for each player. Each player starts with 12 pieces filling the first three rows on their side. White always moves first.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only, and can never move or capture backward under any circumstance. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory. If more than one path is available, you must play the one that captures the most pieces - ties are broken in favor of whichever takes the most Kings.\n\n<b><color=#D4AF37>No-Removal:</color></b>\nA captured piece stays on the board - still blocking its square - until your turn ends; you can't jump the same piece twice.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece only crowns if it finishes its turn on the back row - jumping through mid-capture and landing elsewhere leaves it a man.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move.\n\n<b><color=#D4AF37>Draw:</color></b>\nEither player may offer a draw at any time; if accepted, the match ends level. The match is also drawn if the same position, with the same side to move, repeats three times."
   rows: 8
   columns: 8
   pieceRowsPerSide: 3
@@ -31,6 +31,6 @@ MonoBehaviour:
   midChainPromotionRule: 0
   deferCaptureRemoval: 1
   forbidImmediateReversal: 0
-  noProgressMoveLimit: 30
+  noProgressMoveLimit: 0
   singleManLosesToKing: 0
   firstMoveColor: 1

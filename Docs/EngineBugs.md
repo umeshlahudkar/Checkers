@@ -19,60 +19,52 @@ This is a **static code review only** — no live Unity session, no executed rep
 scenario below is a hand-traced code path anchored to cited line numbers, not an observed bug report.
 See [Coverage and limitations](#coverage-and-limitations) for what was explicitly out of scope.
 
+**A correction after the audit:** two of its "confirmed" findings (originally labeled C1 and H4)
+were retracted during implementation, after checking a detail the audit's own adversarial-verify
+pass didn't chase down. See [Retracted findings](#retracted-findings) — worth reading before trusting
+this document's "confirmed" label at face value elsewhere, since it shows the verify pass was not
+airtight.
+
 ## Executive summary
 
 Move and capture generation itself (`MoveGenerator.cs`, mirrored in `BoardState.cs` for the bot) is
 fundamentally sound — mandatory-capture enforcement, tier cascades, board setup, and win-condition
 detection were traced field-by-field across all 9 rulesets and held up far more often than not. The
-real defects cluster in three places instead:
+real defects clustered in two places: **the capture-chain execution layer** in `Player.cs`
+(board-state corruption and turn-lifecycle races), and **networking/RPC trust** (no sender or turn
+authority validation anywhere). Both are now addressed — **every Critical and High finding in this
+document is fixed or retracted**, leaving only Medium/Low/Cosmetic quality-and-documentation items
+open. See [Status](#status) for the full rundown and for the honest caveats on what "fixed" does and
+doesn't mean for a couple of these (particularly H5's residual network-latency window).
 
-1. **The capture-chain execution layer** in `Player.cs`, where a well-intentioned "destroy early"
-   optimization and a missing turn-timer guard can corrupt board state or strand pieces permanently.
-2. **Player-identity assumptions baked into `GameManager.cs`**, where a hardcoded
-   Black=player1/White=player2 mapping — true only in Multiplayer — silently inverts outcomes and
-   swaps UI in offline modes where color is randomly assigned.
-3. **Cosmetic and documentation drift** — every ruleset's in-app rules text overpromises (none
-   mention their own draw condition), and a couple of code comments describe behavior that no longer
-   matches the code they're attached to.
+**C2** was the single most important finding — it could silently hand a player an illegal extra
+capture in ordinary play, not just degrade AI quality or text — and is fixed. It was also the
+audit's only surviving Critical: the other original Critical (C1, a claimed hardcoded color mapping)
+and its companion High (H4) were both retracted during implementation, not fixed — see
+[Retracted findings](#retracted-findings) below for why they were never real bugs.
 
-The single most important fix is **C2** (early-destroy corrupting a live capture chain) — it can
-silently hand a player an illegal extra capture in ordinary play, not just degrade AI quality or
-text. Close behind is **C1** (the hardcoded color mapping), which inverts match outcomes in offline
-play roughly half the time for any ruleset using `SingleManLosesToKing`, and swaps the pieces-left UI
-for every offline match regardless of ruleset.
+The remaining six High findings (**H1, H2, H3, H5, H6, H7**) are now all fixed as well. Fixing them
+surfaced one thing the original audit missed entirely: `Player.UpdateGrid` — the core RPC that
+actually moves a piece on every client's board for *every* move, not just captures — had no sender
+validation either, and wasn't on the audit's list of RPCs at all. It's covered now, alongside the six
+RPCs the audit did find. See H7's section for the full list.
+
+**All Medium findings are now resolved one way or another too.** Four are fixed (**M1, M3, M5, M6**);
+one (**M4**) stays intentionally deferred, tied to the same untested Russian asset flag C2's
+fix-order notes already flagged as needing play-testing rather than a blind change; and one
+(**M2**) was put to an explicit choice rather than fixed by default, because it's a game-balance
+question — how long every ruleset takes to reach a no-progress draw — dressed as a bug. The answer
+was to leave it as the deliberate simplification `IRuleSet.cs` already documents it as. Implementing
+M7 also produced a second correction of the same shape as H5's: the audit's own suggested fix
+location for one of its three guards turned out to be structurally wrong once traced against its
+actual caller, and the equivalent protection had to move up a level to where it would actually run.
+See M7's section for what changed and why.
 
 ---
 
 ## Critical
 
-### C1 — Turkish's instant-win check silently swaps winner and loser in offline play
-
-**File:** [GameManager.cs:454-483](../Assets/Script/Gameplay/GameManager.cs) (`TryEndGameOnSingleManVsKing` / `GetSingleManVsKingWinner`)
-
-**What it is:** The Turkish `singleManLosesToKing` instant win/loss check hardcodes Black=player 1,
-White=player 2:
-
-```csharp
-int winner = GetSingleManVsKingWinner(gameplayController.blackPieces, gameplayController.whitePieces, 2);
-if (winner == 0)
-{
-    winner = GetSingleManVsKingWinner(gameplayController.whitePieces, gameplayController.blackPieces, 1);
-}
-```
-
-That mapping is only actually true in Multiplayer (`Player.cs:78`). In offline VsBot/VsPlayer, the
-local player's color is assigned via `Random.Range(1,3)`, so player 1 is White in roughly half of
-matches.
-
-**Failure scenario:** Offline Turkish match; the random roll makes player 1 White. White is reduced
-to a single uncrowned man while Black (player 2) still holds a Dama. `GetSingleManVsKingWinner`
-returns `winner = 1` — the side that just *lost* the material race — and `GameManager.GameOver(1, ...)`
-awards **the losing player** the win.
-
-**Fix:** Resolve the winner from actual `PieceType` ownership per player (look up which `Player`
-instance currently holds Black/White) rather than a fixed player-number-to-color mapping.
-
-### C2 — Early-destroy optimization lets a flying king play an illegal extra capture
+### C2 — Early-destroy optimization lets a flying king play an illegal extra capture — Fixed
 
 **Files:** [Player.cs:219-228](../Assets/Script/Gameplay/Player.cs) (early-destroy shortcut),
 [Player.cs:257](../Assets/Script/Gameplay/Player.cs) (authoritative recheck),
@@ -116,17 +108,21 @@ kings — see the parity argument in `CheckersRules.md`'s American section, whic
 or for any man's capture (parity prevents a man's landing square from ever coinciding with a square
 it could later need to fly back through).
 
-**Fix:** Fold the early-destroy branch into the same end-of-chain sweep that already exists at
-[Player.cs:282-288](../Assets/Script/Gameplay/Player.cs) instead of running it mid-turn — i.e. always
-wait for the chain to genuinely end before performing a real `Destroy()`. Alternatively, re-run
-`WouldChainContinue` against a board state where the piece is still logically "captured but
-blocking" rather than physically removed.
+**Fix applied:** the early-destroy special case (the whole block quoted above, plus its only caller
+`WouldChainContinue`) was deleted outright rather than patched. Every `DeferCaptureRemoval` capture
+now stays merely marked through the entire settle wait — lone capture or chain hop alike — and is
+only ever really destroyed by the pre-existing end-of-chain sweep, *after* the authoritative
+`canContinue` check has already run. There is now exactly one code path that decides "is this
+capture really over," instead of two that could disagree. Cosmetic cost: a lone capture no longer
+gets a single clean destroy animation — it shows the same mark-then-sweep sequence a genuine
+multi-kill already used. This also resolved CS5 (a stale comment describing the removed path) and a
+dangling reference to a `Player.FinalizeCapturedChain` method that never existed.
 
 ---
 
 ## High
 
-### H1 — Clicking a different piece mid-capture-chain silently abandons the mandatory continuation
+### H1 — Clicking a different piece mid-capture-chain silently abandons the mandatory continuation — Fixed
 
 **Files:** [HumanPlayer.cs:119-146](../Assets/Script/Gameplay/HumanPlayer.cs) (`OnHighlightedPieceClick`),
 [Player.cs:116-117](../Assets/Script/Gameplay/Player.cs) (`movablePieces` populated once per turn)
@@ -142,11 +138,16 @@ be available). Pieces X and Y both have legal captures. The player starts captur
 X's continuation is highlighted, they click Y instead. X's chain is abandoned mid-way — an illegal
 partial capture is left standing on the board — and Y's separate capture begins.
 
-**Fix:** Track a "chain in progress" flag on `Player`/`HumanPlayer`; gate `OnHighlightedPieceClick`/
-`Piece.OnClick` on it so only the currently-chaining piece (or its legal continuation targets) can be
-clicked until the chain naturally ends.
+**Fix applied:** added `Player.IsChainInProgress` (`chainCaptureCount > 0`) and a guard at the top of
+`HumanPlayer.OnHighlightedPieceClick`: while a chain is in progress, *any* piece click — including a
+different piece, and including re-clicking `selectedPiece` itself — re-displays the same forced
+continuation via `ContinueAfterKill` instead of falling through to `SelectPieceForNewMove`. The
+same-piece re-click case turned out to matter too: `SelectPieceForNewMove` unconditionally clears
+`capturedThisChain` without destroying what's in it, so without this guard a mid-chain re-click on
+the correct piece would have leaked those pieces the same way abandoning the chain to a *different*
+piece would have. One check covers both.
 
-### H2 — Turkish's "no 180° reversal" rule isn't enforced across real hop boundaries
+### H2 — Turkish's "no 180° reversal" rule isn't enforced across real hop boundaries — Fixed
 
 **File:** [MoveGenerator.cs:300-336](../Assets/Script/Gameplay/MoveGenerator.cs)
 (`GetLegalContinuations`, reversal check)
@@ -161,10 +162,16 @@ was just played is never compared against the direction offered for the next hop
 option, force — a capture straight back through the square the piece just vacated, exactly what the
 rule forbids.
 
-**Fix:** Thread the direction of the just-played hop into the `FindCaptureSequences`/`SearchCaptures`
-call inside `GetLegalContinuations`, instead of resetting it to `null` on every real hop.
+**Fix applied:** `GetLegalContinuations` now takes a `(int dRow, int dCol)?` parameter and calls
+`SearchCaptures` directly with it, instead of going through `FindCaptureSequences` (which always
+starts fresh at `null`, correctly, for its other callers like `CanPieceKill`). `Player`'s abstract
+`ContinueAfterKill` now takes the just-captured square's `BoardPosition` alongside the piece — both
+`HumanPlayer` and `BotPlayer` derive the hop's unit direction from it (`Sign(current - captured)` on
+each axis, which is always well-defined since a landing square can never coincide with the square it
+jumped) and pass that through. Also closes the same gap for the bot: `BotPlayer` drives its own
+capture chain through this exact code path, so it was equally exposed.
 
-### H3 — A turn timeout mid-capture-chain permanently strands a captured piece
+### H3 — A turn timeout mid-capture-chain permanently strands a captured piece — Fixed
 
 **Files:** [Player.cs:401-426](../Assets/Script/Gameplay/Player.cs) (`DestroyPieceAt`),
 [Player.cs:282-288](../Assets/Script/Gameplay/Player.cs) (end-of-chain sweep),
@@ -183,25 +190,18 @@ takes too long deciding on hop 2, and the timer fires. The hop-1 victim stays on
 visually half-scaled, still occupying its square, still counted in `whitePieces`/`blackPieces` —
 corrupting piece counts and permanently blocking that square for the rest of the match.
 
-**Fix:** On timeout (or any turn change), run the same destroy sweep over any player's non-empty
-`capturedThisChain` before clearing it.
+**Fix applied:** added `Player.FlushIncompleteChain()` — runs the same real-destroy sweep the
+end-of-chain path already uses over any leftover `capturedThisChain`, then resets it and
+`chainCaptureCount` to zero. Called from the top of `GameManager.HandleTurnMissCount`, before either
+branch (timeout-loss or turn-change) runs, so it applies regardless of which one fires; a no-op
+whenever the timed-out player wasn't actually mid-chain (the common case). **This interacts with H1:**
+once `IsChainInProgress` (added for H1) gates every piece click, a stale nonzero `chainCaptureCount`
+left over from an abandoned chain would have permanently locked that player out of ever selecting a
+new piece on their next turn — `FlushIncompleteChain` resetting it is what keeps that from happening.
+The two fixes were implemented together specifically because of this interaction; landing H1 without
+also landing H3 would have turned a piece-leak bug into a total-lockout bug.
 
-### H4 — Remaining-piece-count helper has the same hardcoded color mapping as C1
-
-**File:** [GameManager.cs:650-655](../Assets/Script/Gameplay/GameManager.cs) (`GetRemainingPieceCount`)
-
-Same fixed Black=player1/White=player2 assumption as C1, applied to the pieces-left UI. Feeds
-`InitPiecesLeft`/`UpdatePiecesLeft` (`GameManager.cs:217,418`) and `LocalPiecesLeft`/
-`OpponentPiecesLeft` on every result screen (`GameManager.cs:518-519,550-551,613-614`);
-`Piece.cs:110`'s live per-capture update has the identical hardcoded ordering.
-
-**Failure scenario:** Any offline match where the random roll makes player 1 White — both players'
-"pieces left" figures are swapped for the entire match, live and on the end screen. Unlike C1, this
-fires on *every* affected match regardless of ruleset, not just Turkish's `SingleManLosesToKing`.
-
-**Fix:** Same as C1 — resolve remaining counts from actual `PieceType` ownership.
-
-### H5 — The turn timer keeps counting through a move's commit animation
+### H5 — The turn timer keeps counting through a move's commit animation — Fixed (with a caveat)
 
 **Files:** [TimerController.cs:40-59](../Assets/Script/Gameplay/TimerController.cs),
 [Player.cs:182-307](../Assets/Script/Gameplay/Player.cs) (`HandlePieceMovementAndPieceDelete`)
@@ -217,11 +217,37 @@ a legal move with under 0.5s left on the clock. The timer hits zero and fires
 Both act on the shared `currentTurn` with no ordering protection: the opponent's turn is silently
 skipped, the player who moved in time is wrongly charged a miss, and turn state visibly bounces.
 
-**Fix:** Have the commit coroutine check `IsMyTurn` (or a turn-generation token) immediately before
-its final `SwitchTurn` call, and/or pause the timer the instant a legal move is committed rather than
-only once `SwitchTurn` actually runs.
+**Fix applied, and why the simpler version of it wasn't enough:** `TimerController` gained
+`PauseTimer`/`ResumeTimer`, freezing/resuming the countdown at its exact remaining value rather than
+clearing it. The first version of this fix called them as plain local methods from
+`HandlePieceMovementAndPieceDelete` — which turned out to only close the race when the mover and the
+master client are the *same device*. Every client runs its own independent `TimerController`
+instance off the shared `PhotonNetwork.Time` baseline, but it's specifically the **master's own copy**
+that `HandleTurnMissCount`'s enforcement listens to (by design — see that method's existing comment
+on why a backgroundable mover's device can't police its own clock). Pausing only the mover's local
+instance does nothing to the master's separate, still-running one whenever they're different physical
+devices — which is roughly half of real Multiplayer matches. (Offline VsPlayer pass-and-play is
+unaffected either way, since mover and master are always the same single device there.)
 
-### H6 — Racing `ChangeTurn` RPCs can corrupt turn/miss-count/no-progress state
+The shipped fix broadcasts the pause/resume instead: `GameManager.PauseTurnTimer`/`ResumeTurnTimer`
+send a `[PunRPC]` (`PauseTurnTimerRPC`/`ResumeTurnTimerRPC`, `RpcTarget.All`) that every client
+applies to its own local `TimerController`, including whichever physical device is master. This
+closes the race for both offline and true Multiplayer — with one honest caveat: it's a fire-and-forget
+RPC, not a request/acknowledge round trip, so there's a residual window equal to actual network
+latency (typically tens of milliseconds) between "mover commits a move" and "master's timer has
+actually received the pause." The original bug's window was the *entire* commit animation
+(500ms–1000ms+); this fix narrows it to roughly one network round-trip, which needed a genuine
+architecture change (RPC broadcast, not a local call) to achieve — but doesn't claim to be a
+mathematically zero window without a full request-acknowledge protocol, which would be a much larger
+change for a residual race this narrow.
+
+`TimerController.ResumeTimer` also had to guard against a subtler bug of its own: naively flipping
+`isRunning` back to `true` unconditionally would have started the timer in VsBot (where
+`enableTurnTimer:0` means it was never running to begin with). It now tracks
+`wasPausedForCommit` — set only when `PauseTimer` actually froze a live countdown — so `ResumeTimer`
+is a no-op unless there was a genuine pause to undo.
+
+### H6 — Racing `ChangeTurn` RPCs can corrupt turn/miss-count/no-progress state — Fixed
 
 **File:** [GameManager.cs:264-330](../Assets/Script/Gameplay/GameManager.cs)
 (`SwitchTurn`, `HandleTurnMissCount`, `ChangeTurn`)
@@ -238,10 +264,17 @@ master client B's own timer independently crosses zero on stale local state and 
 `ChangeTurn` carrying B's outdated `movesWithoutProgress`. Whichever lands second corrupts the
 other's counters.
 
-**Fix:** Add a monotonic sequence number to `ChangeTurn`'s payload and ignore any RPC whose sequence
-number doesn't match the expected next value.
+**Fix applied:** added a `turnSequence` counter on `GameManager`, bumped every time `ChangeTurn`
+actually applies. Both `SwitchTurn` and `HandleTurnMissCount` now capture the value they saw and send
+it as an extra `expectedSequence` argument; `ChangeTurn` checks it first and returns immediately if it
+no longer matches (meaning some other transition already applied first), rather than re-applying its
+own now-stale view of `movesWithoutProgress`/miss counts on top. Reset to `0` in `ResetGameManager`
+alongside the other match-lifetime counters, so it can't carry a stale value into a rematch.
+Complements H5 rather than replacing it: H5 shrinks the race window that lets two `ChangeTurn`s fire
+for the same transition in the first place; H6 makes sure that *if* it still happens (the residual
+network-latency window H5's fix openly acknowledges), the second one can't corrupt state.
 
-### H7 — No gameplay RPC validates sender identity or turn authority
+### H7 — No gameplay RPC validates sender identity or turn authority — Fixed
 
 **Files:** [Player.cs:401-444](../Assets/Script/Gameplay/Player.cs)
 (`DestroyPieceAt`, `CrownPieceAt`, `ReportChainLength`),
@@ -257,15 +290,47 @@ bypassed by a modified client calling the RPC method directly.
 directly, or targets the opponent's `Player` PhotonView's `DestroyPieceAt`/`CrownPieceAt` with
 arbitrary coordinates. Every other client accepts and applies it unconditionally.
 
-**Fix:** Validate sender identity (`PhotonMessageInfo.Sender`) against the expected mover/owner and
-re-derive legality server-authoritatively (or at minimum on the master client) before applying any
-of these RPCs.
+**One RPC the audit missed entirely:** re-checking every `[PunRPC]` in the project while implementing
+this (rather than trusting the list above) turned up `Player.UpdateGrid` — the RPC that actually moves
+a piece on every client's board for *every* move, capture or not. It wasn't in the audit's list, isn't
+named anywhere in this finding, and had exactly the same missing-validation problem as the RPCs that
+were found. Arguably the single most consequential one to have fixed, since it's the one that runs on
+literally every move rather than only ones involving a capture or crowning.
+
+**Fix applied:** added `GameManager.IsAuthorizedSender(Photon.Realtime.Player sender)`, and a
+`if (!IsAuthorizedSender(info.Sender)) { return; }` guard at the top of **every** `[PunRPC]` method in
+the project — all nine of them: `Player.DestroyPieceAt`, `CrownPieceAt`, `ReportChainLength`,
+`UpdateGrid`, and `GameManager.ChangeTurn`, `GameOver`, `Draw`, `PauseTurnTimerRPC`,
+`ResumeTurnTimerRPC` (the last two added by the H5 fix above, and just as exploitable as the rest —
+a forged `PauseTurnTimerRPC` spam would let a cheating client freeze the opponent's clock
+indefinitely). Confirmed by grepping `[PunRPC]` project-wide after the fact, which is how the
+`UpdateGrid` gap surfaced in the first place.
+
+`IsAuthorizedSender` treats exactly two sources as legitimate: the master client (the sole authority
+for timeout/miss-driven actions, and for `Player.FlushIncompleteChain`'s H3 sweep, which the master
+sends on a timed-out player's own `PhotonView` on that player's behalf), or the player whose turn it
+currently is (the sole legitimate author of RPCs resulting from their own move). A `null` sender
+(PUN's own convention for "this wasn't delivered as a real RPC") is treated as trusted, since that
+only happens for a direct, non-RPC call — reachable only from code already running in this same
+process, such as this file's own `[ContextMenu]` debug shortcuts (`ForceWin`/`ForceLose`/`ForceDraw`),
+which call `GameOver`/`Draw` directly rather than through PUN and would otherwise have needed
+rewiring. Every `[PunRPC]` method's trailing `PhotonMessageInfo info` parameter has a `= default` so
+those direct calls keep compiling unchanged.
+
+**What this does not do:** re-derive move legality. A cheating client can no longer forge an RPC as
+someone else, but a client that *is* legitimately the current mover, calling `DestroyPieceAt`/
+`UpdateGrid` with coordinates its own UI would never have produced, still gets it applied — closing
+that fully would mean re-running `MoveGenerator` against the claimed move server-authoritatively (on
+the master, or a real backend) before ever broadcasting the result, which is a materially bigger
+architectural change than this fix and was judged out of proportion to what a single-issue fix should
+take on. This is the one place in this document where "fixed" means "the specific vulnerability
+described is closed," not "the whole class of RPC trust is now fully server-authoritative."
 
 ---
 
 ## Medium
 
-### M1 — The bot discards its own searched capture sequence after the first hop
+### M1 — The bot discards its own searched capture sequence after the first hop — Fixed
 
 **File:** [BotPlayer.cs:61-100](../Assets/Script/Gameplay/BotPlayer.cs)
 (`MakeMove`, `ContinueAfterKill`, `ChooseSafestOrFirst`)
@@ -283,11 +348,19 @@ incomplete tiebreak tiers), the divergence is a same-length but worse/different 
 are unaffected — `HumanPlayer.ContinueAfterKill` hands hop 2+ back to the human rather than
 auto-picking.
 
-**Fix:** Store the full searched `CaptureSequence` on the bot's pending move and replay it
-hop-by-hop, falling back to `ChooseSafestOrFirst` only if the stored sequence becomes invalid (e.g.
-an external state change).
+**Fix applied:** `BotPlayer` now stores the search's chosen `CaptureSequence` (`pendingSequence`) and
+a hop index into it (`pendingSequenceHopIndex`, starting at 1 since hop 0 is played immediately by
+`MakeMove`) whenever it commits a capture; a quiet move clears it. A new
+`ChoosePlannedOrSafestOrFirst` runs before every subsequent hop: if the plan still has a hop left,
+it checks whether that hop's landing/captured squares match any of the currently-legal
+continuations, and if so plays exactly that one — otherwise (plan exhausted, or no longer legal for
+any reason) it clears the plan and falls back to the original `ChooseSafestOrFirst` heuristic, same
+as before this fix. The validation step is defensive rather than strictly necessary given this
+codebase's synchronous single-turn execution (nothing else can move mid-chain), but keeps a model/
+reality divergence elsewhere in the AI (e.g. **L6**, mid-chain promotion not being modeled in the
+search) from ever making the bot commit to a hop that isn't actually legal.
 
-### M2 — No-progress draw counts plies, not move-pairs
+### M2 — No-progress draw counts plies, not move-pairs — Left as documented deliberate behavior
 
 **File:** [GameManager.cs:294-309](../Assets/Script/Gameplay/GameManager.cs) (`SwitchTurn`)
 
@@ -308,11 +381,16 @@ a routine occurrence in king endgames — and the match is silently drawn.
 `CheckersRules.md` already narrates the general discrepancy per-variant. This entry adds the specific
 mechanism (ply-counting, not move-pair-counting) as a concrete, previously-undocumented detail.
 
-**Fix:** Count move-pairs, not plies (increment once per two plies, or track per-color separately);
-consider gating the draw on material (kings-only) for rulesets whose spec ties it to endgame
-material; add a per-ruleset flag to disable the no-progress draw for rulesets that don't define one.
+**Decision (asked explicitly, not assumed):** presented as a choice - fix the ply/move-pair
+mismatch, leave it as the documented simplification, or add a narrower per-ruleset opt-out for the
+3 variants with no move-limit draw at all. Chosen: leave it as-is. Rebalancing how long every one of
+the 9 rulesets takes to reach a no-progress draw is a game-design tradeoff, not a pure correctness
+bug - `IRuleSet.cs` already frames it as a deliberate simplification, so it wasn't treated as
+something to fix by default the way the rest of this document's findings were. Recorded here so a
+future pass doesn't have to re-derive the same reasoning, and so it's clear this was a considered
+choice, not an oversight.
 
-### M3 — `IsSafe` ignores `MenCaptureBackward`
+### M3 — `IsSafe` ignores `MenCaptureBackward` — Fixed
 
 **File:** [MoveGenerator.cs:522-526](../Assets/Script/Gameplay/MoveGenerator.cs)
 (mirrored at `BoardState.cs:500-504`)
@@ -327,10 +405,12 @@ captures whenever that flag is set.
 backward, so `EvaluatePiece` awards a protected bonus instead of a vulnerability penalty, and
 `ChooseSafestOrFirst` picks continuations that look safe but lose the piece on reply.
 
-**Fix:** In `IsSafe`, only skip a backward-moving enemy's threat when
-`!ruleSet.MenCaptureBackward && !enemy.IsCrownedKing`.
+**Fix applied:** `IsSafe` now skips a backward-moving enemy's threat only when
+`!ruleSet.MenCaptureBackward && !enemy.IsCrownedKing` — matching `GetCaptureDirections`'s own gate
+exactly, so the safety heuristic and the actual capture-generation rule it's supposed to be modeling
+finally agree. Fixed identically in both `MoveGenerator.IsSafe` and its `BoardState.IsSafe` mirror.
 
-### M4 — Russian's rules text contradicts the (already-known-wrong) removal setting
+### M4 — Russian's rules text contradicts the (already-known-wrong) removal setting — Still deferred
 
 **File:** [RussianRules.asset:17](../Assets/Script/Gameplay/RuleSets/RussianRules.asset)
 
@@ -340,7 +420,15 @@ behavior (already flagged as wrong in `CheckersRules.md`), but the opposite of t
 Turkish-strike rule. **Must be fixed in the same change as the `deferCaptureRemoval` field itself —
 fixing one without the other leaves the text and the code newly disagreeing in the other direction.**
 
-### M5 — Italian's cantone is dark but not a playing square (sharpened root cause)
+**Status:** intentionally not touched, consistent with the earlier decision in `CheckersRules.md`
+(and reaffirmed while fixing C2) to leave Russian's `deferCaptureRemoval` flag alone until it's
+actually play-tested — it would be the first shipped pairing of `ContinueAsKing` with
+`deferCaptureRemoval:1` anywhere in the project, an untested combination, not a safe one-line flip.
+Since this text fix is explicitly scoped to land in the *same* change as that flag flip, it stays
+deferred alongside it rather than being split off and fixed in isolation, which the finding itself
+warns would just leave things wrong in the other direction.
+
+### M5 — Italian's cantone is dark but not a playing square (sharpened root cause) — Fixed
 
 **Files:** [BoardGenerator.cs:77](../Assets/Script/Gameplay/BoardGenerator.cs) (square coloring) vs.
 [BoardGenerator.cs:128](../Assets/Script/Gameplay/BoardGenerator.cs) (piece placement)
@@ -352,10 +440,15 @@ concrete result: all 12+12 Italian pieces land on the **light**-rendered squares
 bottom-right cantone sits empty and unreachable for the entire game — not merely "cosmetically off,"
 but the *opposite* square set from what a dark-square variant should use.
 
-**Fix:** Make `GeneratePieces`'s parity check consult `ruleSet.DarkSquareBottomRight` the same way
-`GenerateBoard`'s coloring formula does, so playing squares always match the dark-colored squares.
+**Fix applied:** `GeneratePieces` now computes `isDarkSquare = ((i + j) % 2 == 0) == ruleSet.DarkSquareBottomRight`
+— algebraically the negation of `GenerateBoard`'s own `isWhiteSquare` formula, so playing squares are
+now provably always the dark-colored ones. Hand-verified for Italian: square (7,7) — the bottom-right
+cantone — now evaluates `isDarkSquare = true`, matching its dark rendering, and since row 7 is one of
+player 1's three piece rows, it correctly receives a piece. For all 8 other rulesets
+(`DarkSquareBottomRight` is `false` everywhere else), the new formula algebraically reduces back to
+exactly the original `(i + j) % 2 != 0` — verified unchanged, not just assumed so.
 
-### M6 — `IsSafe`'s board-edge shortcut is wrong for orthogonal movement
+### M6 — `IsSafe`'s board-edge shortcut is wrong for orthogonal movement — Fixed
 
 **File:** [MoveGenerator.cs:484-488](../Assets/Script/Gameplay/MoveGenerator.cs)
 
@@ -368,10 +461,15 @@ at (4,0) directly below with (2,0) empty. A legal vertical capture exists, but `
 immediately because `col == 0`, feeding a false-safe verdict into both `BotPlayer.ChooseSafestOrFirst`
 and, via the identical `BoardState.IsSafe` mirror, every leaf of the minimax search.
 
-**Fix:** Gate the edge shortcut on `ruleSet.MovementScheme == MovementScheme.Diagonal`, or check
-per-direction board-edge validity instead of a blanket row/col==0/max shortcut.
+**Fix applied:** gated the shortcut on `ruleSet.MovementScheme == MovementScheme.Diagonal` in both
+`MoveGenerator.IsSafe` and `BoardState.IsSafe`. For the 8 diagonal rulesets nothing changes (the
+shortcut is provably correct there — any diagonal capture's landing square would fall off the
+opposite edge). For Turkish specifically, an edge position now falls through to the existing
+per-direction loop below, which already checks board-edge validity per direction and was already
+correct on its own — the shortcut was purely a (wrong, for this one ruleset) optimization sitting in
+front of already-correct logic.
 
-### M7 — `GameOver`/`Draw` RPCs have no already-ended guard
+### M7 — `GameOver`/`Draw` RPCs have no already-ended guard — Fixed
 
 **File:** [GameManager.cs:485-489](../Assets/Script/Gameplay/GameManager.cs) (`GameOver`),
 [:532-536](../Assets/Script/Gameplay/GameManager.cs) (`Draw`),
@@ -385,8 +483,19 @@ limit and races a timeout can trigger both a `GameOver("out of time")` and a `Dr
 RPC in close succession; every client applies both, showing two stacked or contradictory result
 screens.
 
-**Fix:** Check and short-circuit on `gameState == Ending` at the top of `GameOver`, `Draw`, and
-`ShowVictoryByForfeit`.
+**Fix applied, with a correction along the way:** `GameOver` and `Draw` both now short-circuit with
+`if (gameState != GameState.Playing) { return; }` before starting their coroutines. `ShowVictoryByForfeit`
+turned out to be the wrong place for the equivalent guard, despite that being exactly what the
+finding's own suggested fix said to do: its caller,
+`MatchSessionEventManager.PlayForfeitSequence`, already calls `PrepareGameOverVisuals()` — which sets
+`gameState = Ending` as its first synchronous action — *immediately before* calling
+`ShowVictoryByForfeit()`, every time, including on a completely legitimate first call. A guard inside
+`ShowVictoryByForfeit` would see its own caller's transition having just happened and always reject,
+so it would never actually run at all. The equivalent protection was moved one level up instead: added
+to `MatchSessionEventManager.OnPlayerLeftRoom`'s existing `canOpenGameOverScreen` check (which
+previously only checked whether a result *page* was already open), so a forfeit sequence now also
+never starts if `GameManager.GameState` is no longer `Playing` — checked *before* `PrepareGameOverVisuals`
+runs for the forfeit path, the same position in the sequence the other two guards occupy for theirs.
 
 ---
 
@@ -429,15 +538,19 @@ reached by the non-acting replica) clears it. Pure dead-reference retention for 
 duration — never read elsewhere, no gameplay effect. *Fix:* low priority; clear the list on
 `ChangeTurn` receipt for the non-owning replica if desired.
 
-### L5 — `WouldChainContinue` drops `ContinueAsKing` crowning (latent)
+### L5 — `WouldChainContinue` drops `ContinueAsKing` crowning (latent) — Resolved (moot)
 
-[Player.cs:174-180](../Assets/Script/Gameplay/Player.cs). Evaluates `CanPieceKill` *before*
-crowning, while the authoritative check crowns first — would wrongly conclude a chain ended when a
-newly-crowned king could actually continue. **Not currently live:** the only shipped ruleset using
-`ContinueAsKing` (Russian) also ships `deferCaptureRemoval:0`, so the gate that would trigger this
-path ([Player.cs:219](../Assets/Script/Gameplay/Player.cs)) never executes for Russian today.
-**Must be fixed in tandem with any future Russian `deferCaptureRemoval` correction** — see
-`CheckersRules.md`'s Russian caveats, which already flag that combination as untested.
+`Player.cs:174-180` originally. Evaluated `CanPieceKill` *before* crowning, while the authoritative
+check crowns first — would have wrongly concluded a chain ended when a newly-crowned king could
+actually continue. Flagged as **not currently live**: the only shipped ruleset using `ContinueAsKing`
+(Russian) also ships `deferCaptureRemoval:0`, so the gate that would trigger this path
+(`Player.cs:219`, the old early-destroy special case) never executed for Russian. The audit's own
+recommendation was to fix it in tandem with any future Russian `deferCaptureRemoval` correction.
+
+**Resolved as a side effect of C2, not by that recommended fix.** `WouldChainContinue` — this
+finding's entire subject — was deleted outright when C2 removed the early-destroy special case that
+was its only caller (see C2 above). There is no longer a method to have this bug in, for Russian or
+any other ruleset, so nothing needs revisiting if/when Russian's `deferCaptureRemoval` is corrected.
 
 ### L6 — Capture search never models mid-chain promotion (latent)
 
@@ -516,15 +629,70 @@ Italian ships the redundant-but-harmless value.
 future maintainer trusting the comment could wrongly "fix" Brazilian's asset. *Fix:* correct the
 comment to cite Spanish.
 
-### CS5 — Stale comment on `MarkCaptured` describes behavior that no longer holds for multi-hop chains
+### CS5 — Stale comment on `MarkCaptured` describes behavior that no longer holds for multi-hop chains — Fixed
 
-[Piece.cs:142-145](../Assets/Script/Gameplay/Piece.cs). Claims a chain's final hop never reaches the
+[Piece.cs:142-145](../Assets/Script/Gameplay/Piece.cs). Claimed a chain's final hop never reaches the
 half-scaled `MarkCaptured` state because the early-destroy path handles it — true only for genuine
 single-hop captures (the `capturedThisChain.Count == 1` gate). Every hop of a 2+-hop chain, including
-its last, does go through `MarkCaptured` until the end-of-chain sweep. The comment (and a reference
-elsewhere in `Player.cs`) also names a method, `Player.FinalizeCapturedChain`, that doesn't exist —
-the sweep is inline at [Player.cs:282-288](../Assets/Script/Gameplay/Player.cs). *Fix:* correct the
-comment; no behavioral change needed.
+its last, went through `MarkCaptured` until the end-of-chain sweep. The comment (and a reference
+elsewhere in `Player.cs`) also named a method, `Player.FinalizeCapturedChain`, that never existed —
+the sweep was always inline.
+
+**Fixed as a side effect of C2.** Removing the early-destroy path entirely (see C2 above) made the
+comment's premise disappear rather than just its accuracy — every hop, including a lone capture, now
+goes through `MarkCaptured` uniformly. Both this comment and the `FinalizeCapturedChain` references
+in `Piece.cs` and `Player.cs` were rewritten to describe the current, simpler behavior.
+
+---
+
+## Retracted findings
+
+Two of the audit's original "confirmed" findings — **C1** and **H4** — were retracted during
+implementation. Recorded here rather than deleted, since the reason they're wrong is itself worth
+preserving: it's exactly the kind of thing a future audit pass could re-discover and wrongly "fix"
+again.
+
+**Original claim (C1):** `GameManager.TryEndGameOnSingleManVsKing`/`GetSingleManVsKingWinner`
+([GameManager.cs:454-483](../Assets/Script/Gameplay/GameManager.cs)) "hardcodes Black=player 1,
+White=player 2" when computing Turkish's single-man-vs-king winner — claimed to invert the result in
+offline modes, where `PvcModeHandler`/`PvpModeHandler` assign color to player 1 via
+`Random.Range(1,3)` rather than always Black.
+
+**Original claim (H4):** `GameManager.GetRemainingPieceCount`
+([GameManager.cs:679-686](../Assets/Script/Gameplay/GameManager.cs)) has the identical hardcoded
+mapping, swapping the pieces-left UI in the same offline scenario.
+
+**Why both are wrong:** `GameplayController.whitePieces`/`blackPieces` are *not* partitioned by each
+piece's actually-assigned color. Every site that populates or drains them —
+`BoardGenerator.SpawnPiece` ([BoardGenerator.cs:165-181](../Assets/Script/Gameplay/BoardGenerator.cs)),
+`Piece.Destroy` ([Piece.cs:96-114](../Assets/Script/Gameplay/Piece.cs)), and
+`MoveGenerator.GetPiecesForPlayer` ([MoveGenerator.cs:75-79](../Assets/Script/Gameplay/MoveGenerator.cs))
+— partitions purely on **player number** (`playerID==1` → `blackPieces`, `playerID==2` →
+`whitePieces`), regardless of the `PieceType` those pieces were actually spawned with. `RestorePieceLayout`
+([BoardGenerator.cs:214-228](../Assets/Script/Gameplay/BoardGenerator.cs)) preserves the same
+convention on rematch. So despite their names, these two lists are really "player 1's pieces" and
+"player 2's pieces" — and every consumer in the codebase, including the two flagged methods, already
+treats them that way consistently.
+
+Given that, the original code was already correct: `TryEndGameOnSingleManVsKing` pairs
+`blackPieces` (≡ player 1's list) with player-number 1 and `whitePieces` (≡ player 2's list) with
+player-number 2, which is exactly how those lists are always populated — independent of which color
+either player is actually rendered as. The Turkish single-man-vs-king rule itself is also colorblind
+(it only cares which *side* is reduced to one man, never which color that side displays), so there
+was never a real mismatch for this rule to trip over. Same reasoning clears `GetRemainingPieceCount`.
+
+**What actually happened:** a fix matching the audit's own recommendation — resolve each player's
+piece list from `Player.PieceType` instead of a fixed player-number mapping — was implemented, and
+then caught by re-checking `BoardGenerator`/`Piece.Destroy` before being trusted. That "fix" would
+have decoupled the player-number label from the list's true (player-number-based) identity, and
+introduced exactly the swapped-result bug the audit described — in the same offline scenario, in the
+opposite direction. It was reverted before landing in this repository's history; both methods are
+unchanged from their pre-audit state, now with a comment at each site explaining why the pairing is
+correct, to head off a repeat of this exact false positive.
+
+**Lesson for future audits of this codebase:** `whitePieces`/`blackPieces`'s names are misleading —
+treat them as player-number buckets, not color buckets, and verify against `BoardGenerator.SpawnPiece`
+before flagging anything that touches them as a color-mapping bug.
 
 ---
 
@@ -563,6 +731,13 @@ comment; no behavioral change needed.
 - **Master-migration and disconnect handling:** turn-timer deadlines are computed identically and
   independently per client off synced Photon time; `OnPlayerLeftRoom` always resolves to a forfeit
   for the survivor, with no exploitable rejoin path found.
+- **`GameplayController.whitePieces`/`blackPieces` are player-number buckets, not color buckets** —
+  confirmed by checking every site that populates or drains them (`BoardGenerator.SpawnPiece`,
+  `Piece.Destroy`, `MoveGenerator.GetPiecesForPlayer`, `RestorePieceLayout`), all of which key
+  strictly on `playerID`, never on a piece's actual `PieceType`. See
+  [Retracted findings](#retracted-findings) for why this makes `TryEndGameOnSingleManVsKing` and
+  `GetRemainingPieceCount` already correct despite their misleading list names — don't re-flag either
+  as a color-mapping bug without re-deriving this first.
 
 ## Coverage and limitations
 
@@ -590,14 +765,65 @@ comment; no behavioral change needed.
 
 ## Suggested fix order
 
-Not a commitment to fix — a priority ordering if/when this list is worked through:
+Not a commitment to fix — a priority ordering for what's left. (C1 and H4 are omitted — see
+[Retracted findings](#retracted-findings), nothing to fix there. C2, H1/H2/H3/H5/H6/H7, and
+M1/M3/M5/M6/M7 are all fixed — see [Status](#status). M2 was resolved by explicit decision rather
+than code; M4 stays intentionally deferred.)
 
-1. **C1, C2** — both corrupt actual match outcomes in ordinary play, not just AI/UI quality.
-2. **H7** — the only finding here that's a security/integrity gap (cheating), not just a bug.
-3. **H1, H3** — both leave the board in a genuinely wrong, unrecoverable state for the rest of the
-   match (an illegal partial capture standing, or a piece stranded forever).
-4. **H4** — same root cause as C1; fixing C1's underlying color-resolution helper likely fixes this
-   for free.
-5. **H2, H5, H6, M7** — real but narrower-window bugs; worth a pass but not blocking.
-6. **M1–M6, L1–L9, CS1–CS5** — quality/cosmetic backlog; pick up alongside related work (e.g. fix M4
-   and CS2 whenever Russian's/Italian's known asset issues in `CheckersRules.md` are next touched).
+1. **L1–L4, L6–L9, CS1–CS4** — the entire remaining backlog is Low/Cosmetic; none affect legality,
+   security, or match-ending correctness. Pick up alongside related work (e.g. CS2 whenever Italian's
+   known asset issue in `CheckersRules.md` is next touched).
+2. **L5, CS5** — already done, no action needed; listed here only so they aren't mistaken for open
+   items when skimming the Low/Cosmetic sections above.
+
+## Status
+
+- **C1, H4** — retracted, no fix needed; see [Retracted findings](#retracted-findings).
+- **C2** — fixed. The early-destroy special case in `Player.HandlePieceMovementAndPieceDelete` was
+  removed entirely; every `DeferCaptureRemoval` capture now stays merely marked through the whole
+  settle wait and is only ever really destroyed by the existing end-of-chain sweep, uniformly for
+  lone captures and multi-hop chains alike. The dead `WouldChainContinue` helper (the early-destroy
+  path's only caller) was deleted along with it — which in turn resolved **L5** for free (its entire
+  subject was that method; there's nothing left to have that bug). Also resolves **CS5** (the stale
+  `MarkCaptured` comment describing the now-removed early-destroy path) and the dangling
+  `FinalizeCapturedChain` references in both `Player.cs` and `Piece.cs` — that method never existed;
+  the sweep was always inline. Cosmetic cost: a lone capture no longer gets a single clean destroy
+  animation — it now shows the same mark-then-sweep sequence a genuine multi-kill already used.
+- **H1** — fixed. See H1's section; a re-click on the correct piece needed the same guard as
+  switching to a different one, for a reason that only became apparent while implementing it (see
+  that section).
+- **H2** — fixed. See H2's section; also closes the identical gap for the bot's own live capture
+  execution, which shares the fixed code path.
+- **H3** — fixed. See H3's section; implemented together with H1 because of a direct interaction
+  between the two (a stale post-timeout state that H1's guard would otherwise have turned into a
+  permanent input lockout).
+- **H5** — fixed, with a residual network-latency window the section is explicit about rather than
+  overclaiming as fully closed. See H5's section — the fix went through a real design correction
+  mid-implementation (local pause → networked broadcast) once the master/mover distinction was
+  worked through properly.
+- **H6** — fixed. See H6's section; explicitly defense-in-depth for the residual window H5 leaves open,
+  not a fix for a separate independent bug.
+- **H7** — fixed for the specific vulnerability described (forged RPCs from an unauthorized sender),
+  not for full move-relegitimization, which the section explains was judged too large a change for
+  this fix. Also fixed one RPC (`Player.UpdateGrid`) the original audit never listed at all — found
+  by grepping every `[PunRPC]` in the project during implementation rather than trusting the audit's
+  enumeration. See H7's section for the full accounting and why that omission mattered more than the
+  ones that were caught.
+- **M1** — fixed. See M1's section; the bot now replays its own searched capture sequence hop-by-hop
+  instead of re-deriving each hop independently, with a defensive fallback if the plan ever stops
+  matching reality.
+- **M2** — resolved by an explicit decision, not a code change: asked directly rather than assumed,
+  given it's a game-balance question dressed as a bug. Left as the deliberate simplification
+  `IRuleSet.cs` already documents. See M2's section.
+- **M3, M6** — both fixed, in the same pass, since both live in the same `IsSafe` method (and its
+  `BoardState.IsSafe` mirror) that this pass touched for two unrelated reasons. See their sections.
+- **M4** — intentionally still deferred, for the same reason as Russian's `deferCaptureRemoval` flag
+  itself (see C2's fix-order notes and `CheckersRules.md`'s Russian caveats) — this text fix is
+  explicitly scoped to land in the same change as that flag, which hasn't been play-tested yet.
+- **M5** — fixed. See M5's section; hand-verified against Italian's actual coordinates rather than
+  just trusting the algebra, and confirmed the formula reduces to a no-op for the other 8 rulesets.
+- **M7** — fixed, with the same kind of correction H5 needed: one of the three guards the finding
+  asked for (`ShowVictoryByForfeit`'s) turned out to be structurally impossible where the finding
+  said to put it, once traced against its actual caller. Moved to the correct location instead of
+  leaving a guard that would silently never fire. See M7's section for the full trace.
+- Everything Low/Cosmetic in this document is still open as of this writing.

@@ -215,6 +215,12 @@ public class GamePage : Page
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.QuitPage);
     }
 
+    public void OnOfferDrawButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GameManager>().OfferDraw();
+    }
+
     public void OnRulesButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
@@ -261,9 +267,15 @@ public class GamePage : Page
 
         if (!offlineAndPlaying) { return; }
 
-        bool isHumanTurn = gameManager.GetPlayer(gameManager.CurrentTurn) is Gameplay.HumanPlayer;
+        Gameplay.HumanPlayer humanPlayer = gameManager.GetPlayer(gameManager.CurrentTurn) as Gameplay.HumanPlayer;
+        bool isHumanTurn = humanPlayer != null;
 
-        hintButton.interactable = isHumanTurn;
+        // Neither button is meaningful mid-capture-chain (a hint could suggest an unrelated piece,
+        // and both would corrupt the in-progress chain's bookkeeping the same way an abandoned chain
+        // does - see HumanPlayer.ShowHint's and GameManager.CanUndo's own guards for the full story).
+        // CanUndo already accounts for this itself; Hint has no equivalent method for this button to
+        // defer to, so it's checked directly here instead.
+        hintButton.interactable = isHumanTurn && !humanPlayer.IsChainInProgress;
         undoButton.interactable = isHumanTurn && gameManager.CanUndo();
     }
 

@@ -10,6 +10,12 @@ public class TimerController : MonoBehaviour
     private bool hasPlayedTickingSound = false;
     private bool isRunning;
 
+    // Tracks whether PauseTimer actually froze a running countdown, as opposed to being called
+    // while the timer was already stopped (enableTurnTimer off, or between turns) - isRunning alone
+    // can't tell those two cases apart, and ResumeTimer must never turn a timer back on that wasn't
+    // meant to be running at all.
+    private bool wasPausedForCommit;
+
     public float CurrentTime { get { return currentTime; } }
 
     public void StartTimer()
@@ -27,6 +33,7 @@ public class TimerController : MonoBehaviour
     public void ResetTimer()
     {
         isRunning = false;
+        wasPausedForCommit = false;
         currentTime = 0;
         hasPlayedTickingSound = false;
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
@@ -35,6 +42,29 @@ public class TimerController : MonoBehaviour
         {
             activeCard.ResetDisplay(turnTime);
         }
+    }
+
+    // Freezes the countdown at its current remaining value rather than clearing it (unlike
+    // ResetTimer) - called the instant a legal move starts committing, so the ~0.5s+ commit
+    // animation (Player.HandlePieceMovementAndPieceDelete's settle waits) can never race a timeout
+    // firing independently mid-animation for a turn that has, in fact, already been decided in
+    // time. A no-op if the timer wasn't running to begin with.
+    public void PauseTimer()
+    {
+        wasPausedForCommit = isRunning;
+        isRunning = false;
+    }
+
+    // Resumes counting down from exactly where PauseTimer froze it - only if that call actually
+    // paused a live countdown, so this can never start a timer that was never meant to run
+    // (enableTurnTimer off) or that's already been fully reset for a new turn in the meantime.
+    public void ResumeTimer()
+    {
+        if (!wasPausedForCommit) { return; }
+
+        wasPausedForCommit = false;
+        turnDeadline = PhotonNetwork.Time + currentTime;
+        isRunning = true;
     }
 
     private void Update()

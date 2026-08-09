@@ -20,6 +20,14 @@ public class GameManager : Service<GameManager>
     private int currentTurn;
     private int movesWithoutProgress;
 
+    // Bumped by ChangeTurn every time it actually applies a transition. SwitchTurn and
+    // HandleTurnMissCount each capture the value they saw at the moment they decided to switch and
+    // send it along with their ChangeTurn RPC; ChangeTurn only applies (and bumps this) if that
+    // captured value still matches, so whichever of the two calls resolves the same transition
+    // first "wins" and the other is a stale no-op instead of silently corrupting turn/miss-count/
+    // no-progress state by re-applying its own now-outdated view on top.
+    private int turnSequence;
+
     private GameState gameState = GameState.Waiting;
     private GameModeType gameMode;
     private bool enableTurnTimer;
@@ -47,6 +55,21 @@ public class GameManager : Service<GameManager>
     // to an earlier entry rather than trying to reverse individual moves/captures/promotions.
     private readonly List<BoardSnapshot> historyStack = new();
 
+    // True from the moment OfferDraw/ReceiveDrawOffer raises a mutual-agreement offer until the
+    // response arrives (or the turn moves on and silently cancels it - see ChangeTurn). Prevents a
+    // second offer from being raised while one is already outstanding, and lets ReceiveDrawResponse
+    // reject a stale response referring to an offer that no longer applies.
+    private bool drawOfferPending;
+
+    // Occurrence count of every board position (piece layout + side to move) reached so far this
+    // match, keyed by ComputeBoardHash - powers the threefold-repetition draw. Cleared whenever a
+    // capture or promotion happens (see SwitchTurn), since that permanently changes the board and
+    // nothing recorded before it can ever recur.
+    private readonly Dictionary<long, int> positionRepetitionCounts = new();
+
+    private MaterialDrawPattern materialDrawPattern = MaterialDrawPattern.None;
+    private int materialDrawCounter;
+
     public GameState GameState
     {
         get { return gameState; }
@@ -69,6 +92,63 @@ public class GameManager : Service<GameManager>
 
     private IRuleSet ruleSet;
     public IRuleSet RuleSet { get { return ruleSet; } }
+
+    // Broadcasts to every client rather than just pausing the mover's own local TimerController
+    // instance - every client runs its own independent countdown off the synced PhotonNetwork.Time
+    // baseline (see TimerController.StartTimer), and it's specifically the MASTER client's own copy
+    // that HandleTurnMissCount's timeout enforcement actually listens to, which is a different
+    // physical device from the mover about half the time in real Multiplayer. Pausing only locally
+    // would close this race for offline modes (mover and master are always the same device there)
+    // but leave it wide open whenever the master isn't also the one moving.
+    public void PauseTurnTimer()
+    {
+        gameManagerPhotonView.RPC(nameof(PauseTurnTimerRPC), RpcTarget.All);
+    }
+
+    public void ResumeTurnTimer()
+    {
+        gameManagerPhotonView.RPC(nameof(ResumeTurnTimerRPC), RpcTarget.All);
+    }
+
+    [PunRPC]
+    public void PauseTurnTimerRPC(PhotonMessageInfo info = default)
+    {
+        if (!IsAuthorizedSender(info.Sender)) { return; }
+        timer.PauseTimer();
+    }
+
+    [PunRPC]
+    public void ResumeTurnTimerRPC(PhotonMessageInfo info = default)
+    {
+        if (!IsAuthorizedSender(info.Sender)) { return; }
+        timer.ResumeTimer();
+    }
+
+    // True for exactly the two sources every gameplay-mutating RPC in this project is meant to
+    // originate from: the player whose turn it currently is (the sole legitimate author of RPCs
+    // resulting from their own legal move - DestroyPieceAt/CrownPieceAt/ReportChainLength/
+    // PauseTurnTimerRPC/ResumeTurnTimerRPC, and SwitchTurn's own ChangeTurn), or the master client
+    // (the sole authority for timeout/miss-driven actions - HandleTurnMissCount's ChangeTurn/
+    // GameOver, and Player.FlushIncompleteChain sweeping an abandoned chain on a timed-out player's
+    // behalf, whose DestroyPieceAt calls the master sends on that player's own PhotonView). A null
+    // sender means this was a direct, non-RPC call rather than something PUN delivered - only
+    // reachable from code already running in this same process (e.g. this file's own debug
+    // ContextMenu shortcuts), so it's inherently trusted. Anything else is either a bug in this
+    // codebase's own call sites or a forged RPC from a modified client, and should be dropped
+    // rather than applied - this does not re-validate that the underlying move/action was itself
+    // legal, only that whoever sent it was allowed to be the one deciding a turn should change.
+    public bool IsAuthorizedSender(Photon.Realtime.Player sender)
+    {
+        if (sender == null) { return true; }
+        if (sender.IsMasterClient) { return true; }
+
+        // currentTurn is -1 outside an active match (see ResetGameManager) - fail closed rather
+        // than index out of range if a stray RPC somehow arrives in that window.
+        if (currentTurn < 1 || currentTurn > players.Length) { return false; }
+
+        Gameplay.Player currentPlayer = players[currentTurn - 1];
+        return currentPlayer != null && currentPlayer.PhotonView.Owner == sender;
+    }
 
     public void ShowFloatingText(string text, Color color)
     {
@@ -222,6 +302,7 @@ public class GameManager : Service<GameManager>
         currentTurn = DetermineFirstTurnPlayer();
         matchStartTime = PhotonNetwork.Time;
         PushHistorySnapshot();
+        RecordPositionForRepetition(currentTurn);
         StartTurn();
     }
 
@@ -272,6 +353,12 @@ public class GameManager : Service<GameManager>
             return;
         }
 
+        // A timeout can land between two hops of a capture chain, when no coroutine is left running
+        // to ever reach HandlePieceMovementAndPieceDelete's own end-of-chain sweep - run it here
+        // instead, regardless of which branch below fires. A no-op whenever this player wasn't
+        // actually mid-chain (the common case).
+        players[currentTurn - 1].FlushIncompleteChain();
+
         int missCount = players[currentTurn - 1].TurnMissCount + 1;
 
         if (missCount >= maxTurnMissCount)
@@ -282,9 +369,11 @@ public class GameManager : Service<GameManager>
         else
         {
             // A timed-out turn made no move at all, so it neither advances nor resets the
-            // no-progress count - it's carried over unchanged, same as the miss count above.
+            // no-progress count - it's carried over unchanged, same as the miss count above. Same
+            // reasoning for the material-draw pattern/counter: nothing about the material changed,
+            // so both are carried over unchanged too.
             int nextTurn = currentTurn == 1 ? 2 : 1;
-            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount, movesWithoutProgress, true);
+            gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, missCount, movesWithoutProgress, true, turnSequence, (int)materialDrawPattern, materialDrawCounter);
         }
     }
 
@@ -295,24 +384,171 @@ public class GameManager : Service<GameManager>
     {
         movesWithoutProgress = progressMade ? 0 : movesWithoutProgress + 1;
 
-        if (movesWithoutProgress >= ruleSet.NoProgressMoveLimit)
+        // 0 disables this rule entirely (Spanish/Canadian/Pool Checkers - see IRuleSet.NoProgressMoveLimit
+        // for why that's safe once ThreefoldRepetitionEnabled is guaranteeing termination instead).
+        if (ruleSet.NoProgressMoveLimit > 0 && movesWithoutProgress >= ruleSet.NoProgressMoveLimit)
         {
             gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "no progress for too long");
             return;
         }
 
+        // A capture or promotion permanently changes the board, so no position recorded before this
+        // point can ever recur - clearing here keeps the repetition table from growing across a
+        // whole match and (more importantly) stops an old count from an earlier, now-unreachable
+        // material state ever contributing to a draw it has nothing to do with.
+        if (progressMade)
+        {
+            positionRepetitionCounts.Clear();
+        }
+
+        int nextTurn = currentTurn == 1 ? 2 : 1;
+
+        if (CheckRepetitionDraw(nextTurn)) { return; }
+        if (CheckMaterialDraw()) { return; }
+
         // Miss count is cumulative for the whole match - a completed move doesn't clear it, so the
         // outgoing player's count is carried over unchanged here (only a timeout in
-        // HandleTurnMissCount ever increments it).
-        int nextTurn = currentTurn == 1 ? 2 : 1;
-        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount, movesWithoutProgress, false);
+        // HandleTurnMissCount ever increments it). materialDrawPattern/materialDrawCounter were just
+        // freshly recomputed by CheckMaterialDraw above (on this client only, like
+        // movesWithoutProgress) - passing them through here is what lets ChangeTurn broadcast that
+        // same computation to every other client instead of leaving it stuck at whatever it was last
+        // synced to.
+        gameManagerPhotonView.RPC(nameof(ChangeTurn), RpcTarget.All, nextTurn, players[currentTurn - 1].TurnMissCount, movesWithoutProgress, false, turnSequence, (int)materialDrawPattern, materialDrawCounter);
     }
 
-    [PunRPC]
-    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount, int syncedMovesWithoutProgress, bool wasMissedTurn)
+    // A cheap combinatorial hash (not cryptographic - collisions are not a realistic concern at this
+    // piece/square count) over every occupied square's player and king status, folded together with
+    // sideToMove - two positions only hash equal if the layout AND the side to move both match,
+    // exactly what the threefold-repetition rule compares.
+    private long ComputeBoardHash(int sideToMove)
     {
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        unchecked
+        {
+            long hash = 17;
+            for (int i = 0; i < ruleSet.Rows; i++)
+            {
+                for (int j = 0; j < ruleSet.Columns; j++)
+                {
+                    Piece piece = gameplayController.pieces[i, j];
+                    if (piece == null) { continue; }
+
+                    long cellCode = (i * ruleSet.Columns + j + 1) * 397L + piece.Player_ID * 7 + (piece.IsCrownedKing ? 3 : 1);
+                    hash = hash * 31 + cellCode;
+                }
+            }
+            return hash * 31 + sideToMove;
+        }
+    }
+
+    // Records the position about to be played (sideToMove to act) and returns true if this is its
+    // 3rd occurrence this match, firing the existing Draw RPC exactly like the no-progress check
+    // above. No-op for Italian, whose published rules have no such condition
+    // (ThreefoldRepetitionEnabled false).
+    private bool CheckRepetitionDraw(int sideToMove)
+    {
+        if (!ruleSet.ThreefoldRepetitionEnabled) { return false; }
+
+        long hash = ComputeBoardHash(sideToMove);
+        int count = positionRepetitionCounts.TryGetValue(hash, out int existing) ? existing + 1 : 1;
+        positionRepetitionCounts[hash] = count;
+
+        if (count < 3) { return false; }
+
+        gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "same position repeated three times");
+        return true;
+    }
+
+    // Records the very first position of the match (before any move has been played) as occurrence
+    // 1, so a threefold repetition that happens to return to the opening position is still caught.
+    // Can never fire a draw by itself, since the limit is 3.
+    private void RecordPositionForRepetition(int sideToMove)
+    {
+        CheckRepetitionDraw(sideToMove);
+    }
+
+    // International/Canadian's material-specific endgame draws: a move counter gated on exact
+    // material composition, reset the instant that composition changes (which any capture always
+    // causes). Not general endgame theory - a simplified stand-in in the same spirit as the existing
+    // no-progress counter, just tied to specific reduced material instead of ply count alone.
+    private bool CheckMaterialDraw()
+    {
+        if (ruleSet.ThreeVsOneKingDrawLimit <= 0 && ruleSet.TwoVsOneKingDrawLimit <= 0) { return false; }
+
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        MaterialDrawPattern pattern = ClassifyMaterialPattern(gameplayController.blackPieces, gameplayController.whitePieces)
+            ?? ClassifyMaterialPattern(gameplayController.whitePieces, gameplayController.blackPieces)
+            ?? MaterialDrawPattern.None;
+
+        if (pattern != materialDrawPattern)
+        {
+            materialDrawPattern = pattern;
+            materialDrawCounter = 0;
+        }
+
+        if (pattern == MaterialDrawPattern.None) { return false; }
+
+        materialDrawCounter++;
+        int limit = pattern == MaterialDrawPattern.ThreeVsOneKing ? ruleSet.ThreeVsOneKingDrawLimit : ruleSet.TwoVsOneKingDrawLimit;
+        if (limit <= 0 || materialDrawCounter < limit) { return false; }
+
+        gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "insufficient material to force a win");
+        return true;
+    }
+
+    // attackingSide must be exactly 3 Kings (no men) or 2 pieces with at most 1 man; defendingSide
+    // must be exactly 1 King. Returns null if neither reduced-material pattern matches.
+    private MaterialDrawPattern? ClassifyMaterialPattern(List<Piece> attackingSide, List<Piece> defendingSide)
+    {
+        if (defendingSide.Count != 1 || !defendingSide[0].IsCrownedKing) { return null; }
+
+        int men = 0;
+        for (int i = 0; i < attackingSide.Count; i++)
+        {
+            if (!attackingSide[i].IsCrownedKing) { men++; }
+        }
+
+        if (attackingSide.Count == 3 && men == 0) { return MaterialDrawPattern.ThreeVsOneKing; }
+        if (attackingSide.Count == 2 && men <= 1) { return MaterialDrawPattern.TwoVsOneKing; }
+        return null;
+    }
+
+    // expectedSequence is turnSequence as seen by whichever of SwitchTurn/HandleTurnMissCount fired
+    // this - both read the same shared local state (currentTurn, movesWithoutProgress, miss counts)
+    // to decide independently that a transition should happen, so if a completed move and an
+    // independent timeout both fire for what was really the same transition (see
+    // Player.HandlePieceMovementAndPieceDelete's PauseTurnTimer/ResumeTurnTimer for why that window
+    // is narrow but not provably zero over a real network), whichever RPC actually arrives first
+    // still matches the sequence it captured and applies normally; the second one no longer matches
+    // (this method already bumped it) and is ignored instead of re-applying its own now-stale view
+    // of missCount/movesWithoutProgress on top of a transition that already happened.
+    //
+    // syncedMaterialDrawPattern/syncedMaterialDrawCounter carry CheckMaterialDraw's own local state
+    // the same way syncedMovesWithoutProgress already carries movesWithoutProgress - both are only
+    // ever computed on the client whose move just triggered SwitchTurn (see that method), so without
+    // being threaded through here every other client's copy would silently stay stuck at whatever it
+    // last was, instead of tracking the same real move count CheckMaterialDraw needs it to.
+    [PunRPC]
+    public void ChangeTurn(int nextTurn, int outgoingPlayerMissCount, int syncedMovesWithoutProgress, bool wasMissedTurn, int expectedSequence, int syncedMaterialDrawPattern, int syncedMaterialDrawCounter, PhotonMessageInfo info = default)
+    {
+        if (!IsAuthorizedSender(info.Sender)) { return; }
+        if (expectedSequence != turnSequence) { return; }
+        turnSequence++;
+
+        // A move has actually gone through - any draw offer still outstanding from before this
+        // point no longer refers to the current position, so it's silently dropped rather than left
+        // to resolve against a board that's since changed.
+        drawOfferPending = false;
+
         players[currentTurn - 1].ResetPlayer();
         players[currentTurn - 1].SetTurnMissCount(outgoingPlayerMissCount);
+
+        // RPC-free bookkeeping reset only - see Player.ResetChainState's own comment for why this,
+        // not FlushIncompleteChain, is what needs to run identically on every client here: a timeout
+        // mid-chain only ever runs FlushIncompleteChain locally on the master, so this is the only
+        // point a remote client (in particular the timed-out player's own device, whenever it isn't
+        // also the master) ever actually clears its own stale chainCaptureCount/capturedThisChain.
+        players[currentTurn - 1].ResetChainState();
 
         // A completed move already clears/carries the last-move highlight itself (see
         // Player.UpdateGrid) - only a timed-out turn (no move played at all) needs this, since
@@ -325,6 +561,8 @@ public class GameManager : Service<GameManager>
 
         currentTurn = nextTurn;
         movesWithoutProgress = syncedMovesWithoutProgress;
+        materialDrawPattern = (MaterialDrawPattern)syncedMaterialDrawPattern;
+        materialDrawCounter = syncedMaterialDrawCounter;
         PushHistorySnapshot();
         StartTurn();
     }
@@ -384,13 +622,28 @@ public class GameManager : Service<GameManager>
         return index;
     }
 
+    // Undo is never meaningful mid-capture-chain, and actively dangerous there: historyStack only
+    // gets a new entry once per completed turn (see PushHistorySnapshot), so it has no idea a chain
+    // is in progress and would happily rewind to a turn *before* the current one's already-played
+    // hops. RestoreSnapshot's RestorePieceLayout then destroys every Piece GameObject on the board
+    // (see BoardGenerator.ClearAllPieces) to rebuild from the snapshot - including whatever
+    // selectedPiece/capturedThisChain still point to from the abandoned chain, neither of which
+    // RestoreSnapshot ever resets. The current player's next click would hit
+    // OnHighlightedPieceClick's IsChainInProgress guard and call ContinueAfterKill against those now
+    // -destroyed references - a MissingReferenceException, not just a leaked piece like the
+    // equivalent Hint gap. Checked here rather than only at the button (GamePage.
+    // RefreshHintUndoButtons) for the same reason ShowHint checks itself: the button's interactable
+    // state is a UI-layer mitigation, not a guarantee this method itself never runs mid-chain.
     public bool CanUndo()
     {
+        if (players[currentTurn - 1].IsChainInProgress) { return false; }
         return ComputeUndoTargetIndex() >= 0;
     }
 
     public void UndoLastMove()
     {
+        if (players[currentTurn - 1].IsChainInProgress) { return; }
+
         int targetIndex = ComputeUndoTargetIndex();
         if (targetIndex < 0) { return; }
 
@@ -430,6 +683,11 @@ public class GameManager : Service<GameManager>
                 return;
             }
 
+            if (TryEndGameOnOneVsOneDraw())
+            {
+                return;
+            }
+
             if (!players[currentTurn - 1].CanPlay())
             {
                 int winner = (currentTurn == 1) ? 2 : 1;
@@ -451,6 +709,14 @@ public class GameManager : Service<GameManager>
     // Turkish dama's single-man-vs-Dama instant-win rule: a pure board-state check independent of
     // whose turn it is, so it's checked once per turn transition (a capture is the only way piece
     // counts change) rather than tied to currentTurn specifically.
+    //
+    // gameplayController.blackPieces/whitePieces are, despite their names, partitioned by player
+    // number (playerID==1/2), not by each piece's actually-displayed color - see
+    // BoardGenerator.SpawnPiece/Piece.Destroy, which both bucket purely on playerID regardless of
+    // the PieceType passed in. Pairing blackPieces with player 1 and whitePieces with player 2
+    // below is therefore always correct, even in offline modes where player 1's real displayed
+    // color is randomized (see PvcModeHandler/PvpModeHandler) - this rule only cares which player
+    // is reduced to one man, never which color they happen to be rendered as.
     private bool TryEndGameOnSingleManVsKing()
     {
         if (!ruleSet.SingleManLosesToKing) { return false; }
@@ -468,6 +734,21 @@ public class GameManager : Service<GameManager>
         return true;
     }
 
+    // Turkish dama's "1 vs 1" rule: both sides reduced to exactly one piece each is an automatic
+    // draw. Checked only after TryEndGameOnSingleManVsKing has already had first refusal, above - a
+    // lone man against a Dama must still win outright via that rule rather than draw here, so this
+    // only ever actually fires for a King-vs-King (or man-vs-man) ending.
+    private bool TryEndGameOnOneVsOneDraw()
+    {
+        if (!ruleSet.OneVsOneIsDraw) { return false; }
+
+        GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
+        if (gameplayController.blackPieces.Count != 1 || gameplayController.whitePieces.Count != 1) { return false; }
+
+        gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "one piece against one piece");
+        return true;
+    }
+
     // If reducedSidePieces has been reduced to exactly one non-king piece and otherSidePieces has
     // at least one King, otherSidePlayerNumber instantly wins. Returns 0 if the condition doesn't
     // hold.
@@ -482,9 +763,101 @@ public class GameManager : Service<GameManager>
         return 0;
     }
 
-    [PunRPC]
-    public void GameOver(int winnerPlayerNumber, string reason)
+    // Either player may raise a draw offer at any time, not just on their own turn - identified by
+    // GetLocalPlayerNumber() (which seat's PhotonView the calling client actually owns), not by
+    // currentTurn. Deliberately does NOT reuse IsAuthorizedSender here: that check's master-client
+    // bypass exists so the master can act on a *timed-out* player's behalf elsewhere in this file -
+    // there's no equivalent legitimate case for a draw offer, and reusing it here would let the
+    // master client raise an offer while claiming to be whoever currentTurn happens to name, then
+    // "accept" its own offer as the other seat and force a draw with no real consent from anyone.
+    // VsBot has no second client to offer to, so it's resolved locally with an immediate decline
+    // instead of ever going out as an RPC.
+    public void OfferDraw()
     {
+        if (gameState != GameState.Playing || drawOfferPending) { return; }
+
+        if (gameMode == GameModeType.VsBot)
+        {
+            ShowFloatingText("Bot declined the draw offer", Color.white);
+            return;
+        }
+
+        drawOfferPending = true;
+        gameManagerPhotonView.RPC(nameof(ReceiveDrawOffer), RpcTarget.All, GetLocalPlayerNumber());
+    }
+
+    [PunRPC]
+    public void ReceiveDrawOffer(int offeringPlayerNumber, PhotonMessageInfo info = default)
+    {
+        if (gameState != GameState.Playing || !IsOwnedBy(offeringPlayerNumber, info.Sender)) { return; }
+        drawOfferPending = true;
+
+        // Sent to RpcTarget.All rather than Others so the same call works in every mode - in
+        // Multiplayer the offerer's own client also receives this and should just be told the offer
+        // went out, not shown a prompt to respond to itself. Offline VsPlayer (pass-and-play) has no
+        // such distinction - both seats share one device, so it always shows the prompt, same
+        // convention Player.UpdateGrid already uses for VsPlayer's move highlighting.
+        if (gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine)
+        {
+            ShowFloatingText("Draw offer sent", Color.white);
+            return;
+        }
+
+        GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
+        gamePageManager.DrawOfferPage.Show(offeringPlayerNumber);
+        gamePageManager.OpenPageAsOverlay(GamePageType.DrawOfferPage);
+    }
+
+    public void RespondToDrawOffer(int offeringPlayerNumber, bool accepted)
+    {
+        gameManagerPhotonView.RPC(nameof(ReceiveDrawResponse), RpcTarget.All, offeringPlayerNumber, accepted);
+    }
+
+    [PunRPC]
+    public void ReceiveDrawResponse(int offeringPlayerNumber, bool accepted, PhotonMessageInfo info = default)
+    {
+        if (!drawOfferPending || !IsOwnedBy(offeringPlayerNumber == 1 ? 2 : 1, info.Sender)) { return; }
+        drawOfferPending = false;
+
+        if (accepted)
+        {
+            gameManagerPhotonView.RPC(nameof(Draw), RpcTarget.All, "mutual agreement");
+        }
+        else
+        {
+            ShowFloatingText("Draw declined", Color.white);
+        }
+    }
+
+    // sender must actually own playerNumber's seat, or be null (a direct, non-RPC call - only
+    // reachable from code already running in this same process, same convention as
+    // IsAuthorizedSender's own null-sender case). Deliberately NO master-client bypass, unlike
+    // IsAuthorizedSender - there is no legitimate case here where the master needs to act as, or on
+    // behalf of, a seat it doesn't own; a bypass would let it impersonate either side of a draw
+    // negotiation. In offline modes both seats' PhotonViews share the same single local owner, so
+    // this passes for either playerNumber there without needing a special case.
+    private bool IsOwnedBy(int playerNumber, Photon.Realtime.Player sender)
+    {
+        if (sender == null) { return true; }
+        return players[playerNumber - 1] != null && players[playerNumber - 1].PhotonView.Owner == sender;
+    }
+
+    // info.Sender is auto-supplied by PUN when this arrives as a real RPC; the default lets the
+    // debug ContextMenu shortcuts below call this directly with no sender at all, which
+    // IsAuthorizedSender treats as inherently trusted since only code already running in this same
+    // process can reach a direct (non-RPC) call in the first place.
+    [PunRPC]
+    public void GameOver(int winnerPlayerNumber, string reason, PhotonMessageInfo info = default)
+    {
+        if (!IsAuthorizedSender(info.Sender)) { return; }
+
+        // Guards against two near-simultaneous end-of-match RPCs (e.g. a no-progress Draw and an
+        // out-of-time GameOver racing each other - see H5/H6) both applying and showing two
+        // stacked/contradictory result screens. Safe to check synchronously here: PrepareGameOverVisuals
+        // (reached via PlayGameOverSequence below) calls SetGameOver() as its very first action,
+        // before any yield, so gameState already reflects a first call that's merely still mid-coroutine.
+        if (gameState != GameState.Playing) { return; }
+
         StartCoroutine(PlayGameOverSequence(winnerPlayerNumber, reason));
     }
 
@@ -541,8 +914,14 @@ public class GameManager : Service<GameManager>
     }
 
     [PunRPC]
-    public void Draw(string reason)
+    public void Draw(string reason, PhotonMessageInfo info = default)
     {
+        if (!IsAuthorizedSender(info.Sender)) { return; }
+
+        // Same already-ended guard as GameOver above - see there for why the synchronous check is
+        // safe even against a first call that's still mid-coroutine.
+        if (gameState != GameState.Playing) { return; }
+
         StartCoroutine(PlayDrawSequence(reason));
     }
 
@@ -615,6 +994,14 @@ public class GameManager : Service<GameManager>
 
     // Called when the opponent leaves the match (see MatchSessionEventManager.PlayForfeitSequence) -
     // always a local win since the only way to forfeit is for the *other* side to leave.
+    //
+    // Deliberately has no gameState guard of its own, unlike GameOver/Draw above: its caller
+    // (MatchSessionEventManager.PlayForfeitSequence) already runs PrepareGameOverVisuals - which
+    // sets gameState to Ending as its first synchronous action - immediately before calling this,
+    // every time, including on a legitimate first call. A guard here would see its own caller's
+    // transition and always reject, never actually running. The equivalent protection for THIS
+    // path lives one level up, in MatchSessionEventManager.OnPlayerLeftRoom, which checks GameState
+    // before ever starting that sequence in the first place - see there.
     public void ShowVictoryByForfeit()
     {
         int localPlayerNumber = GetLocalPlayerNumber();
@@ -662,6 +1049,8 @@ public class GameManager : Service<GameManager>
         yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesDisappearAnimation());
     }
 
+    // whitePieces/blackPieces are player-number buckets (see TryEndGameOnSingleManVsKing above),
+    // not color buckets, so this pairing is correct regardless of either player's displayed color.
     private int GetRemainingPieceCount(int playerNumber)
     {
         return playerNumber == 2
@@ -704,8 +1093,13 @@ public class GameManager : Service<GameManager>
         pieceType = PieceType.None;
         currentTurn = -1;
         movesWithoutProgress = 0;
+        turnSequence = 0;
         gameState = GameState.Waiting;
         IsReadyToLeaveGameplay = false;
+        drawOfferPending = false;
+        positionRepetitionCounts.Clear();
+        materialDrawPattern = MaterialDrawPattern.None;
+        materialDrawCounter = 0;
 
         for (int i = 0; i < 2; i++)
         {
@@ -805,6 +1199,13 @@ public enum GameState
     Waiting,
     Playing,
     Ending
+}
+
+public enum MaterialDrawPattern
+{
+    None,
+    ThreeVsOneKing,
+    TwoVsOneKing
 }
 
 // A single board cell's contents at the moment a BoardSnapshot was taken - default value (all

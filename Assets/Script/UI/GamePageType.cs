@@ -6,5 +6,6 @@ public enum GamePageType
     RuleSetInfoPage,
     VictoryPage,
     DefeatPage,
-    DrawPage
+    DrawPage,
+    DrawOfferPage
 }

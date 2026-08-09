@@ -9,6 +9,15 @@ namespace Gameplay
     {
         private readonly WaitForSeconds waitForSeconds = new(1f);
 
+        // The full multi-hop sequence BotMinimax's search actually scored, so later hops can be
+        // played exactly as searched instead of independently re-derived hop-by-hop by
+        // ChooseSafestOrFirst's much shallower heuristic (which has no concept of the sequence
+        // length or quality the search evaluated). Null whenever there's no capture chain in
+        // flight - a quiet move, or between turns. pendingSequenceHopIndex is which hop of it is
+        // next; hop 0 is always played directly by MakeMove, so it starts at 1.
+        private CaptureSequence pendingSequence;
+        private int pendingSequenceHopIndex;
+
         protected override void OnTurnReady()
         {
             StartCoroutine(PlayAITurn());
@@ -58,12 +67,19 @@ namespace Gameplay
             }
         }
 
-        protected override void ContinueAfterKill(Piece selectedPiece)
+        protected override void ContinueAfterKill(Piece selectedPiece, BoardPosition lastCapturedPosition)
         {
             selectedPiece.ResetAllList();
-            List<CaptureSequence> sequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece);
 
-            CaptureSequence chosen = ChooseSafestOrFirst(selectedPiece, sequences);
+            // Same ForbidImmediateReversal direction derivation as HumanPlayer.ContinueAfterKill -
+            // see there for why the captured square, not a stored direction, is what's threaded
+            // through.
+            (int dRow, int dCol) lastDirection = (
+                System.Math.Sign(selectedPiece.Row_ID - lastCapturedPosition.row_ID),
+                System.Math.Sign(selectedPiece.Coloum_ID - lastCapturedPosition.col_ID));
+            List<CaptureSequence> sequences = ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece, lastDirection);
+
+            CaptureSequence chosen = ChoosePlannedOrSafestOrFirst(selectedPiece, sequences);
             BoardPosition position = chosen.Landings[0];
 
             Block b = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
@@ -71,6 +87,37 @@ namespace Gameplay
             b.CapturedPosition = chosen.Captured[0];
             OnHighlightedTargetBlockClick(b);
             ResetNextToNextHighlightedBlock();
+        }
+
+        // Prefers replaying the next hop of pendingSequence - the sequence BotMinimax's search
+        // actually chose - over ChooseSafestOrFirst's much shallower per-hop heuristic. Falls back
+        // to that heuristic (and abandons the plan for the rest of this chain) if the plan's next
+        // hop no longer matches any currently-legal continuation - defensively, since nothing in
+        // this codebase's synchronous single-turn execution should actually invalidate it mid-chain,
+        // but a model/reality divergence elsewhere (e.g. a rule the AI's search doesn't model)
+        // shouldn't be allowed to make the bot commit to a hop that isn't actually legal.
+        private CaptureSequence ChoosePlannedOrSafestOrFirst(Piece piece, List<CaptureSequence> sequences)
+        {
+            if (pendingSequence != null && pendingSequenceHopIndex < pendingSequence.Length)
+            {
+                BoardPosition plannedLanding = pendingSequence.Landings[pendingSequenceHopIndex];
+                BoardPosition plannedCapture = pendingSequence.Captured[pendingSequenceHopIndex];
+
+                for (int i = 0; i < sequences.Count; i++)
+                {
+                    BoardPosition landing = sequences[i].Landings[0];
+                    BoardPosition captured = sequences[i].Captured[0];
+                    if (landing.row_ID == plannedLanding.row_ID && landing.col_ID == plannedLanding.col_ID
+                        && captured.row_ID == plannedCapture.row_ID && captured.col_ID == plannedCapture.col_ID)
+                    {
+                        pendingSequenceHopIndex++;
+                        return sequences[i];
+                    }
+                }
+            }
+
+            pendingSequence = null;
+            return ChooseSafestOrFirst(piece, sequences);
         }
 
         private CaptureSequence ChooseSafestOrFirst(Piece piece, List<CaptureSequence> sequences)
@@ -89,6 +136,12 @@ namespace Gameplay
         private void MakeMove(Piece piece, CaptureSequence sequence)
         {
             SelectPieceForNewMove(piece);
+
+            // Hop 0 is played directly below; if the search's chosen sequence has more hops than
+            // that, ContinueAfterKill's ChoosePlannedOrSafestOrFirst picks up from index 1.
+            pendingSequence = sequence;
+            pendingSequenceHopIndex = 1;
+
             BoardPosition landing = sequence.Landings[0];
             Block block = ServiceLocator.Get<GameplayController>().board[landing.row_ID, landing.col_ID];
 
@@ -102,6 +155,7 @@ namespace Gameplay
         private void MakeMove(Piece piece, BoardPosition position)
         {
             SelectPieceForNewMove(piece);
+            pendingSequence = null; // a quiet move, not a capture chain - nothing to plan ahead
             Block block = ServiceLocator.Get<GameplayController>().board[position.row_ID, position.col_ID];
 
             OnHighlightedTargetBlockClick(block);

@@ -52,6 +52,15 @@ and draw by threefold repetition are absent engine-wide (no draw-offer path, no 
 as are all the variant-specific endgame draws — International's king-count rules and Turkish's
 1-vs-1 rule. See each variant's "Draw conditions" for specifics.
 
+**Update — a later implementation pass closed most of this.** Mutual agreement, threefold
+repetition (all 8 variants that call for it), International/Canadian's king-count endgame draws, and
+Turkish's 1-vs-1 rule are now all implemented in `GameManager.cs`. One item remains open by design —
+Italian's "no forceable win" rule needs real endgame theory/a tablebase judgment, not a counter, and
+was left unimplemented rather than faked. One item remains open by omission — the mutual-agreement
+offer's UI (an "Offer Draw" button and an Accept/Decline popup prefab) still needs to be wired up in
+the Unity Editor; the RPC/negotiation logic behind it is done. See "Draw rules implementation
+status" near the end of this document for the full per-variant accounting.
+
 Each variant is a `RuleSetSO` asset under `Assets/Script/Gameplay/RuleSets/`, selectable from the
 mode-selection screen's ruleset carousel. The engine that reads these assets lives mainly in
 `MoveGenerator.cs` (live gameplay) and its pure-data mirror `BoardState.cs` (used by the bot's
@@ -154,13 +163,14 @@ empty board is just the degenerate case of having no moves.
 
 ### Draw conditions
 
-Real American checkers recognizes three draws; **the engine implements one of them.**
+Real American checkers recognizes three draws; **the engine now implements all three**, one of them
+approximately.
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree neither can force a win | **Not implemented** — no draw-offer UI or RPC exists |
+| Mutual agreement | Both players agree neither can force a win | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring (see "Draw rules implementation status") |
 | 40-move / no-progress rule | 40 consecutive moves *by each player* with no capture and no man advanced | **Implemented, but counted differently** — see below |
-| Threefold repetition | Same position, same side to move, three times | **Not implemented** — no position history is kept |
+| Threefold repetition | Same position, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw`, a position hash checked every turn (`ThreefoldRepetitionEnabled: true`) |
 
 The one that does run is the no-progress rule: `AmericanRules.asset` sets `noProgressMoveLimit: 40`,
 and `GameManager.SwitchTurn` increments `movesWithoutProgress` on every turn that made no progress,
@@ -262,23 +272,23 @@ Same single code path as every other variant: `Player.CanPlay()` checked from
 
 ### Draw conditions
 
-International's official draw rules are the most elaborate of any variant here, and **none of them
-are implemented as specified.**
+International's official draw rules are the most elaborate of any variant here, and **all four are
+now implemented** as simplified stand-ins (not full endgame theory, but tied to the specific
+material/position each rule actually names).
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
-| Threefold repetition | Same position, same side to move, three times | **Not implemented** — no position history kept |
-| 3 kings vs 1 king | Draw after 16 moves if no win is forced | **Not implemented** — no endgame material tracking |
-| 2 kings, or king + man, vs 1 king | Draw after 5 moves | **Not implemented** — same |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
+| Threefold repetition | Same position, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
+| 3 kings vs 1 king | Draw after 16 moves if no win is forced | **Implemented as a move counter** — `GameManager.CheckMaterialDraw`, gated on exact material (`ThreeVsOneKingDrawLimit: 16`), not a forced-win judgment |
+| 2 kings, or king + man, vs 1 king | Draw after 5 moves | **Implemented as a move counter** — same mechanism (`TwoVsOneKingDrawLimit: 5`) |
 
-What runs instead is the engine's single generic no-progress rule, tuned tighter for this variant:
-`InternationalRules.asset` sets `noProgressMoveLimit: 25` (against American's 40), so a draw is
-declared after 25 consecutive turns without a capture or a promotion. It is a rough stand-in for the
-material-specific endgame limits above rather than an implementation of them — the two king-count
-rules in particular would need piece-composition tracking that doesn't exist anywhere in the
-codebase. As with American, the counter runs in plies rather than move-pairs and treats only
-captures and promotions as progress ([Player.cs:304](Assets/Script/Gameplay/Player.cs:304)).
+`InternationalRules.asset` used to set `noProgressMoveLimit: 25` as a rough stand-in for the two
+king-count rules above, back when neither they nor threefold repetition existed. Now that both are
+properly implemented, that stand-in has been turned off (`noProgressMoveLimit: 0`) rather than left
+running alongside its own replacement — a finite board has finitely many positions, so a shuffle
+making no progress is now guaranteed to eventually trip the threefold-repetition check on its own,
+without needing a second, cruder counter layered on top of it.
 
 **Caveats:** one open discrepancy, plus one previously-documented gap that is fixed.
 
@@ -348,9 +358,9 @@ reason `"no legal moves left"`.
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
 | 25-move rule | 25 consecutive moves using only kings, no capture and no man advanced | **Approximated** — generic counter at `noProgressMoveLimit: 30` |
-| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+| Threefold repetition | Same layout, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
 
 The generic counter is a loose stand-in rather than the real rule: it is set to 30 (not 25), counts
 plies rather than move-pairs, treats captures and promotions as the only progress
@@ -442,9 +452,9 @@ counter.
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
 | 20-move rule | 20 consecutive moves using only kings, no capture and no man advanced | **Approximated** — generic counter at `noProgressMoveLimit: 25` |
-| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+| Threefold repetition | Same layout, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
 
 Same limitations as everywhere else: the counter is set to 25 rather than 20, counts plies rather
 than move-pairs, and never checks the "using only kings" precondition
@@ -529,8 +539,8 @@ Italian's published draw rules are unusual here in that **neither is a move coun
 
 | Rule | Real game | This engine |
 |---|---|---|
-| No forceable win | Remaining material means neither side can engineer a finishing sequence | **Not implemented** — requires endgame theory, not a counter |
-| Mutual agreement | Both players agree the position is unbreakable | **Not implemented** — no draw-offer UI or RPC |
+| No forceable win | Remaining material means neither side can engineer a finishing sequence | **Not implemented, and out of scope** — requires real endgame theory/a tablebase judgment, not a counter; a later pass that implemented every other variant's draw rules deliberately left this one unimplemented rather than fake it with a counter |
+| Mutual agreement | Both players agree the position is unbreakable | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
 
 This makes Italian the one variant where the engine's draw behavior is not merely an approximation
 but an *addition*: `noProgressMoveLimit: 40` (the highest of any ruleset, tied with American) will
@@ -629,13 +639,15 @@ men strictly forbidden from capturing backward.
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
-| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
+| Threefold repetition | Same layout, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
 
-As with Italian, the published rules used here list **no move-limit draw at all**, yet the engine
-applies `noProgressMoveLimit: 30`. So Spanish's draw behavior is an *addition* rather than an
-approximation — a pragmatic safety valve against endless king shuffling, but capable of ending a
-game the real rules would let continue.
+The published rules used here list **no move-limit draw at all** — `noProgressMoveLimit` used to be
+set to 30 anyway, as a pragmatic safety valve against endless king shuffling, but that made Spanish's
+draw behavior an *addition* rather than an approximation, capable of ending a game the real rules
+would let continue. Now that threefold repetition is properly implemented and already guarantees a
+no-progress shuffle can't run forever on its own, the redundant counter has been turned off
+(`noProgressMoveLimit: 0`).
 
 **Caveats:** every *rule* field matches the published rules — the documentation pass found no
 discrepancy in movement, capturing, promotion, or win conditions. The board-orientation modeling,
@@ -711,16 +723,17 @@ resized rather than a variant with mechanics of its own; unlike Brazilian, it sc
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
-| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
+| Threefold repetition | Same layout, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
 
-The description used here lists no move-limit rule, yet the engine applies
-`noProgressMoveLimit: 35` — the third variant (after Italian and Spanish) where the engine's draw
-behavior is an *addition* rather than an approximation. Note also that as International's scaled-up
-sibling, Canadian most likely inherits International's material-specific endgame draws (the
-king-count rules) even though the description used doesn't mention them; those are unimplemented
-too, for the same reason given under International — they need piece-composition tracking that
-doesn't exist anywhere in the codebase.
+The description used here lists no move-limit rule, and `noProgressMoveLimit` is now `0` (disabled)
+here too, for the same reason as Spanish and International: threefold repetition already guarantees
+a no-progress shuffle can't run forever, so the old safety-valve counter (it used to be 35, making
+Canadian's draw behavior an *addition* rather than an approximation) is redundant rather than needed.
+As International's scaled-up sibling, Canadian also inherits International's material-specific
+endgame draws (the king-count rules), now implemented too, the same way as International:
+`GameManager.CheckMaterialDraw` with `ThreeVsOneKingDrawLimit: 16`/`TwoVsOneKingDrawLimit: 5` set on
+`CanadianRules.asset`.
 
 **Caveats:** none known, and the documentation pass that expanded this section found **no
 discrepancies of any kind** — every rule field matches, and unlike Italian and Spanish, its board
@@ -783,12 +796,13 @@ maximum-capture rule thrown out entirely, giving the player free choice of captu
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree to a tie | **Not implemented** — no draw-offer UI or RPC |
-| Threefold repetition | Same layout, same side to move, three times | **Not implemented** — no position history kept |
+| Mutual agreement | Both players agree to a tie | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
+| Threefold repetition | Same layout, same side to move, three times | **Implemented** — `GameManager.CheckRepetitionDraw` |
 
-`noProgressMoveLimit: 30` applies regardless — the fourth variant (after Italian, Spanish, and
-Canadian) where the engine's draw behavior is an *addition* to the published rules rather than an
-approximation of them.
+`noProgressMoveLimit` is now `0` (disabled) here too, for the same reason as Spanish/Canadian/
+International — it used to be 30, making Pool Checkers a fourth variant (after Italian/Spanish/
+Canadian) whose draw behavior was an *addition* to the published rules rather than an approximation
+of them; threefold repetition alone already guarantees the same safety without it.
 
 **Caveats:** none known, and the documentation pass that expanded this section found no
 discrepancies — every field matches, including board orientation. That pass also **independently
@@ -876,13 +890,16 @@ for a non-king; under the orthogonal direction set that leaves forward plus both
 
 | Rule | Real game | This engine |
 |---|---|---|
-| Mutual agreement | Both players agree neither can force a win | **Not implemented** — no draw-offer UI or RPC |
-| 1 vs. 1 | Exactly one piece against one piece is an automatic draw | **Not implemented** — no piece-count draw check exists |
+| Mutual agreement | Both players agree neither can force a win | **Implemented** — `GameManager.OfferDraw`/`ReceiveDrawOffer`/`RespondToDrawOffer`. RPC/negotiation logic is done; the "Offer Draw" button and Accept/Decline popup prefab still need Editor wiring |
+| 1 vs. 1 | Exactly one piece against one piece is an automatic draw | **Implemented** — `GameManager.TryEndGameOnOneVsOneDraw` (`OneVsOneIsDraw: true`), checked every turn transition right after the single-man-vs-Dama win check |
 
-As with every other variant, the only draw that can actually fire is the generic no-progress rule,
-here set to `noProgressMoveLimit: 30`. Note the asymmetry the missing 1-vs-1 rule creates: a lone man
-against a Dama ends instantly in a win (rule 3 above, implemented), but a Dama against a Dama —
-which should be an immediate draw — instead grinds on until the 30-turn no-progress counter expires.
+The generic no-progress rule used to fill in for the missing 1-vs-1 rule (`noProgressMoveLimit: 30`,
+grinding a Dama-vs-Dama ending out to a draw eventually rather than immediately); with the real rule
+now implemented and threefold repetition already guaranteeing termination for anything else, the
+counter has been turned off (`noProgressMoveLimit: 0`) rather than kept running redundantly alongside
+both. The asymmetry the old missing 1-vs-1 rule used to create is resolved the same way either way:
+`TryEndGameOnOneVsOneDraw` runs *after* `TryEndGameOnSingleManVsKing`, so a lone man against a Dama
+still ends instantly in a win (rule 3 above) rather than ever reaching this draw.
 
 **Caveats:** this variant received the most correction passes in the original audit (setup bug,
 mandatory capture, removal timing, the 180°-turn rule, and the single-man-vs-Dama win condition were
@@ -1138,21 +1155,62 @@ shipping.
   A correct fix flips piece-placement parity, with coloring following. Harmless to outcomes, since a
   mirrored checkers board is isomorphic.
 
-### Engine-wide gaps in draw handling
+### Draw rules implementation status
 
-The single generic `noProgressMoveLimit` counter is the only draw the engine can ever declare. It
-counts plies rather than move-pairs, treats only captures and promotions as progress, and never
-checks any variant's preconditions. Consequently:
+Everything below in this subsection used to describe an engine-wide gap ("draw conditions are barely
+modeled anywhere"). A later implementation pass closed almost all of it — the per-variant "Draw
+conditions" sections above are now current; this is the consolidated view.
 
-- **Draw by mutual agreement** — absent everywhere (no draw-offer path, no RPC, no UI).
-- **Draw by threefold repetition** — absent everywhere (no position history is kept).
-- **Material-specific endgame draws** — absent: International's king-count rules (3 kings vs 1 → 16
-  moves; 2 kings or king+man vs 1 → 5 moves), Turkish's 1-vs-1 draw, Italian's "no forceable win".
-  These need piece-composition tracking that doesn't exist in the codebase.
-- **Four variants get a draw rule they shouldn't have.** Italian, Spanish, Canadian, and Pool
-  Checkers have no move-limit draw in their published rules, but the counter applies anyway and can
-  end a game those rules would let continue. Pragmatically defensible as a safety valve against
-  endless king shuffling — worth a deliberate decision rather than leaving it implicit.
+**Implemented, code side done, all logic in `GameManager.cs`:**
+- **Mutual agreement** — `OfferDraw()`/`ReceiveDrawOffer`/`RespondToDrawOffer`/`ReceiveDrawResponse`,
+  for all 9 rulesets. The current-turn player offers (VsBot auto-declines locally, no real opponent
+  to ask); the response reuses the existing `Draw(reason)` RPC to actually end the match, per this
+  project's convention of piggybacking new sync behavior on an existing RPC rather than adding one.
+- **Threefold repetition** — `CheckRepetitionDraw`, a cheap position hash (piece layout + side to
+  move) checked every turn. Enabled (`ThreefoldRepetitionEnabled`) for all 9 rulesets except Italian,
+  whose published rules don't call for it.
+- **International/Canadian king-count draws** — `CheckMaterialDraw`, a move counter gated on exact
+  material (3 Kings vs 1 King, or 2 Kings/King+man vs 1 King), reset whenever a capture changes that
+  composition. A simplified stand-in in the same spirit as `noProgressMoveLimit` itself — a move
+  counter tied to specific material, not a real forced-win judgment.
+- **Turkish's 1-vs-1 draw** — `TryEndGameOnOneVsOneDraw`, checked every turn transition right after
+  the existing single-man-vs-Dama win check (so that win still takes priority — see Turkish's Draw
+  conditions above for why the ordering matters).
+
+**Still open, by omission — needs Editor work, not more code:**
+- The mutual-agreement offer's UI. `Assets/Script/UI/DrawOfferPage.cs` (the Accept/Decline popup) and
+  `GamePage.OnOfferDrawButtonClick` exist and are wired to `GameManager.OfferDraw`, and
+  `GamePageType.DrawOfferPage` is registered in code — but the actual `DrawOfferPage` prefab, its
+  entry in `GamePageManager`'s `pageEntries` list, and an "Offer Draw" button on the `GamePage`
+  prefab all still need to be created and wired in the Unity Editor before a player can actually
+  trigger or see any of this in a build.
+
+**Still open, by design — needs real endgame theory, not a counter:**
+- **Italian's "no forceable win" rule.** Unlike every other draw rule above, this one asks a genuine
+  endgame-theory question ("can either side engineer a finishing sequence from this exact material and
+  position") that a move counter can't approximate the way `noProgressMoveLimit` approximates the
+  other variants' move-limit rules. Deliberately left unimplemented rather than faked.
+
+**Resolved by decision, not just code:** five variants' published rules have no generic move-limit
+draw at all (International, Spanish, Canadian, Pool Checkers, Turkish) — the engine used to run
+`noProgressMoveLimit` for them anyway, purely as a pragmatic safety valve (the same reasoning
+`IRuleSet.cs` documents and `EngineBugs.md`'s M2 chose for a related question). Now that threefold
+repetition is properly implemented for all five, that safety valve is provably redundant: a finite
+board has finitely many positions, so a shuffle making no progress is *guaranteed* to eventually
+repeat one three times on its own. `noProgressMoveLimit` is now `0` (disabled) on all five assets,
+leaving threefold repetition (plus, where applicable, the material-specific rules) as the sole
+automatic backstop — matching each variant's real published rules exactly, rather than adding
+something they don't call for.
+
+**Italian is the one deliberate exception.** It has neither a real move-limit rule nor threefold
+repetition (only "no forceable win," which is out of scope above, and mutual agreement) — disabling
+`noProgressMoveLimit` there as well would remove the *only* remaining automatic way a non-repeating
+king shuffle can end, short of one player voluntarily offering a draw. `ItalianRules.asset` keeps
+`noProgressMoveLimit: 40` for exactly this reason.
+
+**American, Russian, and Brazilian are unaffected by any of this** — their `noProgressMoveLimit`
+approximates a real, named rule in their own published rules (the 40-move, 25-move, and 20-move
+rules respectively), not an engine addition, so it was never a candidate for disabling.
 
 ### AI-quality gap — no illegal moves
 

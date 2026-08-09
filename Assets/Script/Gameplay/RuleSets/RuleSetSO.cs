@@ -36,6 +36,11 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     [SerializeField] private int noProgressMoveLimit = 80;
     [SerializeField] private bool singleManLosesToKing;
 
+    [SerializeField] private bool threefoldRepetitionEnabled = true;
+    [SerializeField] private int threeVsOneKingDrawLimit;
+    [SerializeField] private int twoVsOneKingDrawLimit;
+    [SerializeField] private bool oneVsOneIsDraw;
+
     [SerializeField] private PieceType firstMoveColor = PieceType.None;
     [SerializeField] private bool darkSquareBottomRight;
 
@@ -65,6 +70,11 @@ public class RuleSetSO : ScriptableObject, IRuleSet
 
     public int NoProgressMoveLimit => noProgressMoveLimit;
     public bool SingleManLosesToKing => singleManLosesToKing;
+
+    public bool ThreefoldRepetitionEnabled => threefoldRepetitionEnabled;
+    public int ThreeVsOneKingDrawLimit => threeVsOneKingDrawLimit;
+    public int TwoVsOneKingDrawLimit => twoVsOneKingDrawLimit;
+    public bool OneVsOneIsDraw => oneVsOneIsDraw;
 
     public PieceType FirstMoveColor => firstMoveColor;
     public bool DarkSquareBottomRight => darkSquareBottomRight;
