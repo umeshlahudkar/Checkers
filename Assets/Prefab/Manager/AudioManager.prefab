@@ -140,7 +140,7 @@ GameObject:
   - component: {fileID: 2872840138297405202}
   - component: {fileID: 2256086370781769199}
   m_Layer: 0
-  m_Name: sfxPieceKillAudioSource
+  m_Name: musicAudioSource
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -176,7 +176,7 @@ AudioSource:
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
-  Loop: 0
+  Loop: 1
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
@@ -434,15 +434,11 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 329919cab793c63428284071bd126084, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
+  soundLibrary: {fileID: 11400000, guid: 1440bb6e14138c245a8ec212dfbcfe60, type: 2}
   sfxAudioSource: {fileID: 113128289012255433}
-  pieceKillAudioSource: {fileID: 2256086370781769199}
+  musicAudioSource: {fileID: 2256086370781769199}
   timeTickingAudioSource: {fileID: 5336312844353592624}
-  buttonClickClip: {fileID: 8300000, guid: c62eebb3209c3fc4f84326941b65353c, type: 3}
-  pieceKilledClip: {fileID: 8300000, guid: a8dc417811d98084f99d25022757161b, type: 3}
-  pieceMoveClip: {fileID: 8300000, guid: b615063de0f2ea34094bb50979941153, type: 3}
-  coinClip: {fileID: 8300000, guid: ba7f962b43d9b17499b7e3c9230d2358, type: 3}
-  crownKingClip: {fileID: 8300000, guid: ffb34ee9797fd214cbb335698fc0ddf3, type: 3}
 --- !u!81 &8274182561755547255
 AudioListener:
   m_ObjectHideFlags: 0

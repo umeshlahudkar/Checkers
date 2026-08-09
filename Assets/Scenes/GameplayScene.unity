@@ -386,7 +386,6 @@ GameObject:
   - component: {fileID: 392054789}
   - component: {fileID: 392054788}
   - component: {fileID: 392054792}
-  - component: {fileID: 392054793}
   m_Layer: 5
   m_Name: Gameplay_Canvas
   m_TagString: Untagged
@@ -503,21 +502,6 @@ MonoBehaviour:
     page: {fileID: 695372222104152338}
   - key: 5
     page: {fileID: 385611282905447177}
---- !u!114 &392054793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 392054787}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 082cc9fe7c7161f41877fd73bf7076ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CanvasScalerMatchSetter
-  referenceAspect: 0.5625
-  tallAspect: 0.46153846
-  wideAspect: 0.75
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1344,6 +1328,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 413322804737658159, guid: c6bb8cd19e35abf42aa7f30f9c815a53, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: fcaf04e56644227428bef0e2e03d8598, type: 3}
     - target: {fileID: 985241410195941267, guid: c6bb8cd19e35abf42aa7f30f9c815a53, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

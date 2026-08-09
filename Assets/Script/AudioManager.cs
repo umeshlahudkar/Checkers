@@ -8,14 +8,11 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public const string MusicVolumeKey = "Audio.MusicVolume";
     public const string MusicMuteKey = "Audio.MusicMute";
 
-    [SerializeField] private AudioSource sfxAudioSource;
-    [SerializeField] private AudioSource timeTickingAudioSource;
+    [SerializeField] private SoundLibrarySO soundLibrary;
 
-    [SerializeField] private AudioClip buttonClickClip;
-    [SerializeField] private AudioClip pieceKilledClip;
-    [SerializeField] private AudioClip pieceMoveClip;
-    [SerializeField] private AudioClip coinClip;
-    [SerializeField] private AudioClip crownKingClip;
+    [SerializeField] private AudioSource sfxAudioSource;
+    [SerializeField] private AudioSource musicAudioSource;
+    [SerializeField] private AudioSource timeTickingAudioSource;
 
     private float sfxVolume = 0.5f;
     private float musicVolume = 0.5f;
@@ -36,6 +33,11 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
         musicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, musicVolume);
         isMusicMute = PlayerPrefs.GetInt(MusicMuteKey, 0) == 1;
+
+        musicAudioSource.clip = soundLibrary.GetClip(SoundType.BackgroundMusic);
+        musicAudioSource.loop = true;
+
+        timeTickingAudioSource.clip = soundLibrary.GetClip(SoundType.TimerTick);
 
         ApplyMute();
         ApplyVolume();
@@ -67,6 +69,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public void ToggleMusicMute()
     {
         isMusicMute = !isMusicMute;
+        ApplyMute();
 
         PlayerPrefs.SetInt(MusicMuteKey, isMusicMute ? 1 : 0);
         PlayerPrefs.Save();
@@ -76,6 +79,8 @@ public class AudioManager : Service<AudioManager>, IInitializable
     {
         musicVolume = Mathf.Clamp01(volume);
         isMusicMute = musicVolume <= 0f;
+        ApplyMute();
+        ApplyVolume();
 
         PlayerPrefs.SetFloat(MusicVolumeKey, musicVolume);
         PlayerPrefs.SetInt(MusicMuteKey, isMusicMute ? 1 : 0);
@@ -84,32 +89,47 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayButtonClickSound()
     {
-        PlaySfx(buttonClickClip);
+        PlaySfx(SoundType.ButtonClick);
     }
 
     public void PlayPieceMoveSound()
     {
-        PlaySfx(pieceMoveClip);
+        PlaySfx(SoundType.PieceMove);
     }
 
     public void PlayPieceKillSound()
     {
-        PlaySfx(pieceKilledClip);
+        PlaySfx(SoundType.PieceCapture);
     }
 
     public void PlayCoinSound()
     {
-        PlaySfx(coinClip);
+        PlaySfx(SoundType.Coin);
     }
 
     public void PlayCrownKingSound()
     {
-        PlaySfx(crownKingClip);
+        PlaySfx(SoundType.CrownKing);
+    }
+
+    public void PlayBackgroundMusic()
+    {
+        if (musicAudioSource.clip == null)
+        {
+            return;
+        }
+
+        musicAudioSource.Play();
+    }
+
+    public void StopBackgroundMusic()
+    {
+        musicAudioSource.Stop();
     }
 
     public void PlayTimeTickingSound()
     {
-        if (isSfxMute)
+        if (isSfxMute || timeTickingAudioSource.clip == null)
         {
             return;
         }
@@ -136,9 +156,15 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     // PlayOneShot layers overlapping SFX on this single source itself, mixed together, instead of
     // needing a pool of cloned AudioSource components to avoid one cutting another off.
-    private void PlaySfx(AudioClip clip)
+    private void PlaySfx(SoundType soundType)
     {
         if (isSfxMute)
+        {
+            return;
+        }
+
+        AudioClip clip = soundLibrary.GetClip(soundType);
+        if (clip == null)
         {
             return;
         }
@@ -150,11 +176,13 @@ public class AudioManager : Service<AudioManager>, IInitializable
     {
         sfxAudioSource.mute = isSfxMute;
         timeTickingAudioSource.mute = isSfxMute;
+        musicAudioSource.mute = isMusicMute;
     }
 
     private void ApplyVolume()
     {
         sfxAudioSource.volume = sfxVolume;
         timeTickingAudioSource.volume = sfxVolume;
+        musicAudioSource.volume = musicVolume;
     }
 }

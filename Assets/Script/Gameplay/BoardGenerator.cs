@@ -59,7 +59,7 @@ public class BoardGenerator : MonoBehaviour
         pieceHolderParent.localPosition = Vector3.zero;
 
         float screenWidth = canvasRect.rect.width;
-        float totalWidth = screenWidth * 0.80f;
+        float totalWidth = screenWidth * 0.85f;
 
         blockSize = (totalWidth / colums);
 
