@@ -8,9 +8,7 @@ public class Piece : MonoBehaviour
     [SerializeField] private RectTransform thisTransform;
     [SerializeField] private Button button;
 
-    [SerializeField] private Image whitePieceImage;
-    [SerializeField] private Image blackPieceImage;
-    [SerializeField] private Image crownImage;
+    [SerializeField] private Image pieceIcon;
     [SerializeField] private PieceType pieceType;
 
     [SerializeField] private int rowID;
@@ -18,6 +16,11 @@ public class Piece : MonoBehaviour
 
     [SerializeField] private bool isCrownedKing;
     [SerializeField] private int playerID;
+
+    public static Sprite white_piece;
+    public static Sprite black_piece;
+    public static Sprite crowned_white_piece;
+    public static Sprite crowned_black_piece;
 
     // Set by MarkCaptured, never by Destroy - true for the DeferCaptureRemoval window where a
     // captured piece is still sitting on its square (blocking it) but can no longer be captured
@@ -38,14 +41,7 @@ public class Piece : MonoBehaviour
         pieceType = (PieceType)_pieceType;
         isCrownedKing = false;
 
-        if(pieceType == PieceType.White)
-        {
-            whitePieceImage.gameObject.SetActive(true);
-        }
-        else
-        {
-            blackPieceImage.gameObject.SetActive(true);
-        }
+        UpdatePieceIcon();
 
         thisTransform.position = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.position;
         thisTransform.sizeDelta = ServiceLocator.Get<GameplayController>().board[rowID, columID].ThisTransform.sizeDelta;
@@ -62,7 +58,7 @@ public class Piece : MonoBehaviour
         }
     }
 
-    private static readonly Color KingTextColor = new(1f, 0.42745098f, 0.3529412f); // FF6D5A
+    private static readonly Color KingTextColor = Color.white;
 
     public void SetCrownKing()
     {
@@ -77,7 +73,19 @@ public class Piece : MonoBehaviour
     public void SetKingState(bool isKing)
     {
         isCrownedKing = isKing;
-        crownImage.gameObject.SetActive(isKing);
+        UpdatePieceIcon();
+    }
+
+    private void UpdatePieceIcon()
+    {
+        if (pieceType == PieceType.White)
+        {
+            pieceIcon.sprite = isCrownedKing ? crowned_white_piece : white_piece;
+        }
+        else
+        {
+            pieceIcon.sprite = isCrownedKing ? crowned_black_piece : black_piece;
+        }
     }
 
     // Board/list/UI bookkeeping happens immediately (move generation and the pieces-left count need

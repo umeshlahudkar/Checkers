@@ -18,6 +18,8 @@ public class BoardGenerator : MonoBehaviour
     [SerializeField] private Piece piecePrefab;
     [SerializeField] private Sprite whitePieceSprite;
     [SerializeField] private Sprite blackPieceSprite;
+    [SerializeField] private Sprite crownedWhitePieceSprite;
+    [SerializeField] private Sprite crownedBlackPieceSprite;
 
     [Header("Piece Holder")]
     [SerializeField] private Transform pieceHolderParent;
@@ -25,6 +27,8 @@ public class BoardGenerator : MonoBehaviour
 
     [Header("Piece Holder")]
     [SerializeField] private RectTransform boardBorder;
+    [SerializeField] private float offset;
+
 
     [Header("Board Canvas")]
     [SerializeField] private RectTransform canvasRect;
@@ -39,6 +43,11 @@ public class BoardGenerator : MonoBehaviour
 
     public void GenerateBoard(IRuleSet ruleSet)
     {
+        Piece.white_piece = whitePieceSprite;
+        Piece.black_piece = blackPieceSprite;
+        Piece.crowned_white_piece = crownedWhitePieceSprite;
+        Piece.crowned_black_piece = crownedBlackPieceSprite;
+
         this.ruleSet = ruleSet;
         int rows = ruleSet.Rows;
         int colums = ruleSet.Columns;
@@ -50,7 +59,7 @@ public class BoardGenerator : MonoBehaviour
         pieceHolderParent.localPosition = Vector3.zero;
 
         float screenWidth = canvasRect.rect.width;
-        float totalWidth = screenWidth * 0.90f;
+        float totalWidth = screenWidth * 0.80f;
 
         blockSize = (totalWidth / colums);
 
@@ -88,8 +97,20 @@ public class BoardGenerator : MonoBehaviour
         blockHolderParent.localPosition += new Vector3(blockSize, 0, 0);
         pieceHolderParent.localPosition += new Vector3(blockSize, 0, 0);
 
-        float borderX = (blockSize * colums) + (blockSize / 2);
-        float borderY = (blockSize * rows) + (blockSize / 2);
+        //float borderX = (blockSize * colums) + (blockSize / 2);
+        //float borderY = (blockSize * rows) + (blockSize / 2);
+
+        //boardBorder.sizeDelta = new Vector2(borderX, borderY);
+
+        ApplyBorder(rows);
+    }
+
+    [ContextMenu("Setup Border")]
+    public void ApplyBorder(int rows)
+    {
+        float gridSize = (blockSize * rows);
+        float borderX = gridSize + (gridSize * offset);
+        float borderY = gridSize + (gridSize * offset);
 
         boardBorder.sizeDelta = new Vector2(borderX, borderY);
     }

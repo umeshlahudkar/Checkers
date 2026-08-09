@@ -19,9 +19,9 @@ namespace Gameplay
         protected readonly List<Piece> movablePieces = new();
         protected Piece selectedPiece;
 
-        // Counts captures across an entire move (including every hop of a capture chain), so a
-        // multi-capture can be celebrated with a "DOUBLE KILL!"-style callout. Reset only when a
-        // fresh piece is picked up (see SelectPieceForNewMove), not between individual hops.
+        // Counts captures across an entire move (including every hop of a capture chain) - reported
+        // via ReportChainLength for longestChainCount tracking. Reset only when a fresh piece is
+        // picked up (see SelectPieceForNewMove), not between individual hops.
         private int chainCaptureCount;
 
         // DeferCaptureRemoval rulesets only: pieces captured so far this same capture-chain move,
@@ -29,8 +29,6 @@ namespace Gameplay
         // their square until the chain truly ends. Same reset lifetime as chainCaptureCount - swept
         // and really destroyed in FinalizeCapturedChain, right before the turn is handed over.
         private readonly List<Piece> capturedThisChain = new();
-
-        private static readonly Color KillStreakTextColor = new(1f, 0.3f, 0.3f);
 
         public PieceType PieceType { get { return pieceType; } }
         public int Player_ID { get { return playerID; } }
@@ -269,11 +267,6 @@ namespace Gameplay
                     justPromoted = true;
                 }
 
-                if (chainCaptureCount >= 2)
-                {
-                    thisPhotonView.RPC(nameof(ShowGratificationText), RpcTarget.All, GetKillStreakText(chainCaptureCount));
-                }
-
                 // The chain is over (this is reached exactly once per whole move, whether it took
                 // one hop or many) - now's the single correct point to really destroy every piece
                 // that was only marked-captured along the way, before the opponent's turn starts.
@@ -304,22 +297,6 @@ namespace Gameplay
                 ServiceLocator.Get<GameManager>().SwitchTurn(hasDeleted || justPromoted);
                 ResetNextToNextHighlightedBlock();
             }
-        }
-
-        private static string GetKillStreakText(int captureCount)
-        {
-            return captureCount switch
-            {
-                2 => "DOUBLE KILL!",
-                3 => "TRIPLE KILL!",
-                _ => "MULTI KILL!"
-            };
-        }
-
-        [PunRPC]
-        public void ShowGratificationText(string text)
-        {
-            ServiceLocator.Get<GameManager>().ShowFloatingText(text, KillStreakTextColor);
         }
 
         protected abstract void ContinueAfterKill(Piece selectedPiece);
