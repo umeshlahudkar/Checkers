@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class MainMenuPage : Page
 {
+    private void Start()
+    {
+        ServiceLocator.Get<AudioManager>().PlayBackgroundMusic();
+    }
+
     public void OnPlayButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();

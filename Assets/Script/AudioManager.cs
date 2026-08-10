@@ -150,11 +150,21 @@ public class AudioManager : Service<AudioManager>, IInitializable
 
     public void PlayBackgroundMusic()
     {
-        if (musicAudioSource.clip == null)
+        if (musicAudioSource.isPlaying)
         {
             return;
         }
 
+        musicEntry = soundLibrary.GetSoundEntry(SoundType.BackgroundMusic);
+        if (musicEntry == null || musicEntry.clip == null)
+        {
+            return;
+        }
+
+        musicAudioSource.clip = musicEntry.clip;
+        musicAudioSource.pitch = musicEntry.pitch;
+        musicAudioSource.priority = musicEntry.priority;
+        musicAudioSource.volume = musicVolume * musicEntry.baseVolume;
         musicAudioSource.Play();
     }
 
