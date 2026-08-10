@@ -17,6 +17,10 @@ public class AudioManager : Service<AudioManager>, IInitializable
     private float sfxVolume = 0.5f;
     private float musicVolume = 0.5f;
 
+    private SoundLibrarySO.SoundEntry musicEntry;
+    private SoundLibrarySO.SoundEntry timerTickEntry;
+    private float timerTickBasePitch = 1f;
+
     private bool isSfxMute = false;
     private bool isMusicMute = false;
 
@@ -34,10 +38,17 @@ public class AudioManager : Service<AudioManager>, IInitializable
         musicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, musicVolume);
         isMusicMute = PlayerPrefs.GetInt(MusicMuteKey, 0) == 1;
 
-        musicAudioSource.clip = soundLibrary.GetClip(SoundType.BackgroundMusic);
+        musicEntry = soundLibrary.GetSoundEntry(SoundType.BackgroundMusic);
+        musicAudioSource.clip = musicEntry?.clip;
         musicAudioSource.loop = true;
+        musicAudioSource.pitch = musicEntry?.pitch ?? 1f;
+        musicAudioSource.priority = musicEntry?.priority ?? 128;
 
-        timeTickingAudioSource.clip = soundLibrary.GetClip(SoundType.TimerTick);
+        timerTickEntry = soundLibrary.GetSoundEntry(SoundType.TimerTick);
+        timeTickingAudioSource.clip = timerTickEntry?.clip;
+        timerTickBasePitch = timerTickEntry?.pitch ?? 1f;
+        timeTickingAudioSource.pitch = timerTickBasePitch;
+        timeTickingAudioSource.priority = timerTickEntry?.priority ?? 128;
 
         ApplyMute();
         ApplyVolume();
@@ -159,7 +170,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
             return;
         }
 
-        timeTickingAudioSource.pitch = 1f;
+        timeTickingAudioSource.pitch = timerTickBasePitch;
         timeTickingAudioSource.Stop();
         timeTickingAudioSource.Play();
     }
@@ -167,7 +178,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     public void StopTimeTickingSound()
     {
         timeTickingAudioSource.Stop();
-        timeTickingAudioSource.pitch = 1f;
+        timeTickingAudioSource.pitch = timerTickBasePitch;
     }
 
     // Speeds the ticking loop up (and, as a side effect of pitch, raises its tone) as the turn
@@ -176,7 +187,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     // while everything else on screen gets more frantic.
     public void SetTimeTickingUrgency(float urgency)
     {
-        timeTickingAudioSource.pitch = Mathf.Lerp(1f, 1.5f, Mathf.Clamp01(urgency));
+        timeTickingAudioSource.pitch = Mathf.Lerp(timerTickBasePitch, timerTickBasePitch * 1.5f, Mathf.Clamp01(urgency));
     }
 
     // PlayOneShot layers overlapping SFX on this single source itself, mixed together, instead of
@@ -188,13 +199,15 @@ public class AudioManager : Service<AudioManager>, IInitializable
             return;
         }
 
-        AudioClip clip = soundLibrary.GetClip(soundType);
-        if (clip == null)
+        SoundLibrarySO.SoundEntry entry = soundLibrary.GetSoundEntry(soundType);
+        if (entry == null || entry.clip == null)
         {
             return;
         }
 
-        sfxAudioSource.PlayOneShot(clip);
+        sfxAudioSource.pitch = entry.pitch;
+        sfxAudioSource.priority = entry.priority;
+        sfxAudioSource.PlayOneShot(entry.clip, entry.baseVolume);
     }
 
     private void ApplyMute()
@@ -207,7 +220,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     private void ApplyVolume()
     {
         sfxAudioSource.volume = sfxVolume;
-        timeTickingAudioSource.volume = sfxVolume;
-        musicAudioSource.volume = musicVolume;
+        timeTickingAudioSource.volume = sfxVolume * (timerTickEntry?.baseVolume ?? 1f);
+        musicAudioSource.volume = musicVolume * (musicEntry?.baseVolume ?? 1f);
     }
 }
