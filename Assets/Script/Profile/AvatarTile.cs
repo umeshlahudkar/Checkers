@@ -5,15 +5,16 @@ using UnityEngine.UI;
 public class AvatarTile : MonoBehaviour
 {
     [SerializeField] private Image iconImage;
-    [SerializeField] private GameObject selectedBg;
+    [SerializeField] private Image selectedBg;
 
     private int avtarIndex;
     private Action<int> onButtonClick;
 
-    public void Setup(int index, Sprite avtarSprite, Action<int> onSelected)
+    public void Setup(int index, Sprite avtarSprite, Sprite Bg, Action<int> onSelected)
     {
         avtarIndex = index;
         iconImage.sprite = avtarSprite;
+        selectedBg.sprite = Bg;
         onButtonClick = onSelected;
     }
 
@@ -22,8 +23,8 @@ public class AvatarTile : MonoBehaviour
         onButtonClick?.Invoke(avtarIndex);
     }
 
-    public void SetSelected(bool isSelected)
+    public void SetSelected(Sprite bg)
     {
-        selectedBg.SetActive(isSelected);
+        selectedBg.sprite = bg;
     }
 }

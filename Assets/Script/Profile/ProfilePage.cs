@@ -11,6 +11,9 @@ public class ProfilePage : Page
     [SerializeField] private AvatarTile tileTemplate;
     [SerializeField] private Transform tileContainer;
 
+    [SerializeField] private Sprite selectedBg;
+    [SerializeField] private Sprite unSelectedBg;
+
     private readonly List<AvatarTile> avatarTiles = new();
 
     private bool tilesCreated;
@@ -49,7 +52,7 @@ public class ProfilePage : Page
         {
             AvatarTile tile = Instantiate(tileTemplate, tileContainer);
             tile.gameObject.SetActive(true);
-            tile.Setup(i, ServiceLocator.Get<ProfileManager>().GetAvtar(i), OnAvatarSelected);
+            tile.Setup(i, ServiceLocator.Get<ProfileManager>().GetAvtar(i), unSelectedBg, OnAvatarSelected);
             avatarTiles.Add(tile);
         }
 
@@ -67,14 +70,14 @@ public class ProfilePage : Page
     {
         if (selectedAvtarIndex > 0)
         {
-            avatarTiles[selectedAvtarIndex - 1].SetSelected(false);
+            avatarTiles[selectedAvtarIndex - 1].SetSelected(unSelectedBg);
         }
 
         selectedAvtarIndex = index;
 
         if (selectedAvtarIndex > 0)
         {
-            avatarTiles[selectedAvtarIndex - 1].SetSelected(true);
+            avatarTiles[selectedAvtarIndex - 1].SetSelected(selectedBg);
         }
     }
 
