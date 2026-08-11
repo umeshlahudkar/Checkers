@@ -307,7 +307,17 @@ namespace Gameplay
             // rulesets let men capture backward) must keep playing that capture as a man even
             // though it's standing on the back row; it only actually crowns once the chain truly
             // has nowhere further to go from here.
-            bool canContinue = !blocksContinuation && hasDeleted && ServiceLocator.Get<MoveGenerator>().CanPieceKill(selectedPiece);
+            // Must respect the same ForbidImmediateReversal restriction ContinueAfterKill's own
+            // GetLegalContinuations call below (see HumanPlayer/BotPlayer) enforces - CanPieceKill
+            // finds captures in every direction with no such restriction, so on a
+            // ForbidImmediateReversal ruleset (Turkish) it can say "yes, keep going" for a piece
+            // whose only remaining capture is the reversal hop GetLegalContinuations then correctly
+            // refuses, handing ContinueAfterKill an empty sequence list it isn't prepared for.
+            (int dRow, int dCol) lastDirection = (
+                System.Math.Sign(selectedPiece.Row_ID - lastCapturedPosition.row_ID),
+                System.Math.Sign(selectedPiece.Coloum_ID - lastCapturedPosition.col_ID));
+            bool canContinue = !blocksContinuation && hasDeleted
+                && ServiceLocator.Get<MoveGenerator>().GetLegalContinuations(selectedPiece, lastDirection).Count > 0;
 
             if (canContinue)
             {

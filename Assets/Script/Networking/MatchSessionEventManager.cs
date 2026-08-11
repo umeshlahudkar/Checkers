@@ -166,19 +166,23 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks, IOnEventCallb
     // If the master client is the one backgrounded, it can't police the turn timer (its own Update
     // loop is suspended), and nothing switches the turn until Photon's disconnect grace period
     // (PhotonNetwork.KeepAliveInBackground, ~60s) expires and auto-promotes the other client. Handing
-    // master off immediately on minimize closes that gap instead of waiting on it.
-    //private void OnApplicationPause(bool pauseStatus)
-    //{
-    //    if (!pauseStatus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
-    //    {
-    //        return;
-    //    }
+    // master off immediately on minimize closes that gap instead of waiting on it. This is the hook
+    // that actually fires for a mobile home-button/task-switcher minimize - OnApplicationFocus below
+    // is not reliably raised by that on Android/iOS, so it stays only as a desktop alt-tab backstop;
+    // both share the same guard, and calling SetMasterClient a second time once this client is no
+    // longer master is already a safe no-op via the IsMasterClient check.
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (!pauseStatus || ServiceLocator.Get<GameManager>().GameMode != GameModeType.Multiplayer || !PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
 
-    //    if (PhotonNetwork.PlayerListOthers.Length > 0)
-    //    {
-    //        PhotonNetwork.SetMasterClient(PhotonNetwork.PlayerListOthers[0]);
-    //    }
-    //}
+        if (PhotonNetwork.PlayerListOthers.Length > 0)
+        {
+            PhotonNetwork.SetMasterClient(PhotonNetwork.PlayerListOthers[0]);
+        }
+    }
 
     private void OnApplicationFocus(bool focus)
     {

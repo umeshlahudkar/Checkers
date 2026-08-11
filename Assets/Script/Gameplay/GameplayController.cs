@@ -52,6 +52,26 @@ public class GameplayController : Service<GameplayController>
         yield return new WaitForSeconds(StaggeredDuration(count, Piece.AppearDuration));
     }
 
+    // Piece.SetPiece leaves a freshly spawned piece at full scale (RestorePieceLayout's Undo case
+    // needs it to just be there, with no animation) - fine when PlayPiecesAppearAnimation runs
+    // right after with no yield in between (SetupLocalMatch), since Unity never renders a frame
+    // between the two. PrepareOnlineMode instead has a wait-for-both-players-ready poll loop in
+    // between, so without this the freshly spawned pieces would render at full scale for however
+    // many frames that wait takes (worse for whichever side reaches it first, typically the master)
+    // before PlayPiecesAppearAnimation's own scale-to-zero-then-animate ever runs. Call this right
+    // after generating pieces and before any such wait, so they simply stay invisible until then.
+    public void HidePiecesInstantly()
+    {
+        for (int i = 0; i < whitePieces.Count; i++)
+        {
+            whitePieces[i].ThisTransform.localScale = Vector3.zero;
+        }
+        for (int i = 0; i < blackPieces.Count; i++)
+        {
+            blackPieces[i].ThisTransform.localScale = Vector3.zero;
+        }
+    }
+
     public IEnumerator PlayPiecesDisappearAnimation()
     {
         int count = AnimateAll((piece, delay) => piece.PlayDisappearAnimation(delay));

@@ -274,6 +274,12 @@ public class GameManager : Service<GameManager>
 
         GeneratePiecesAndInitUI();
 
+        // GeneratePiecesAndInitUI leaves every piece at full scale, and the wait loop just below
+        // (for whichever side reaches it first - typically the master) can render several frames
+        // before PlayPiecesAppearAnimation ever runs - keep them invisible until then instead of
+        // letting them flash fully visible on the board first. See HidePiecesInstantly.
+        ServiceLocator.Get<GameplayController>().HidePiecesInstantly();
+
         // Tell the other client this side has finished its local setup (board/pieces generated),
         // and wait until it confirms the same, before either side starts the first turn. Without
         // this, whichever client finishes first has no way to know if the other is actually ready -
