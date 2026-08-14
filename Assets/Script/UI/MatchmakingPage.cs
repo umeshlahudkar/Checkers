@@ -48,10 +48,11 @@ public class MatchmakingPage : Page
         rulesText.text = $"{ruleSet.DisplayName} · {ruleSet.Rows}×{ruleSet.Columns}";
         turnTimerText.text = TurnTimerSeconds + " seconds";
 
-        ShowSearching();
+        ResetOpponentUI();
+        ShowConnecting();
     }
 
-    private void ShowSearching()
+    private void ResetOpponentUI()
     {
         opponentFound = false;
 
@@ -61,8 +62,27 @@ public class MatchmakingPage : Page
 
         opponentSearchIcon.gameObject.SetActive(true);
         StartSearchIconAnimation();
+    }
 
+    public void ShowConnecting()
+    {
+        searchingSpinner.SetActive(false);
+        statusText.text = "Connecting...";
+    }
+
+    public void ShowConnected()
+    {
+        statusText.text = "Connected";
+    }
+
+    public void ShowJoinedRoom()
+    {
+        statusText.text = "Joined";
         searchingSpinner.SetActive(true);
+    }
+
+    public void ShowSearchingOpponent()
+    {
         statusText.text = "Searching for opponent...";
     }
 
@@ -83,8 +103,13 @@ public class MatchmakingPage : Page
         opponentAvtarImg.sprite = opponentAvtar;
         opponentNameText.text = opponentName;
 
-        searchingSpinner.SetActive(false);
-        statusText.text = "Opponent found — starting...";
+        searchingSpinner.SetActive(true);
+        statusText.text = "Starting match";
+    }
+
+    public void ShowPreGameCountdown(string text)
+    {
+        countdownTimeText.text = text;
     }
 
     public void ShowFailed(string message)

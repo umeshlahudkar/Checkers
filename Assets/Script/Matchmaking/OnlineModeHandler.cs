@@ -7,11 +7,20 @@ public class OnlineModeHandler : MatchModeHandler
 
     private const float MatchmakingTimeoutSeconds = 15f;
     private const float BotFallbackLeadTimeSeconds = 3f;
+    private const float PreGameCountdownSeconds = 3f;
 
     private bool isCancelled;
     private bool isTimerRunning;
     private float matchmakingElapsed;
     private int lastDisplayedSeconds;
+
+    private bool isPreGameCountdownRunning;
+    private float preGameCountdownElapsed;
+    private int lastDisplayedCountdown;
+
+    private bool isBotFallbackPending;
+    private string pendingDisguisedName;
+    private Sprite pendingDisguisedAvatar;
 
     public OnlineModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
         : base(connectionManager, gameDataSO)
@@ -26,8 +35,6 @@ public class OnlineModeHandler : MatchModeHandler
         isCancelled = false;
 
         ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Matchmaking);
-
-        StartMatchmakingTimer();
 
         if(connectionManager.IsConnectedAndReady)
         {
@@ -54,11 +61,19 @@ public class OnlineModeHandler : MatchModeHandler
 
     public override void Update()
     {
-        if(!isTimerRunning)
+        if(isTimerRunning)
         {
-            return;
+            UpdateMatchmakingTimer();
         }
 
+        if(isPreGameCountdownRunning)
+        {
+            UpdatePreGameCountdown();
+        }
+    }
+
+    private void UpdateMatchmakingTimer()
+    {
         matchmakingElapsed += Time.deltaTime;
         float remaining = MatchmakingTimeoutSeconds - matchmakingElapsed;
 
@@ -77,6 +92,50 @@ public class OnlineModeHandler : MatchModeHandler
         }
     }
 
+    private void UpdatePreGameCountdown()
+    {
+        preGameCountdownElapsed += Time.deltaTime;
+        float remaining = PreGameCountdownSeconds - preGameCountdownElapsed;
+
+        if(remaining <= 0f)
+        {
+            Debug.Log($"[OnlineModeHandler] Pre-game countdown finished, loading gameplay scene - time: {Time.realtimeSinceStartup}, isMasterClient: {connectionManager.IsMasterClient}");
+
+            isPreGameCountdownRunning = false;
+            matchmakingPage.ShowPreGameCountdown("GO!");
+
+            if(isBotFallbackPending)
+            {
+                isBotFallbackPending = false;
+
+                // Starting a VsBot match sets gameDataSO.opponentPlayer to "Computer" (with the correct
+                // piece type) via PvcModeHandler; overwrite the name/avatar afterwards so the player
+                // believes they matched with a real opponent, but keep the piece type it assigned.
+                connectionManager.StartMatch(GameModeType.VsBot);
+
+                gameDataSO.opponentPlayer = new PlayerInfo
+                {
+                    userName = pendingDisguisedName,
+                    avatar = pendingDisguisedAvatar,
+                    pieceType = gameDataSO.opponentPlayer.pieceType
+                };
+            }
+            else
+            {
+                connectionManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
+            }
+
+            return;
+        }
+
+        int displaySeconds = Mathf.CeilToInt(remaining);
+        if(displaySeconds != lastDisplayedCountdown)
+        {
+            lastDisplayedCountdown = displaySeconds;
+            matchmakingPage.ShowPreGameCountdown(displaySeconds.ToString());
+        }
+    }
+
     public override void OnConnectedToMaster()
     {
         base.OnConnectedToMaster();
@@ -85,6 +144,8 @@ public class OnlineModeHandler : MatchModeHandler
         {
             return;
         }
+
+        matchmakingPage.ShowConnected();
 
         if(!connectionManager.JoinRandomRoom())
         {
@@ -153,6 +214,15 @@ public class OnlineModeHandler : MatchModeHandler
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
+
+        matchmakingPage.ShowJoinedRoom();
+        StartMatchmakingTimer();
+
+        if(!connectionManager.IsRoomFull)
+        {
+            matchmakingPage.ShowSearchingOpponent();
+        }
+
         TryStartGameplay();
     }
 
@@ -164,7 +234,9 @@ public class OnlineModeHandler : MatchModeHandler
 
     private void TryStartGameplay()
     {
-        if(isCancelled || !connectionManager.IsRoomFull)
+        Debug.Log($"[OnlineModeHandler] TryStartGameplay - isCancelled: {isCancelled}, isPreGameCountdownRunning: {isPreGameCountdownRunning}, IsRoomFull: {connectionManager.IsRoomFull}, time: {Time.realtimeSinceStartup}");
+
+        if(isCancelled || isPreGameCountdownRunning || !connectionManager.IsRoomFull)
         {
             return;
         }
@@ -176,7 +248,16 @@ public class OnlineModeHandler : MatchModeHandler
 
         matchmakingPage.ShowOpponentFound(gameDataSO.opponentPlayer.userName, gameDataSO.opponentPlayer.avatar);
 
-        connectionManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
+        StartPreGameCountdown();
+    }
+
+    private void StartPreGameCountdown()
+    {
+        Debug.Log($"[OnlineModeHandler] StartPreGameCountdown - time: {Time.realtimeSinceStartup}");
+
+        preGameCountdownElapsed = 0f;
+        lastDisplayedCountdown = -1;
+        isPreGameCountdownRunning = true;
     }
 
     private void OnMatchmakingTimeout()
@@ -187,29 +268,16 @@ public class OnlineModeHandler : MatchModeHandler
         }
 
         isCancelled = true;
+        isBotFallbackPending = true;
 
-        // Starting a VsBot match sets gameDataSO.opponentPlayer to "Computer" (with the correct
-        // piece type) via PvcModeHandler; overwrite the name/avatar afterwards so the player
-        // believes they matched with a real opponent, but keep the piece type it assigned.
-        connectionManager.StartMatch(GameModeType.VsBot);
-
-        PlayerInfo disguisedOpponent = CreateDisguisedOpponent(gameDataSO.opponentPlayer.pieceType);
-        gameDataSO.opponentPlayer = disguisedOpponent;
-
-        matchmakingPage.ShowOpponentFound(disguisedOpponent.userName, disguisedOpponent.avatar);
-    }
-
-    private PlayerInfo CreateDisguisedOpponent(PieceType pieceType)
-    {
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
         int avtarIndex = Random.Range(1, profileManager.AvtarCount + 1);
+        pendingDisguisedName = "Random_" + Random.Range(1000, 10000);
+        pendingDisguisedAvatar = profileManager.GetAvtar(avtarIndex);
 
-        return new PlayerInfo
-        {
-            userName = "Random_" + Random.Range(1000, 10000),
-            avatar = profileManager.GetAvtar(avtarIndex),
-            pieceType = pieceType
-        };
+        matchmakingPage.ShowOpponentFound(pendingDisguisedName, pendingDisguisedAvatar);
+
+        StartPreGameCountdown();
     }
 
     private void StartMatchmakingTimer()
