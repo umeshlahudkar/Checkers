@@ -37,6 +37,14 @@ public class GameManager : Service<GameManager>
 
     private const string GameplayReadyPropertyKey = "GameplayReady";
 
+    // Cooldown enforced purely on the offerer's own Offer Draw button after sending an offer - runs
+    // to completion unconditionally (turn changes, an early accept/decline, none of it cuts this
+    // short - see GamePage.StartDrawOfferCountdown), it's a flat "can't send another offer within
+    // 15 seconds of the last one" rate limit, not tied to whether that earlier offer is still
+    // meaningfully pending. The offer itself has no separate timeout - a real opponent's
+    // DrawOfferPage popup stays open until they explicitly accept or decline (see ReceiveDrawOffer).
+    private const float DrawOfferButtonCooldownSeconds = 15f;
+
     private string player1DisplayName;
     private string player2DisplayName;
 
@@ -184,13 +192,19 @@ public class GameManager : Service<GameManager>
         ServiceLocator.Get<GameplayController>().InitBoard(ruleSet);
         ServiceLocator.Get<MoveGenerator>().Initialize(ruleSet);
 
-        if (gameMode == GameModeType.Multiplayer)
+        // Whether to actually wait for a networked opponent has to be decided from
+        // PhotonNetwork.OfflineMode, not gameMode: OnlineModeHandler's matchmaking-timeout bot
+        // fallback deliberately keeps gameMode as Multiplayer (to disguise the bot as a real
+        // opponent) while still running entirely offline on this one device - see
+        // OnlineModeHandler.UpdatePreGameCountdown. gameDataSO.opponentIsBot is the analogous
+        // mode-independent signal for which prefab the local opponent should use.
+        if (!PhotonNetwork.OfflineMode)
         {
             StartCoroutine(PrepareOnlineMode());
         }
         else
         {
-            Gameplay.Player opponentPrefab = (gameMode == GameModeType.VsBot) ? (Gameplay.Player)botPlayerPrefab : humanPlayerPrefab;
+            Gameplay.Player opponentPrefab = gameDataSO.opponentIsBot ? (Gameplay.Player)botPlayerPrefab : humanPlayerPrefab;
             StartCoroutine(SetupLocalMatch(opponentPrefab));
         }
     }
@@ -218,6 +232,13 @@ public class GameManager : Service<GameManager>
             opponentInfo.userName, opponentInfo.avatar, boardGenerator.GetPieceSprite(opponentInfo.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
         gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
+        gamePageManager.GamePage.RefreshOfferDrawButtonVisibility();
+
+        // Defensive reset, not just cosmetic: GamePage's countdown coroutine lives on a
+        // MonoBehaviour that persists across a rematch, so a fresh match must not inherit a
+        // still-running cooldown left over from a previous one (e.g. the match ended some other
+        // way while an offer's cooldown was mid-flight).
+        gamePageManager.GamePage.StopDrawOfferCountdown();
 
         boardGenerator.GenerateBoard(ruleSet);
         boardGenerator.SetBoardOrientation(!PhotonNetwork.IsMasterClient);
@@ -266,6 +287,13 @@ public class GameManager : Service<GameManager>
             player2.userName, player2.avatar, boardGenerator.GetPieceSprite(player2.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
         gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
+        gamePageManager.GamePage.RefreshOfferDrawButtonVisibility();
+
+        // Defensive reset, not just cosmetic: GamePage's countdown coroutine lives on a
+        // MonoBehaviour that persists across a rematch, so a fresh match must not inherit a
+        // still-running cooldown left over from a previous one (e.g. the match ended some other
+        // way while an offer's cooldown was mid-flight).
+        gamePageManager.GamePage.StopDrawOfferCountdown();
 
         while(!HasBothPlayerReady())
         {
@@ -543,7 +571,9 @@ public class GameManager : Service<GameManager>
 
         // A move has actually gone through - any draw offer still outstanding from before this
         // point no longer refers to the current position, so it's silently dropped rather than left
-        // to resolve against a board that's since changed.
+        // to resolve against a board that's since changed. This deliberately does NOT touch the
+        // Offer Draw button's own cooldown (see DrawOfferButtonCooldownSeconds) - that keeps
+        // counting down regardless of a turn change in between.
         drawOfferPending = false;
 
         players[currentTurn - 1].ResetPlayer();
@@ -776,17 +806,14 @@ public class GameManager : Service<GameManager>
     // there's no equivalent legitimate case for a draw offer, and reusing it here would let the
     // master client raise an offer while claiming to be whoever currentTurn happens to name, then
     // "accept" its own offer as the other seat and force a draw with no real consent from anyone.
-    // VsBot has no second client to offer to, so it's resolved locally with an immediate decline
-    // instead of ever going out as an RPC.
+    // Only reachable when gameMode is Multiplayer - GamePage hides the Offer Draw button entirely
+    // for VsBot/VsPlayer (see GamePage.RefreshOfferDrawButtonVisibility). Note that "Multiplayer"
+    // here doesn't necessarily mean networked: a disguised bot-fallback match reports Multiplayer
+    // too (see OnlineModeHandler.OnMatchmakingTimeout) - see ReceiveDrawOffer for how that case
+    // still resolves correctly.
     public void OfferDraw()
     {
         if (gameState != GameState.Playing || drawOfferPending) { return; }
-
-        if (gameMode == GameModeType.VsBot)
-        {
-            ShowFloatingText("Bot declined the draw offer", Color.white);
-            return;
-        }
 
         drawOfferPending = true;
         gameManagerPhotonView.RPC(nameof(ReceiveDrawOffer), RpcTarget.All, GetLocalPlayerNumber());
@@ -806,12 +833,72 @@ public class GameManager : Service<GameManager>
         if (gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine)
         {
             ShowFloatingText("Draw offer sent", Color.white);
+            ServiceLocator.Get<GamePageManager>().GamePage.StartDrawOfferCountdown(DrawOfferButtonCooldownSeconds);
+
+            // A disguised bot-fallback match (see OnlineModeHandler.OnMatchmakingTimeout) reports
+            // gameMode as Multiplayer but runs entirely on this one device in
+            // PhotonNetwork.OfflineMode - both seats are locally owned, so the check above is
+            // always true and there's no second real client left to ever receive this same RPC and
+            // respond for real. The bot has to simulate accepting it here instead, through the same
+            // RespondToDrawOffer path and wording a real opponent's acceptance would use.
+            if (PhotonNetwork.OfflineMode && gameDataSO.opponentIsBot)
+            {
+                StartCoroutine(AutoAcceptDrawOffer(offeringPlayerNumber));
+            }
+
             return;
         }
 
+        // A real opponent's popup has no dismiss/close option - it stays open (blocking, via
+        // OpenPageAsOverlay) until they explicitly accept or decline via DrawOfferPage's own two
+        // buttons. There's deliberately no timeout here to auto-close it.
         GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
         gamePageManager.DrawOfferPage.Show(offeringPlayerNumber);
         gamePageManager.OpenPageAsOverlay(GamePageType.DrawOfferPage);
+    }
+
+    // A material lead of this many points (man = 1, king = 2) or more is what makes the bot decline
+    // instead of accepting - deliberately a simple material-only read of the board, not a call into
+    // the standalone Minimax/BotMinimax evaluator, since a draw decision only needs "am I clearly
+    // ahead", not a full move search.
+    private const int BotDrawDeclineMaterialLead = 2;
+
+    // The bot's "thinking" delay before responding - see GameManager.OfferDraw's comment and
+    // OnlineModeHandler.OnMatchmakingTimeout for why this has to look identical to a real opponent.
+    // The response itself now actually weighs the board (see ShouldBotAcceptDraw) rather than
+    // always accepting.
+    private IEnumerator AutoAcceptDrawOffer(int offeringPlayerNumber)
+    {
+        yield return new WaitForSeconds(Random.Range(3f, 5f));
+        RespondToDrawOffer(offeringPlayerNumber, ShouldBotAcceptDraw(offeringPlayerNumber));
+    }
+
+    // The bot only turns a draw down when it's clearly ahead on material - anything level, close,
+    // or where the bot is actually behind still gets accepted, so it reads as a reasonable opponent
+    // rather than one that never settles for a draw it could still win from.
+    private bool ShouldBotAcceptDraw(int offeringPlayerNumber)
+    {
+        int botPlayerNumber = offeringPlayerNumber == 1 ? 2 : 1;
+        int botScore = ComputeMaterialScore(botPlayerNumber);
+        int offererScore = ComputeMaterialScore(offeringPlayerNumber);
+
+        return botScore - offererScore < BotDrawDeclineMaterialLead;
+    }
+
+    // whitePieces/blackPieces are player-number buckets, not color buckets - see
+    // GetRemainingPieceCount's own comment for why player 2 pairs with whitePieces.
+    private int ComputeMaterialScore(int playerNumber)
+    {
+        List<Piece> pieces = playerNumber == 2
+            ? ServiceLocator.Get<GameplayController>().whitePieces
+            : ServiceLocator.Get<GameplayController>().blackPieces;
+
+        int score = 0;
+        for (int i = 0; i < pieces.Count; i++)
+        {
+            score += pieces[i].IsCrownedKing ? 2 : 1;
+        }
+        return score;
     }
 
     public void RespondToDrawOffer(int offeringPlayerNumber, bool accepted)
@@ -871,8 +958,12 @@ public class GameManager : Service<GameManager>
     {
         yield return StartCoroutine(PrepareGameOverVisuals());
 
+        // Same PhotonNetwork.OfflineMode-based distinction as InitializeGame, not gameMode - a
+        // disguised bot-fallback match reports Multiplayer but runs fully offline, where every
+        // PhotonView (both seats) is locally owned, so PhotonView.IsMine would always be true and
+        // resolve every win as a local win regardless of who actually won.
         bool isLocalWin;
-        if (gameMode == GameModeType.Multiplayer)
+        if (!PhotonNetwork.OfflineMode)
         {
             isLocalWin = players[winnerPlayerNumber - 1].PhotonView.IsMine;
         }

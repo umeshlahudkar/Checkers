@@ -29,5 +29,7 @@ public class PvcModeHandler : OfflineMatchModeHandlerBase
             avatar = profileManager.GetComputerAvtar(),
             pieceType = opponentPieceType
         };
+
+        gameDataSO.opponentIsBot = true;
     }
 }

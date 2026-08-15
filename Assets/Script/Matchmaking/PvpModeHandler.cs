@@ -29,5 +29,10 @@ public class PvpModeHandler : OfflineMatchModeHandlerBase
             avatar = profileManager.GetPieceAvtar(opponentPieceType),
             pieceType = opponentPieceType
         };
+
+        // Explicit reset, not just "default false" - gameDataSO is a persistent asset reused across
+        // matches, so a previous VsBot (or disguised bot-fallback) match's true would otherwise leak
+        // into this one.
+        gameDataSO.opponentIsBot = false;
     }
 }

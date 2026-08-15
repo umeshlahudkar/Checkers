@@ -124,6 +124,14 @@ public class OnlineModeHandler : MatchModeHandler
                     avatar = pendingDisguisedAvatar,
                     pieceType = gameDataSO.opponentPlayer.pieceType
                 };
+
+                // PvcModeHandler.StartMatch just set gameMode to VsBot (and opponentIsBot to true,
+                // which we deliberately keep) - restore Multiplayer so every gameMode-driven UI/rule
+                // difference (draw offer button shown, no Undo, PhotonView-based win resolution,
+                // etc.) behaves exactly like a real multiplayer match. GameManager tells this match
+                // apart from a real one via PhotonNetwork.OfflineMode/gameDataSO.opponentIsBot, never
+                // via gameMode - see GameManager.InitializeGame/PlayGameOverSequence/ReceiveDrawOffer.
+                gameDataSO.gameMode = GameModeType.Multiplayer;
             }
             else
             {
@@ -320,6 +328,10 @@ public class OnlineModeHandler : MatchModeHandler
         isBotFallbackPending = false;
         pendingDisguisedName = null;
         pendingDisguisedAvatar = null;
+
+        // A previous match's bot fallback (see OnMatchmakingTimeout below) may have left this true -
+        // a genuine, successfully-matched online match must not inherit it.
+        gameDataSO.opponentIsBot = false;
 
         StopMatchmakingTimer();
         StopPreGameCountdown();

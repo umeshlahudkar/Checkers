@@ -18,6 +18,10 @@ public class GamePage : Page
     [SerializeField] private Button hintButton;
     [SerializeField] private Button undoButton;
 
+    [Header("Draw (Multiplayer only)")]
+    [SerializeField] private CustomButton offerDrawButton;
+    private const string OfferDrawButtonIdleLabel = "DRAW";
+
     [Header("Layout")]
     [SerializeField] private RectTransform boardBorder;
     [SerializeField] private float cardSpacing = 20f;
@@ -36,6 +40,10 @@ public class GamePage : Page
 
     private readonly Queue<(string text, Color color)> floatingTextQueue = new();
     private bool isShowingFloatingText;
+
+    private TextMeshProUGUI offerDrawButtonLabel;
+    private Image offerDrawButtonImage;
+    private Coroutine drawOfferCountdownCoroutine;
 
     // Always spawned centered on screen (floatingTextParent is a fixed, board-independent anchor),
     // not tied to any specific board square. Queued rather than shown immediately - a crowning and
@@ -255,6 +263,8 @@ public class GamePage : Page
     // right after an Undo.
     public void RefreshHintUndoButtons()
     {
+        RefreshOfferDrawButtonVisibility();
+
         // Buttons are wired in the Editor separately from this script (see plan) - no-op until then
         // instead of throwing, since this runs every turn.
         if (hintButton == null || undoButton == null) { return; }
@@ -287,5 +297,106 @@ public class GamePage : Page
 
         hintButton.interactable = interactable;
         undoButton.interactable = interactable;
+    }
+
+    // Multiplayer is the only mode that keeps the draw-offer feature: VsBot's "opponent" always
+    // accepts anyway (see GameManager.OfferDraw), and VsPlayer is local pass-and-play with no one
+    // else to negotiate a draw with, so the button is hidden entirely rather than shown but inert.
+    // Public so GameManager can apply it immediately during match setup (see SetupLocalMatch/
+    // PrepareOnlineMode), rather than waiting for RefreshHintUndoButtons' first call from
+    // StartFirstTurn - that runs only after the pieces-appear animation, which left the button
+    // showing its prefab-default state (active) for that whole stretch in offline modes.
+    public void RefreshOfferDrawButtonVisibility()
+    {
+        if (offerDrawButton == null) { return; }
+
+        offerDrawButton.gameObject.SetActive(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer);
+    }
+
+    // Shows a live 15-to-0 countdown on the Offer Draw button's own label in place of "DRAW", and
+    // blocks further clicks for the duration - GameManager.OfferDraw already no-ops on a repeat
+    // click while an offer is pending, so spamming the button was never unsafe, but nothing
+    // previously told the player their click actually landed or that one was already in flight.
+    // GameManager starts this the moment its own offer is confirmed sent (ReceiveDrawOffer's
+    // offerer branch). This is a flat cooldown on the button itself, not tied to the offer's own
+    // outcome - it runs to completion regardless of an early accept/decline or a turn change in
+    // between (see GameManager.ChangeTurn/ReceiveDrawResponse, which deliberately don't call
+    // StopDrawOfferCountdown). That method still exists purely as a defensive reset at the start of
+    // a fresh match (see GameManager.SetupLocalMatch/PrepareOnlineMode).
+    public void StartDrawOfferCountdown(float durationSeconds)
+    {
+        if (offerDrawButton == null) { return; }
+
+        if (drawOfferCountdownCoroutine != null)
+        {
+            StopCoroutine(drawOfferCountdownCoroutine);
+        }
+
+        drawOfferCountdownCoroutine = StartCoroutine(RunDrawOfferCountdown(durationSeconds));
+    }
+
+    // Only ever called defensively at the start of a fresh match (this MonoBehaviour, and any
+    // coroutine running on it, persists across a rematch) - nothing during an active match calls
+    // this, since the cooldown above is deliberately unconditional.
+    public void StopDrawOfferCountdown()
+    {
+        if (offerDrawButton == null) { return; }
+
+        if (drawOfferCountdownCoroutine != null)
+        {
+            StopCoroutine(drawOfferCountdownCoroutine);
+            drawOfferCountdownCoroutine = null;
+        }
+
+        SetOfferDrawButtonClickable(true);
+        GetOfferDrawButtonLabel().text = OfferDrawButtonIdleLabel;
+    }
+
+    private IEnumerator RunDrawOfferCountdown(float durationSeconds)
+    {
+        SetOfferDrawButtonClickable(false);
+
+        TextMeshProUGUI label = GetOfferDrawButtonLabel();
+        float remaining = durationSeconds;
+        int lastDisplayedSeconds = -1;
+
+        while (remaining > 0f)
+        {
+            int displaySeconds = Mathf.CeilToInt(remaining);
+            if (displaySeconds != lastDisplayedSeconds)
+            {
+                lastDisplayedSeconds = displaySeconds;
+                label.text = displaySeconds.ToString();
+            }
+
+            yield return null;
+            remaining -= Time.deltaTime;
+        }
+
+        drawOfferCountdownCoroutine = null;
+        SetOfferDrawButtonClickable(true);
+        label.text = OfferDrawButtonIdleLabel;
+    }
+
+    private void SetOfferDrawButtonClickable(bool clickable)
+    {
+        // CustomButton has no built-in disabled state - gating the Image's raycast target is what
+        // actually stops IPointerDown/IPointerUp/OnClick from ever reaching it (see CustomButton).
+        if (offerDrawButtonImage == null)
+        {
+            offerDrawButtonImage = offerDrawButton.GetComponent<Image>();
+        }
+
+        offerDrawButtonImage.raycastTarget = clickable;
+    }
+
+    private TextMeshProUGUI GetOfferDrawButtonLabel()
+    {
+        if (offerDrawButtonLabel == null)
+        {
+            offerDrawButtonLabel = offerDrawButton.GetComponentInChildren<TextMeshProUGUI>();
+        }
+
+        return offerDrawButtonLabel;
     }
 }
