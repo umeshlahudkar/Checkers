@@ -54,6 +54,8 @@ MonoBehaviour:
   - ResumeTurnTimerRPC
   - ReceiveDrawOffer
   - ReceiveDrawResponse
+  - ReceiveRematchOffer
+  - ReceiveRematchResponse
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

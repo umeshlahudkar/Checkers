@@ -660,6 +660,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   localAvatarImage: {fileID: 10000084}
   opponentAvatarImage: {fileID: 10000114}
+  rematchButtonImage: {fileID: 10000284}
   opponentNameText: {fileID: 10000124}
   localPiecesText: {fileID: 10000134}
   opponentPiecesText: {fileID: 10000154}
@@ -873,6 +874,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &10000284 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2674251721587110264, guid: 58bea9deda6191944b68a4fd34a406d4, type: 3}
+  m_PrefabInstance: {fileID: 2674251721596053220}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!224 &8837068072867694603 stripped

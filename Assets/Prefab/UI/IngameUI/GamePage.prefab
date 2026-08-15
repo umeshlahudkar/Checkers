@@ -1775,7 +1775,7 @@ MonoBehaviour:
   undoButton: {fileID: 0}
   offerDrawButton: {fileID: 726334283543219753}
   boardBorder: {fileID: 2429666907259517869}
-  cardSpacing: 20
+  cardSpacing: 30
   floatingTextParent: {fileID: 406365616497085632}
   floatingTextPrefab: {fileID: 100004, guid: d713469e58f6a57f2a7023fb0b36337a, type: 3}
   captureEffectParent: {fileID: 1948247626485681656}

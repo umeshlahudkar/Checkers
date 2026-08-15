@@ -1,4 +1,3 @@
-using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +7,9 @@ public class VictoryPage : Page
     [Header("Avatars")]
     [SerializeField] private Image localAvatarImage;
     [SerializeField] private Image opponentAvatarImage;
+
+    [Header("Rematch (PrimaryButton's own Image - see CustomButton)")]
+    [SerializeField] private Image rematchButtonImage;
 
     [Header("Texts")]
     [SerializeField] private TextMeshProUGUI opponentNameText;
@@ -32,6 +34,10 @@ public class VictoryPage : Page
         kingsCrownedText.text = result.LocalKingsCrowned.ToString();
         longestChainText.text = result.LocalLongestChain.ToString();
         matchTimeText.text = result.MatchDuration;
+
+        // Defensive reset - a previous match on this same page instance may have disabled the
+        // button after a declined rematch offer (see SetRematchButtonInteractable).
+        SetRematchButtonInteractable(true);
     }
 
     public void OnRematchButtonClick()
@@ -39,7 +45,24 @@ public class VictoryPage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
-        ServiceLocator.Get<GameManager>().StartRematch();
+        GameManager gameManager = ServiceLocator.Get<GameManager>();
+        if (gameManager.GameMode == GameModeType.Multiplayer)
+        {
+            gameManager.OfferRematch();
+        }
+        else
+        {
+            gameManager.StartRematch();
+        }
+    }
+
+    // CustomButton (unlike a standard UI Button) has no built-in disabled state - gating the
+    // button's own Image's raycast target is what actually stops IPointerDown/IPointerUp/OnClick
+    // from ever reaching it (see CustomButton, and GamePage.SetOfferDrawButtonClickable for the same
+    // trick applied to the Offer Draw button).
+    public void SetRematchButtonInteractable(bool interactable)
+    {
+        rematchButtonImage.raycastTarget = interactable;
     }
 
     public void OnMainMenuButtonClick()
@@ -47,8 +70,7 @@ public class VictoryPage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
-        PhotonNetwork.Disconnect();
-        ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
+        ServiceLocator.Get<GameManager>().GoToMainMenu();
     }
 
     public void OnShareButtonClick()

@@ -210,17 +210,42 @@ public class GamePage : Page
         RefreshHintUndoButtons();
     }
 
-    public void OnRetryButtonClick()
+    // Restarting is only ever gated by this one confirmation, regardless of mode - see
+    // GameManager.StartRematch for what it actually does. A misclick here is otherwise a single tap
+    // away from wiping the current match, since (unlike the old QuitPage-only Restart) this button is
+    // always on screen rather than behind Home's own quit confirmation.
+    public void OnRestartButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-        ServiceLocator.Get<GameManager>().StartRematch();
+
+        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
+        ddolPageManager.ConfirmationPopup.Show(
+            "Restart match?",
+            "Are you sure you want to restart? Your current progress will be lost.",
+            "Restart",
+            "Cancel",
+            () =>
+            {
+                ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+                ServiceLocator.Get<GameManager>().StartRematch();
+            },
+            () => { });
+        ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
     }
 
     public void OnHomeButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.QuitPage);
+
+        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
+        ddolPageManager.ConfirmationPopup.Show(
+            "Quit match?",
+            "Are you sure you want to quit? You will lose all your progress in this game, and you cannot go back.",
+            "Quit Anyway",
+            "Keep Playing",
+            () => ServiceLocator.Get<GameManager>().GoToMainMenu(),
+            () => { });
+        ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
     }
 
     public void OnOfferDrawButtonClick()

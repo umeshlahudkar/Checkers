@@ -42,7 +42,7 @@ public class GameManager : Service<GameManager>
     // short - see GamePage.StartDrawOfferCountdown), it's a flat "can't send another offer within
     // 15 seconds of the last one" rate limit, not tied to whether that earlier offer is still
     // meaningfully pending. The offer itself has no separate timeout - a real opponent's
-    // DrawOfferPage popup stays open until they explicitly accept or decline (see ReceiveDrawOffer).
+    // ConfirmationPopup stays open until they explicitly accept or decline (see ReceiveDrawOffer).
     private const float DrawOfferButtonCooldownSeconds = 15f;
 
     private string player1DisplayName;
@@ -68,6 +68,41 @@ public class GameManager : Service<GameManager>
     // second offer from being raised while one is already outstanding, and lets ReceiveDrawResponse
     // reject a stale response referring to an offer that no longer applies.
     private bool drawOfferPending;
+
+    // Which seat raised the currently-pending draw offer, set alongside drawOfferPending in
+    // ReceiveDrawOffer - lets ChangeTurn tell that seat's own client (and only that client) their
+    // offer was withdrawn when a turn change silently cancels it. -1 whenever no offer is pending;
+    // never read while drawOfferPending is false.
+    private int pendingDrawOfferPlayerNumber = -1;
+
+    // Same role as drawOfferPending, but for OfferRematch/ReceiveRematchOffer - see there. Unlike a
+    // draw offer, nothing here ever silently cancels it (there's no further turn to change once the
+    // match has ended), so it only ever clears via ReceiveRematchResponse or a fresh match starting
+    // (ResetGameManager).
+    private bool rematchOfferPending;
+
+    // The bot's "thinking" delay before responding to a rematch request - same disguise purpose as
+    // AutoAcceptDrawOffer's delay (see OfferRematch/ReceiveRematchOffer and
+    // OnlineModeHandler.OnMatchmakingTimeout). Unlike a draw, the bot always accepts a rematch (per
+    // spec), so there's no board to weigh here.
+    private const float RematchOfferBotAcceptDelayMin = 2f;
+    private const float RematchOfferBotAcceptDelayMax = 4f;
+
+    // How long the offerer's own client waits for an explicit accept/decline before giving up and
+    // warning them instead - covers a real opponent who's gone AFK or disconnected without formally
+    // leaving the room (a clean disconnect is instead caught by MatchSessionEventManager's forfeit
+    // path). Applies to both OfferDraw and OfferRematch.
+    private const float OfferResponseTimeoutSeconds = 10f;
+
+    // Bumped every time OfferDraw/OfferRematch actually sends a new offer, and captured by that
+    // offer's own timeout coroutine - same "stale call from a superseded operation" guard as
+    // turnSequence above. Needed because drawOfferPending/rematchOfferPending alone can't tell two
+    // offers apart: offer A's coroutine is still asleep in WaitForSeconds when offer A resolves and
+    // offer B starts, so by the time it wakes up, drawOfferPending/rematchOfferPending is B's state,
+    // not A's - checking the sequence number first ensures a coroutine only ever acts on the exact
+    // offer it was started for.
+    private int drawOfferSequence;
+    private int rematchOfferSequence;
 
     // Occurrence count of every board position (piece layout + side to move) reached so far this
     // match, keyed by ComputeBoardHash - powers the threefold-repetition draw. Cleared whenever a
@@ -570,10 +605,23 @@ public class GameManager : Service<GameManager>
         turnSequence++;
 
         // A move has actually gone through - any draw offer still outstanding from before this
-        // point no longer refers to the current position, so it's silently dropped rather than left
-        // to resolve against a board that's since changed. This deliberately does NOT touch the
-        // Offer Draw button's own cooldown (see DrawOfferButtonCooldownSeconds) - that keeps
-        // counting down regardless of a turn change in between.
+        // point no longer refers to the current position, so it's dropped rather than left to
+        // resolve against a board that's since changed. This deliberately does NOT touch the Offer
+        // Draw button's own cooldown (see DrawOfferButtonCooldownSeconds) - that keeps counting down
+        // regardless of a turn change in between.
+        //
+        // Only the offerer's own client is told - everyone else already knows a move just happened,
+        // and needs no separate notice about a draw offer they either never saw or already dismissed.
+        // Without this, an offer raised during the *other* seat's turn (draw offers aren't restricted
+        // to your own turn - see OfferDraw) could be silently orphaned here before that seat's
+        // response ever arrives (a bot's simulated "thinking" delay in particular easily outlasts its
+        // own much-faster real move - see AutoAcceptDrawOffer/BotPlayer.PlayAITurn), leaving the
+        // offerer with no accept, no decline, and no timeout warning either (WaitForDrawOfferResponse
+        // treats "no longer pending" as already resolved, same as a real response would).
+        if (drawOfferPending && gameMode == GameModeType.Multiplayer && players[pendingDrawOfferPlayerNumber - 1].PhotonView.IsMine)
+        {
+            ServiceLocator.Get<WarningNotifier>().Show("Your draw offer was withdrawn - the game continued.");
+        }
         drawOfferPending = false;
 
         players[currentTurn - 1].ResetPlayer();
@@ -816,7 +864,22 @@ public class GameManager : Service<GameManager>
         if (gameState != GameState.Playing || drawOfferPending) { return; }
 
         drawOfferPending = true;
+        int expectedSequence = ++drawOfferSequence;
         gameManagerPhotonView.RPC(nameof(ReceiveDrawOffer), RpcTarget.All, GetLocalPlayerNumber());
+        StartCoroutine(WaitForDrawOfferResponse(expectedSequence));
+    }
+
+    // Fires only if this exact offer is still unresolved OfferResponseTimeoutSeconds after it was
+    // sent - a response (either answer), a turn change silently cancelling it, or a newer offer
+    // superseding it all count as "resolved" and leave this a no-op (see drawOfferSequence's comment
+    // for why the sequence check has to come first).
+    private IEnumerator WaitForDrawOfferResponse(int expectedSequence)
+    {
+        yield return new WaitForSeconds(OfferResponseTimeoutSeconds);
+        if (expectedSequence != drawOfferSequence || !drawOfferPending) { yield break; }
+
+        drawOfferPending = false;
+        ServiceLocator.Get<WarningNotifier>().Show("No response from your opponent - draw offer rejected, or they may be offline.");
     }
 
     [PunRPC]
@@ -824,6 +887,7 @@ public class GameManager : Service<GameManager>
     {
         if (gameState != GameState.Playing || !IsOwnedBy(offeringPlayerNumber, info.Sender)) { return; }
         drawOfferPending = true;
+        pendingDrawOfferPlayerNumber = offeringPlayerNumber;
 
         // Sent to RpcTarget.All rather than Others so the same call works in every mode - in
         // Multiplayer the offerer's own client also receives this and should just be told the offer
@@ -832,7 +896,7 @@ public class GameManager : Service<GameManager>
         // convention Player.UpdateGrid already uses for VsPlayer's move highlighting.
         if (gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine)
         {
-            ShowFloatingText("Draw offer sent", Color.white);
+            ServiceLocator.Get<WarningNotifier>().Show("Draw offer sent");
             ServiceLocator.Get<GamePageManager>().GamePage.StartDrawOfferCountdown(DrawOfferButtonCooldownSeconds);
 
             // A disguised bot-fallback match (see OnlineModeHandler.OnMatchmakingTimeout) reports
@@ -850,11 +914,17 @@ public class GameManager : Service<GameManager>
         }
 
         // A real opponent's popup has no dismiss/close option - it stays open (blocking, via
-        // OpenPageAsOverlay) until they explicitly accept or decline via DrawOfferPage's own two
+        // OpenPageAsOverlay) until they explicitly accept or decline via ConfirmationPopup's own two
         // buttons. There's deliberately no timeout here to auto-close it.
-        GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
-        gamePageManager.DrawOfferPage.Show(offeringPlayerNumber);
-        gamePageManager.OpenPageAsOverlay(GamePageType.DrawOfferPage);
+        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
+        ddolPageManager.ConfirmationPopup.Show(
+            "Draw Offer",
+            "Your opponent offers a draw. Accept?",
+            "Accept",
+            "Decline",
+            () => RespondToDrawOffer(offeringPlayerNumber, true),
+            () => RespondToDrawOffer(offeringPlayerNumber, false));
+        ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
     }
 
     // A material lead of this many points (man = 1, king = 2) or more is what makes the bot decline
@@ -919,6 +989,102 @@ public class GameManager : Service<GameManager>
         else
         {
             ShowFloatingText("Draw declined", Color.white);
+        }
+    }
+
+    // Multiplayer-only rematch negotiation, mirroring OfferDraw/ReceiveDrawOffer/RespondToDrawOffer/
+    // ReceiveDrawResponse above - see those for the reasoning behind IsOwnedBy vs IsAuthorizedSender,
+    // RpcTarget.All (so the offerer's own client is told its offer went out rather than being shown a
+    // prompt to respond to itself), and the disguised-bot-fallback branch. VsBot/VsPlayer never reach
+    // this at all - their result-page buttons call StartRematch() directly (see VictoryPage/
+    // DefeatPage/DrawPage), unchanged from before this feature existed.
+    //
+    // Only reachable once the match has actually ended (gameState == Ending) - there's no scenario
+    // where a rematch offer needs to be raised, or is safe to raise, while a match is still in
+    // progress.
+    public void OfferRematch()
+    {
+        if (gameState != GameState.Ending || rematchOfferPending) { return; }
+
+        rematchOfferPending = true;
+        int expectedSequence = ++rematchOfferSequence;
+        gameManagerPhotonView.RPC(nameof(ReceiveRematchOffer), RpcTarget.All, GetLocalPlayerNumber());
+        StartCoroutine(WaitForRematchOfferResponse(expectedSequence));
+    }
+
+    // See WaitForDrawOfferResponse above - same reasoning, applied to a rematch offer instead.
+    private IEnumerator WaitForRematchOfferResponse(int expectedSequence)
+    {
+        yield return new WaitForSeconds(OfferResponseTimeoutSeconds);
+        if (expectedSequence != rematchOfferSequence || !rematchOfferPending) { yield break; }
+
+        rematchOfferPending = false;
+        ServiceLocator.Get<WarningNotifier>().Show("No response from your opponent - rematch offer rejected, or they may be offline.");
+    }
+
+    [PunRPC]
+    public void ReceiveRematchOffer(int offeringPlayerNumber, PhotonMessageInfo info = default)
+    {
+        if (gameState != GameState.Ending || !IsOwnedBy(offeringPlayerNumber, info.Sender)) { return; }
+        rematchOfferPending = true;
+
+        if (gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine)
+        {
+            ServiceLocator.Get<WarningNotifier>().Show("Rematch offer sent");
+
+            // See ReceiveDrawOffer's matching comment - a disguised bot-fallback match has no second
+            // real client to ever receive this RPC and respond for real, so the bot simulates
+            // accepting it here instead, through the same RespondToRematchOffer path a real
+            // opponent's acceptance would use.
+            if (PhotonNetwork.OfflineMode && gameDataSO.opponentIsBot)
+            {
+                StartCoroutine(AutoAcceptRematchOffer(offeringPlayerNumber));
+            }
+
+            return;
+        }
+
+        DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
+        ddolPageManager.ConfirmationPopup.Show(
+            "Rematch",
+            "Your opponent wants a rematch. Accept?",
+            "Accept",
+            "Decline",
+            () => RespondToRematchOffer(offeringPlayerNumber, true),
+            () => RespondToRematchOffer(offeringPlayerNumber, false));
+        ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
+    }
+
+    // The bot always accepts a rematch (unlike a draw offer, there's no board state left to weigh) -
+    // the delay alone is what keeps it indistinguishable from a real opponent deciding.
+    private IEnumerator AutoAcceptRematchOffer(int offeringPlayerNumber)
+    {
+        yield return new WaitForSeconds(Random.Range(RematchOfferBotAcceptDelayMin, RematchOfferBotAcceptDelayMax));
+        RespondToRematchOffer(offeringPlayerNumber, true);
+    }
+
+    public void RespondToRematchOffer(int offeringPlayerNumber, bool accepted)
+    {
+        gameManagerPhotonView.RPC(nameof(ReceiveRematchResponse), RpcTarget.All, offeringPlayerNumber, accepted);
+    }
+
+    [PunRPC]
+    public void ReceiveRematchResponse(int offeringPlayerNumber, bool accepted, PhotonMessageInfo info = default)
+    {
+        if (!rematchOfferPending || !IsOwnedBy(offeringPlayerNumber == 1 ? 2 : 1, info.Sender)) { return; }
+        rematchOfferPending = false;
+
+        if (accepted)
+        {
+            // Runs identically on every client (RpcTarget.All), which is what actually synchronizes
+            // the rematch this time - unlike a bare StartRematch() call from a single client, every
+            // client now transitions together instead of only whichever one happened to click first.
+            StartRematch();
+        }
+        else
+        {
+            ShowFloatingText("Rematch declined", Color.white);
+            ServiceLocator.Get<GamePageManager>().DisableRematchButton();
         }
     }
 
@@ -1194,6 +1360,8 @@ public class GameManager : Service<GameManager>
         gameState = GameState.Waiting;
         IsReadyToLeaveGameplay = false;
         drawOfferPending = false;
+        pendingDrawOfferPlayerNumber = -1;
+        rematchOfferPending = false;
         positionRepetitionCounts.Clear();
         materialDrawPattern = MaterialDrawPattern.None;
         materialDrawCounter = 0;
@@ -1228,6 +1396,7 @@ public class GameManager : Service<GameManager>
         {
             PhotonNetwork.DestroyAll();
         }
+
         ResetGameManager();
         historyStack.Clear();
         ServiceLocator.Get<GameplayController>().ResetGameplay();
@@ -1238,17 +1407,23 @@ public class GameManager : Service<GameManager>
     {
         ResetGameplay();
         StartCoroutine(InitializeGame());
-        //StartCoroutine(Rematch());
     }
 
-    private IEnumerator Rematch()
+    public IEnumerator LoadMainMenu()
     {
-        ResetGameplay();
-        yield return new WaitForSeconds(2f);
-        InitializeGame();
+        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+
+        yield return new WaitForSeconds(1f);
+
+        SceneManager.LoadScene(0);
     }
 
-    public void OnQuitConfirmed()
+    // The single way back to the main menu from gameplay - called after a Quit confirmation
+    // (GamePage.OnHomeButtonClick) and directly from the post-game result screens
+    // (VictoryPage/DefeatPage/DrawPage's Main Menu button, which need no confirmation since the
+    // match has already ended). Kept here rather than duplicated per caller so every path gets the
+    // same safe teardown instead of each hand-rolling its own PhotonNetwork.Disconnect().
+    public void GoToMainMenu()
     {
         if (gameMode == GameModeType.Multiplayer && PhotonNetwork.IsConnected)
         {
@@ -1256,7 +1431,9 @@ public class GameManager : Service<GameManager>
 
             // Mark the match as ending before disconnecting - Disconnect() (unlike LeaveRoom())
             // fires OnDisconnected, and MatchSessionEventManager.OnDisconnected would otherwise
-            // kick off its own redundant LoadMainMenu() alongside the one started below.
+            // kick off its own redundant LoadMainMenu() alongside the SceneLoader call below. A
+            // no-op if the match already ended normally (GameOver/Draw already called SetGameOver
+            // before the result screen was ever shown) - only matters for the Quit-mid-match path.
             SetGameOver();
 
             if (PhotonNetwork.IsMasterClient)
@@ -1269,25 +1446,26 @@ public class GameManager : Service<GameManager>
             // they actively choose to matchmake again.
             PhotonNetwork.AutomaticallySyncScene = false;
             PhotonNetwork.Disconnect();
-            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
             ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
 
-            StartCoroutine(LoadMainMenu());
+            // Straight to MainScene via the fade transition - LoadMainMenu()/SceneManager.LoadScene(0)
+            // instead lands on StartScene, which reruns Bootstrapper's full "Loading settings/profile/
+            // audio..." sequence before it fades on to MainScene itself. That's fine for the
+            // surprise-disconnect path that still uses LoadMainMenu() (see MatchSessionEventManager.
+            // OnDisconnected), but a deliberate return to the menu should be immediate.
+            ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
         }
         else
         {
-            ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-            StartCoroutine(LoadMainMenu());
+            // Offline (VsBot/VsPlayer) has no connection to tear down, but still needs gameState
+            // marked Ending before the scene unloads - the load below isn't instant (SceneLoader
+            // fades out first), and without this a bot turn or an in-flight coroutine could still act
+            // (e.g. complete a move and fire GameOver/Draw) during that window and race the menu
+            // transition with a result screen that's about to be torn down anyway.
+            SetGameOver();
+            ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
+            ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
         }
-    }
-
-    public IEnumerator LoadMainMenu()
-    {
-        ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-
-        yield return new WaitForSeconds(1f);
-
-        SceneManager.LoadScene(0);
     }
 }
 

@@ -2,5 +2,6 @@ using UnityEngine;
 
 public enum DDOLPageType
 {
-   LoadingPage
+   LoadingPage,
+   ConfirmationPopup
 }
