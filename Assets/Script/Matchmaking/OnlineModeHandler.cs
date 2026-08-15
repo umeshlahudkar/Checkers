@@ -32,7 +32,11 @@ public class OnlineModeHandler : MatchModeHandler
     public override void StartMatch()
     {
         gameDataSO.gameMode = Mode;
-        isCancelled = false;
+
+        // This handler instance is reused across every online match attempt, so a previous
+        // cycle's leftover state (e.g. a cancel that landed mid pre-game-countdown) must not
+        // bleed into this new one.
+        ResetMatchState();
 
         ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.Matchmaking);
 
@@ -53,6 +57,7 @@ public class OnlineModeHandler : MatchModeHandler
     {
         isCancelled = true;
         StopMatchmakingTimer();
+        StopPreGameCountdown();
         // Disconnect entirely (not just leave the room) - canceling means the player isn't
         // matchmaking anymore, so there's no reason to keep an idle Photon connection open.
         connectionManager.Disconnect();
@@ -146,6 +151,18 @@ public class OnlineModeHandler : MatchModeHandler
         }
 
         matchmakingPage.ShowConnected();
+    }
+
+    // Random matchmaking has to wait until we're actually inside the rule-set SQL lobby -
+    // joining a room before then would ignore the rule-set filter entirely.
+    public override void OnJoinedLobby()
+    {
+        base.OnJoinedLobby();
+
+        if(isCancelled)
+        {
+            return;
+        }
 
         if(!connectionManager.JoinRandomRoom())
         {
@@ -164,8 +181,8 @@ public class OnlineModeHandler : MatchModeHandler
             return;
         }
 
-        StopMatchmakingTimer();
-        matchmakingPage.ShowFailed($"Connection lost ({cause}). Please try again.");
+        ServiceLocator.Get<WarningNotifier>().Show($"Connection lost ({cause}). Please try again.");
+        CancelMatch();
     }
 
     public override void OnCustomAuthenticationFailed(string debugMessage)
@@ -207,8 +224,8 @@ public class OnlineModeHandler : MatchModeHandler
             return;
         }
 
-        StopMatchmakingTimer();
-        matchmakingPage.ShowFailed("Could not create a match. Please try again.");
+        ServiceLocator.Get<WarningNotifier>().Show("Could not create a match. Please try again.");
+        CancelMatch();
     }
 
     public override void OnJoinedRoom()
@@ -290,5 +307,21 @@ public class OnlineModeHandler : MatchModeHandler
     private void StopMatchmakingTimer()
     {
         isTimerRunning = false;
+    }
+
+    private void StopPreGameCountdown()
+    {
+        isPreGameCountdownRunning = false;
+    }
+
+    private void ResetMatchState()
+    {
+        isCancelled = false;
+        isBotFallbackPending = false;
+        pendingDisguisedName = null;
+        pendingDisguisedAvatar = null;
+
+        StopMatchmakingTimer();
+        StopPreGameCountdown();
     }
 }

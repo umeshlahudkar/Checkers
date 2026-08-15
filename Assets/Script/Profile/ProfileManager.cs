@@ -99,17 +99,19 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
             return avatarList.avatars[index - 1];
         }
 
-        return null;
+        return avatarList.avatars.Count > 0 ? avatarList.avatars[0] : null;
     }
 
     public Sprite GetPieceAvtar(PieceType pieceType)
     {
-        if(pieceType != PieceType.None)
+        int index = (int)pieceType - 1;
+
+        if(pieceType != PieceType.None && index >= 0 && index < pieceAvtar.Length)
         {
-            return pieceAvtar[(int)pieceType - 1];
+            return pieceAvtar[index];
         }
 
-        return null;
+        return pieceAvtar.Length > 0 ? pieceAvtar[0] : null;
     }
 
     public Sprite GetComputerAvtar()

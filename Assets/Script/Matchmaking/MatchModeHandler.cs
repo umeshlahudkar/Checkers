@@ -108,6 +108,10 @@ public abstract class MatchModeHandler
     }
 
     // Lobby callbacks
+    public virtual void OnJoinedLobby()
+    {
+    }
+
     public virtual void OnLeftLobby()
     {
     }

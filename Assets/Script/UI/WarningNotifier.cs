@@ -4,70 +4,80 @@ using UnityEngine;
 
 public class WarningNotifier : Service<WarningNotifier>
 {
-    [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private RectTransform contentTransform;
     [SerializeField] private TextMeshProUGUI descriptionText;
 
-    private const float FadeInDuration = 0.3f;
-    private const float HoldDuration = 2f;
-    private const float FadeOutDuration = 0.4f;
-    private const float FloatDistance = 40f;
-    private const float PopInScale = 0.5f;
+    [SerializeField] private float PopInDuration = 0.3f;
+    [SerializeField] private float HoldDuration = 2f;
+    [SerializeField] private float PopOutDuration = 0.3f;
 
-    private Sequence activeSequence;
-    private Vector2 basePosition;
+    private float holdTimer;
+    private bool isHolding;
+    private bool isShowing;
 
     protected override void Awake()
     {
         base.Awake();
-
-        basePosition = contentTransform.anchoredPosition;
-        canvasGroup.alpha = 0f;
-        canvasGroup.blocksRaycasts = false;
-        canvasGroup.interactable = false;
-
-        // The GameObject must stay active in the saved scene so Awake (and ServiceLocator
-        // registration) actually runs at load - Unity never calls Awake on an object that
-        // starts inactive. Deactivating here instead of via the Inspector checkbox gives the
-        // same "disabled until needed" result without breaking that registration.
         gameObject.SetActive(false);
     }
 
-    // Pops out from half scale while fading in (no movement yet), holds still in place, then
-    // moves upward while fading out.
+    private void Update()
+    {
+        if (!isShowing || !isHolding)
+            return;
+
+        holdTimer += Time.deltaTime;
+
+        if (holdTimer >= HoldDuration)
+        {
+            isHolding = false;
+
+            // Pop out
+            contentTransform
+                .DOScale(Vector3.zero, PopOutDuration)
+                .SetEase(Ease.InBack)
+                .OnComplete(() =>
+                {
+                    isShowing = false;
+                    gameObject.SetActive(false);
+                });
+        }
+    }
+
     public void Show(string description)
     {
+        // Make sure the GameObject is visible
         gameObject.SetActive(true);
+
+        // Set message
         descriptionText.text = description;
 
-        // Kill (not Complete) any in-flight sequence so a spammed Show() restarts the animation
-        // from the beginning instead of continuing/queuing, and so its OnComplete below can't
-        // fire late and deactivate the object out from under the new sequence.
-        activeSequence?.Kill();
+        // Stop any existing animation
+        contentTransform.DOKill();
 
-        contentTransform.anchoredPosition = basePosition;
-        contentTransform.localScale = Vector3.one * PopInScale;
-        canvasGroup.alpha = 0f;
+        // Always start from zero
+        contentTransform.localScale = Vector3.zero;
 
-        activeSequence = DOTween.Sequence();
-        activeSequence.Append(canvasGroup.DOFade(1f, FadeInDuration));
-        activeSequence.Join(contentTransform.DOScale(1f, FadeInDuration).SetEase(Ease.OutBack));
-        activeSequence.AppendInterval(HoldDuration);
-        activeSequence.Append(canvasGroup.DOFade(0f, FadeOutDuration));
-        activeSequence.Join(contentTransform.DOAnchorPosY(basePosition.y + FloatDistance, FadeOutDuration).SetEase(Ease.InCubic));
-        activeSequence.OnComplete(() => gameObject.SetActive(false));
-        activeSequence.SetTarget(this);
+        // Reset state
+        holdTimer = 0f;
+        isHolding = false;
+        isShowing = true;
+
+        // Pop in
+        contentTransform
+            .DOScale(Vector3.one, PopInDuration)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() =>
+            {
+                // Start hold timer after pop-in completes
+                holdTimer = 0f;
+                isHolding = true;
+            });
     }
 
     protected override void OnDestroy()
     {
+        contentTransform.DOKill();
         base.OnDestroy();
-        activeSequence?.Kill();
-    }
-
-    [ContextMenu("Test Show Warning")]
-    private void TestShow()
-    {
-        Show("Something went wrong. Please try again.");
     }
 }

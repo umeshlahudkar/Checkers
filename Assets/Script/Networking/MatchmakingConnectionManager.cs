@@ -8,6 +8,14 @@ using Unity.Mathematics;
 
 public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
 {
+    // Custom room property used to only match players who selected the same rule set - set on
+    // room creation and filtered on via a SQL lobby, so mismatched rule sets never join together.
+    // "C0" is not an arbitrary choice: Photon's SQL lobby only allows filtering on its reserved
+    // "C0".."C9" property names (int/string only), so this key can't be renamed to something
+    // more descriptive without breaking the filter.
+    private const string RuleSetPropertyKey = "C0";
+    private static readonly TypedLobby RuleSetLobby = new TypedLobby("RuleSetLobby", LobbyType.SqlLobby);
+
     [SerializeField] private GameDataSO gameDataSO;
 
     private Dictionary<GameModeType, MatchModeHandler> handlers;
@@ -100,21 +108,31 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
     {
         string roomName = "Online_" + (UnityEngine.Random.Range(1000, 9999)).ToString();
 
+        ExitGames.Client.Photon.Hashtable roomProperties = new ExitGames.Client.Photon.Hashtable
+        {
+            { RuleSetPropertyKey, ServiceLocator.Get<GameSettingsManager>().GetRuleSetIndex() }
+        };
+
         RoomOptions roomOptions = new RoomOptions
         {
             MaxPlayers = 2,
             IsVisible = true,
-            IsOpen = true
+            IsOpen = true,
+            CustomRoomProperties = roomProperties,
+            CustomRoomPropertiesForLobby = new[] { RuleSetPropertyKey }
         };
 
-        PhotonNetwork.CreateRoom(roomName, roomOptions);
+        PhotonNetwork.CreateRoom(roomName, roomOptions, RuleSetLobby);
     }
 
     public bool JoinRandomRoom()
     {
         if(IsConnectedAndReady)
         {
-            return PhotonNetwork.JoinRandomRoom();
+            int ruleSetIndex = ServiceLocator.Get<GameSettingsManager>().GetRuleSetIndex();
+            string sqlLobbyFilter = $"{RuleSetPropertyKey} = {ruleSetIndex}";
+
+            return PhotonNetwork.JoinRandomRoom(null, 0, MatchmakingMode.FillRoom, RuleSetLobby, sqlLobbyFilter);
         }
 
         return false;
@@ -186,6 +204,12 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         Debug.Log($"[MatchmakingConnectionManager] OnConnectedToMaster - inLobby: {PhotonNetwork.InLobby}");
+
+        if(!PhotonNetwork.OfflineMode)
+        {
+            PhotonNetwork.JoinLobby(RuleSetLobby);
+        }
+
         activeHandler?.OnConnectedToMaster();
     }
 
@@ -223,6 +247,7 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("[MatchmakingConnectionManager] OnJoinedLobby");
         activeHandler?.SetProfile();
+        activeHandler?.OnJoinedLobby();
     }
 
     public override void OnLeftLobby()

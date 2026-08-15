@@ -87,6 +87,12 @@ public class SettingPage : Page
         ServiceLocator.Get<GameSettingsManager>().SetVibrationEnabled(isOn);
     }
 
+    public void OnAccountAndLegelClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<WarningNotifier>().Show("Coming Soon!");
+    }
+
     public void OnCloseButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
