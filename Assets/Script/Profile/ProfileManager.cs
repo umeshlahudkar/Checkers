@@ -6,6 +6,7 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
     private string userName = string.Empty;
     private Sprite profileAvtar;
     private int avtarID = -1;
+    private int pieceID = -1;
 
     [SerializeField] private Sprite computerAvtar;
     [SerializeField] private Sprite[] pieceAvtar;
@@ -32,16 +33,26 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
             avtarID = data.avtarIndex;
             profileAvtar = avatarList.avatars[avtarID - 1];
         }
+
+        if(data.pieceIndex == (int)PieceType.White || data.pieceIndex == (int)PieceType.Black)
+        {
+            pieceID = data.pieceIndex;
+        }
 #endif
 
         if (string.IsNullOrEmpty(userName))
         {
-            SetUserName("Random_" + Random.Range(1000, 10000));
+            SetUserName(GameConstants.Profile.GuestNamePrefix + Random.Range(1000, 10000));
         }
 
         if (avtarID <= 0)
         {
             SetAvtar(Random.Range(1, avatarList.avatars.Count + 1));
+        }
+
+        if (pieceID <= 0)
+        {
+            SetPiece((int)PieceType.White);
         }
 
         OnProfileChange?.Invoke(profileAvtar, userName);
@@ -122,6 +133,25 @@ public class ProfileManager : Service<ProfileManager>, IInitializable
     public int GetProfileAvtarID()
     {
         return avtarID;
+    }
+
+    public void SetPiece(int index)
+    {
+        if(index == (int)PieceType.White || index == (int)PieceType.Black)
+        {
+            pieceID = index;
+
+#if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
+            ProfileData data = SavingSystem.Load<ProfileData>(ProfileData.FileName);
+            data.pieceIndex = pieceID;
+            SavingSystem.Save(ProfileData.FileName, data);
+#endif
+        }
+    }
+
+    public int GetProfilePieceID()
+    {
+        return pieceID;
     }
 
     public int AvtarCount { get { return avatarList.avatars.Count; } }

@@ -96,12 +96,12 @@ public class SettingPage : Page
     public void OnCloseButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 
     public void OnDoneButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
+        ServiceLocator.Get<MenuPageManager>().GoBack();
     }
 }

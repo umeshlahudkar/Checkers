@@ -91,6 +91,7 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
     }
 
     public Page CurrentActivePage => currentPage;
+    public TEnum CurrentPageKey => currentKey;
 
     public bool IsPageOpen(TEnum key)
     {

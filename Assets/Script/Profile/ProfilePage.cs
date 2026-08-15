@@ -5,39 +5,69 @@ using UnityEngine.UI;
 
 public class ProfilePage : Page
 {
-    [SerializeField] private Image profileIcon;
+    // Username
     [SerializeField] private TMP_InputField userNameInputField;
 
+    // Avatar
     [SerializeField] private AvatarTile tileTemplate;
     [SerializeField] private Transform tileContainer;
-
-    [SerializeField] private Sprite selectedBg;
-    [SerializeField] private Sprite unSelectedBg;
-
     private readonly List<AvatarTile> avatarTiles = new();
-
     private bool tilesCreated;
     private int selectedAvtarIndex = -1;
 
+    // Piece
+    [SerializeField] private AvatarTile whitePieceTile;
+    [SerializeField] private AvatarTile blackPieceTile;
+    private PieceType selectedPieceType = PieceType.None;
+
+    // Shared by Avatar and Piece tiles
+    [SerializeField] private Sprite selectedBg;
+    [SerializeField] private Sprite unSelectedBg;
+
     protected override void OnOpened()
     {
-        CreateTiles();
+        ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuTopPanel);
+        ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuBottomPanel);
 
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
 
-        selectedAvtarIndex = profileManager.GetProfileAvtarID();
-        HighlightSelectedAvatar(selectedAvtarIndex);
+        SetupUserName(profileManager);
+        SetupAvatarTiles(profileManager);
+        SetupPieceTiles(profileManager);
+    }
 
-        if (selectedAvtarIndex > 0)
-        {
-            profileIcon.sprite = profileManager.GetProfileAvtar();
-        }
+    #region Username
 
+    private void SetupUserName(ProfileManager profileManager)
+    {
         string userName = profileManager.GetUserName();
         if (!string.IsNullOrEmpty(userName))
         {
             userNameInputField.text = userName;
         }
+    }
+
+    public void OnSaveButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+
+        string enteredName = userNameInputField.text.Trim();
+        if (!string.IsNullOrEmpty(enteredName))
+        {
+            ServiceLocator.Get<ProfileManager>().SetUserName(enteredName);
+        }
+    }
+
+    #endregion
+
+    #region Avatar
+
+    private void SetupAvatarTiles(ProfileManager profileManager)
+    {
+        CreateTiles();
+
+        selectedAvtarIndex = profileManager.GetProfileAvtarID();
+        HighlightSelectedAvatar(selectedAvtarIndex);
     }
 
     private void CreateTiles()
@@ -63,7 +93,7 @@ public class ProfilePage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         HighlightSelectedAvatar(index);
-        profileIcon.sprite = ServiceLocator.Get<ProfileManager>().GetAvtar(index);
+        ServiceLocator.Get<ProfileManager>().SetAvtar(index);
     }
 
     private void HighlightSelectedAvatar(int index)
@@ -81,23 +111,43 @@ public class ProfilePage : Page
         }
     }
 
-    public void OnSaveButtonClick()
+    #endregion
+
+    #region Piece
+
+    private void SetupPieceTiles(ProfileManager profileManager)
+    {
+        whitePieceTile.Setup((int)PieceType.White, profileManager.GetPieceAvtar(PieceType.White), unSelectedBg, OnPieceSelected);
+        blackPieceTile.Setup((int)PieceType.Black, profileManager.GetPieceAvtar(PieceType.Black), unSelectedBg, OnPieceSelected);
+
+        HighlightSelectedPiece((PieceType)profileManager.GetProfilePieceID());
+    }
+
+    private void OnPieceSelected(int index)
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-
-        if (selectedAvtarIndex > 0)
-        {
-            ServiceLocator.Get<ProfileManager>().SetAvtar(selectedAvtarIndex);
-        }
-
-        string enteredName = userNameInputField.text.Trim();
-        if (!string.IsNullOrEmpty(enteredName))
-        {
-            ServiceLocator.Get<ProfileManager>().SetUserName(enteredName);
-        }
-
-        ServiceLocator.Get<MenuPageManager>().GoBack();
+        HighlightSelectedPiece((PieceType)index);
+        ServiceLocator.Get<ProfileManager>().SetPiece(index);
     }
+
+    private void HighlightSelectedPiece(PieceType pieceType)
+    {
+        GetPieceTile(selectedPieceType)?.SetSelected(unSelectedBg);
+        selectedPieceType = pieceType;
+        GetPieceTile(selectedPieceType)?.SetSelected(selectedBg);
+    }
+
+    private AvatarTile GetPieceTile(PieceType pieceType)
+    {
+        return pieceType switch
+        {
+            PieceType.White => whitePieceTile,
+            PieceType.Black => blackPieceTile,
+            _ => null
+        };
+    }
+
+    #endregion
 
     public void OnCloseButtonClick()
     {

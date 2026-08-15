@@ -6,4 +6,5 @@ public struct ProfileData
     public string username;
     public int avtarIndex;
     public int coins;
+    public int pieceIndex;
 }

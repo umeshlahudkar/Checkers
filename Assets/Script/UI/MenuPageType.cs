@@ -10,5 +10,8 @@ public enum MenuPageType
     AvtarSelection,
     Setting,
     Matchmaking,
-    RuleSetInfoPage
+    RuleSetInfoPage,
+
+    MenuTopPanel,
+    MenuBottomPanel
 }

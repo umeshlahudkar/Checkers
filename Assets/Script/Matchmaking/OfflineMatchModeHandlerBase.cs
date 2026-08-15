@@ -51,6 +51,6 @@ public class OfflineMatchModeHandlerBase : MatchModeHandler
 
     private void StartGameplayScene()
     {
-        ServiceLocator.Get<SceneLoader>().LoadScene("GameplayScene");
+        ServiceLocator.Get<SceneLoader>().LoadScene(GameConstants.Scenes.GameplayScene);
     }
 }

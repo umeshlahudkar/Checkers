@@ -1453,7 +1453,7 @@ public class GameManager : Service<GameManager>
             // audio..." sequence before it fades on to MainScene itself. That's fine for the
             // surprise-disconnect path that still uses LoadMainMenu() (see MatchSessionEventManager.
             // OnDisconnected), but a deliberate return to the menu should be immediate.
-            ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
+            ServiceLocator.Get<SceneLoader>().LoadScene(GameConstants.Scenes.MainScene);
         }
         else
         {
@@ -1464,7 +1464,7 @@ public class GameManager : Service<GameManager>
             // transition with a result screen that's about to be torn down anyway.
             SetGameOver();
             ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
-            ServiceLocator.Get<SceneLoader>().LoadScene("MainScene");
+            ServiceLocator.Get<SceneLoader>().LoadScene(GameConstants.Scenes.MainScene);
         }
     }
 }

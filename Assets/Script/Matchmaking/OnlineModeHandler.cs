@@ -3,8 +3,6 @@ using Photon.Realtime;
 
 public class OnlineModeHandler : MatchModeHandler
 {
-    private const string GameplaySceneName = "GameplayScene";
-
     private const float MatchmakingTimeoutSeconds = 15f;
     private const float BotFallbackLeadTimeSeconds = 3f;
     private const float PreGameCountdownSeconds = 3f;
@@ -135,7 +133,7 @@ public class OnlineModeHandler : MatchModeHandler
             }
             else
             {
-                connectionManager.CloseRoomAndLoadOnlineScene(GameplaySceneName);
+                connectionManager.CloseRoomAndLoadOnlineScene(GameConstants.Scenes.GameplayScene);
             }
 
             return;
@@ -297,7 +295,7 @@ public class OnlineModeHandler : MatchModeHandler
 
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
         int avtarIndex = Random.Range(1, profileManager.AvtarCount + 1);
-        pendingDisguisedName = "Random_" + Random.Range(1000, 10000);
+        pendingDisguisedName = GameConstants.Profile.GuestNamePrefix + Random.Range(1000, 10000);
         pendingDisguisedAvatar = profileManager.GetAvtar(avtarIndex);
 
         matchmakingPage.ShowOpponentFound(pendingDisguisedName, pendingDisguisedAvatar);

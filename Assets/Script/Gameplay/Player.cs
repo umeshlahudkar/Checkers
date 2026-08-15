@@ -97,10 +97,26 @@ namespace Gameplay
             if(!PhotonNetwork.OfflineMode)
             {
                 playerID = thisPhotonView.OwnerActorNr;
-                pieceType = (playerID == 1) ? PieceType.Black : PieceType.White;
+                pieceType = ResolveOnlinePieceType(thisPhotonView.Owner);
                 ServiceLocator.Get<GameManager>().ListPlayer(this);
                 SetTurnMissCount(0);
             }
+        }
+
+        // Each seat's color comes from the owning Photon player's own "pieceType" custom property
+        // (set from their ProfilePage preference before joining the room - see
+        // MatchmakingConnectionManager.Connect/CreateRoom/JoinRandomRoom, which also guarantees the
+        // two seated players always requested opposite colors), not from OwnerActorNr - actor numbers
+        // only reflect room join order and carry no color preference at all. Falls back to the old
+        // actor-number rule only if the property somehow hasn't replicated yet.
+        private PieceType ResolveOnlinePieceType(Photon.Realtime.Player owner)
+        {
+            if (owner.CustomProperties.TryGetValue(GameConstants.PhotonPlayerProperties.PieceType, out object pieceTypeValue))
+            {
+                return (PieceType)(int)pieceTypeValue;
+            }
+
+            return (playerID == 1) ? PieceType.Black : PieceType.White;
         }
 
         public void SetPlayer(int playerNumber, PieceType pieceType)

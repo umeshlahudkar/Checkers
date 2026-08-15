@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public class PvpModeHandler : OfflineMatchModeHandlerBase
 {
     public PvpModeHandler(MatchmakingConnectionManager connectionManager, GameDataSO gameDataSO)
@@ -13,7 +11,7 @@ public class PvpModeHandler : OfflineMatchModeHandlerBase
     {
         ProfileManager profileManager = ServiceLocator.Get<ProfileManager>();
 
-        PieceType ownPieceType = (PieceType)Random.Range(1, 3);
+        PieceType ownPieceType = (PieceType)profileManager.GetProfilePieceID();
         PieceType opponentPieceType = (ownPieceType == PieceType.White) ? PieceType.Black : PieceType.White;
 
         gameDataSO.ownPlayer = new PlayerInfo

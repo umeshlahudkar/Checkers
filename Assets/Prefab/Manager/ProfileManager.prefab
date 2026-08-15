@@ -44,8 +44,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db59ee1566357b64b9461f2038dbc69e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  computerAvtar: {fileID: 21300000, guid: b48ca84c3ceec0541a9ef3c03ae083b1, type: 3}
+  computerAvtar: {fileID: 21300000, guid: 74f66b6f13e46ed4eb9c440cade1f517, type: 3}
   pieceAvtar:
-  - {fileID: 21300000, guid: 5bb4ce1c55c913d43b80467f20c06fdd, type: 3}
-  - {fileID: 21300000, guid: 787ec47ed8c456244892f43fdf9e6a83, type: 3}
+  - {fileID: 21300000, guid: c7ac5ca8b12e76546a174faba2687e9b, type: 3}
+  - {fileID: 21300000, guid: d5a6b41219b3f144f9378c37c8ede316, type: 3}
   avatarList: {fileID: 11400000, guid: 5104b06986a940491f9769cd6efcf06d, type: 2}

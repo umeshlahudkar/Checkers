@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Bootstrapper : MonoBehaviour
 {
-    [SerializeField] private string nextSceneName = "MainScene";
+    [SerializeField] private string nextSceneName = GameConstants.Scenes.MainScene;
     [SerializeField] private float splashDuration = 1f;
 
     private void Awake()

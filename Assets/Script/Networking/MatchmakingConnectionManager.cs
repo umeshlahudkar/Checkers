@@ -8,12 +8,6 @@ using Unity.Mathematics;
 
 public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
 {
-    // Custom room property used to only match players who selected the same rule set - set on
-    // room creation and filtered on via a SQL lobby, so mismatched rule sets never join together.
-    // "C0" is not an arbitrary choice: Photon's SQL lobby only allows filtering on its reserved
-    // "C0".."C9" property names (int/string only), so this key can't be renamed to something
-    // more descriptive without breaking the filter.
-    private const string RuleSetPropertyKey = "C0";
     private static readonly TypedLobby RuleSetLobby = new TypedLobby("RuleSetLobby", LobbyType.SqlLobby);
 
     [SerializeField] private GameDataSO gameDataSO;
@@ -96,8 +90,9 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
 
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
         {
-            { "avtarID",  profileManager.AvatarID},
-            { "userName", profileManager.UserName }
+            { GameConstants.PhotonPlayerProperties.AvatarId, profileManager.AvatarID },
+            { GameConstants.PhotonPlayerProperties.UserName, profileManager.UserName },
+            { GameConstants.PhotonPlayerProperties.PieceType, profileManager.GetProfilePieceID() }
         };
 
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
@@ -108,9 +103,12 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
     {
         string roomName = "Online_" + (UnityEngine.Random.Range(1000, 9999)).ToString();
 
+        int pieceTypeIndex = ServiceLocator.Get<ProfileManager>().GetProfilePieceID();
+
         ExitGames.Client.Photon.Hashtable roomProperties = new ExitGames.Client.Photon.Hashtable
         {
-            { RuleSetPropertyKey, ServiceLocator.Get<GameSettingsManager>().GetRuleSetIndex() }
+            { GameConstants.RoomMatchProperties.RuleSet, ServiceLocator.Get<GameSettingsManager>().GetRuleSetIndex() },
+            { GameConstants.RoomMatchProperties.PieceColor, pieceTypeIndex }
         };
 
         RoomOptions roomOptions = new RoomOptions
@@ -119,7 +117,7 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
             IsVisible = true,
             IsOpen = true,
             CustomRoomProperties = roomProperties,
-            CustomRoomPropertiesForLobby = new[] { RuleSetPropertyKey }
+            CustomRoomPropertiesForLobby = new[] { GameConstants.RoomMatchProperties.RuleSet, GameConstants.RoomMatchProperties.PieceColor }
         };
 
         PhotonNetwork.CreateRoom(roomName, roomOptions, RuleSetLobby);
@@ -130,12 +128,19 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
         if(IsConnectedAndReady)
         {
             int ruleSetIndex = ServiceLocator.Get<GameSettingsManager>().GetRuleSetIndex();
-            string sqlLobbyFilter = $"{RuleSetPropertyKey} = {ruleSetIndex}";
+            int myPieceTypeIndex = ServiceLocator.Get<ProfileManager>().GetProfilePieceID();
+            int requiredOpponentPieceTypeIndex = GetOppositePieceTypeIndex(myPieceTypeIndex);
+            string sqlLobbyFilter = $"{GameConstants.RoomMatchProperties.RuleSet} = {ruleSetIndex} AND {GameConstants.RoomMatchProperties.PieceColor} = {requiredOpponentPieceTypeIndex}";
 
             return PhotonNetwork.JoinRandomRoom(null, 0, MatchmakingMode.FillRoom, RuleSetLobby, sqlLobbyFilter);
         }
 
         return false;
+    }
+
+    private static int GetOppositePieceTypeIndex(int pieceTypeIndex)
+    {
+        return pieceTypeIndex == (int)PieceType.White ? (int)PieceType.Black : (int)PieceType.White;
     }
 
     public bool IsRoomFull => PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.PlayerCount >= PhotonNetwork.CurrentRoom.MaxPlayers;
@@ -160,12 +165,14 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
 
     private PlayerInfo BuildPlayerInfo(Player player)
     {
-        int avtarIndex = player.CustomProperties.TryGetValue("avtarID", out object avtarID) ? (int)avtarID : -1;
+        int avtarIndex = player.CustomProperties.TryGetValue(GameConstants.PhotonPlayerProperties.AvatarId, out object avtarID) ? (int)avtarID : -1;
+        PieceType pieceType = player.CustomProperties.TryGetValue(GameConstants.PhotonPlayerProperties.PieceType, out object pieceTypeValue) ? (PieceType)(int)pieceTypeValue : PieceType.None;
 
         return new PlayerInfo
         {
             userName = player.NickName,
-            avatar = ServiceLocator.Get<ProfileManager>().GetAvtar(avtarIndex)
+            avatar = ServiceLocator.Get<ProfileManager>().GetAvtar(avtarIndex),
+            pieceType = pieceType
         };
     }
 
