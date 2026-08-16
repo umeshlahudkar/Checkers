@@ -272,6 +272,8 @@ MonoBehaviour:
   descriptionText: {fileID: 4134791758312057128}
   acceptButtonText: {fileID: 3587838991049910529}
   declineButtonText: {fileID: 8891028230712344103}
+  bgImage: {fileID: 3863476359797017878}
+  contentTransform: {fileID: 3216427722883793454}
 --- !u!1 &784034475139667602
 GameObject:
   m_ObjectHideFlags: 0

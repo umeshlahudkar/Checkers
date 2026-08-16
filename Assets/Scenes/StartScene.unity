@@ -1327,6 +1327,7 @@ GameObject:
   - component: {fileID: 800000000005}
   - component: {fileID: 800000000006}
   - component: {fileID: 800000000007}
+  - component: {fileID: 800000000011}
   m_Layer: 5
   m_Name: DDOL_Canvas
   m_TagString: Untagged
@@ -1553,6 +1554,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e796cd259872120e154857d188d698c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FaderPage
+--- !u!114 &800000000011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 082cc9fe7c7161f41877fd73bf7076ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CanvasScalerMatchSetter
+  referenceAspect: 0.5625
+  tallAspect: 0.46153846
+  wideAspect: 0.75
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

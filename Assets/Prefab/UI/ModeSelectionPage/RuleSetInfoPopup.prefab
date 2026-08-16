@@ -54,6 +54,8 @@ MonoBehaviour:
   titleText: {fileID: 700000000000000140}
   bodyText: {fileID: 700000000000000240}
   bodyScrollRect: {fileID: 6598535333524711733}
+  bgImage: {fileID: 1547723234266943842}
+  contentTransform: {fileID: 700000000000000420}
 --- !u!1 &700000000000000110
 GameObject:
   m_ObjectHideFlags: 0
