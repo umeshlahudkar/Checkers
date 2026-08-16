@@ -267,7 +267,7 @@ public class GameManager : Service<GameManager>
             opponentInfo.userName, opponentInfo.avatar, boardGenerator.GetPieceSprite(opponentInfo.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
         gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
-        gamePageManager.GamePage.RefreshOfferDrawButtonVisibility();
+        gamePageManager.GamePage.RefreshHintUndoButtons();
 
         // Defensive reset, not just cosmetic: GamePage's countdown coroutine lives on a
         // MonoBehaviour that persists across a rematch, so a fresh match must not inherit a
@@ -322,7 +322,7 @@ public class GameManager : Service<GameManager>
             player2.userName, player2.avatar, boardGenerator.GetPieceSprite(player2.pieceType));
         gamePageManager.GamePage.InitTurnIndicators(enableTurnTimer ? maxTurnMissCount : 0);
         gamePageManager.GamePage.SetTimerVisible(enableTurnTimer);
-        gamePageManager.GamePage.RefreshOfferDrawButtonVisibility();
+        gamePageManager.GamePage.RefreshHintUndoButtons();
 
         // Defensive reset, not just cosmetic: GamePage's countdown coroutine lives on a
         // MonoBehaviour that persists across a rematch, so a fresh match must not inherit a

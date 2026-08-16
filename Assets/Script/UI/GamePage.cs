@@ -14,9 +14,10 @@ public class GamePage : Page
     [Header("Buttons")]
     [SerializeField] private RectTransform buttonsParent;
 
-    [Header("Hint/Undo (offline modes only)")]
-    [SerializeField] private Button hintButton;
-    [SerializeField] private Button undoButton;
+    [Header("Hint/Undo/Restart (offline modes only)")]
+    [SerializeField] private CustomButton hintButton;
+    [SerializeField] private CustomButton undoButton;
+    [SerializeField] private CustomButton restartButton;
 
     [Header("Draw (Multiplayer only)")]
     [SerializeField] private CustomButton offerDrawButton;
@@ -43,6 +44,8 @@ public class GamePage : Page
 
     private TextMeshProUGUI offerDrawButtonLabel;
     private Image offerDrawButtonImage;
+    private Image hintButtonImage;
+    private Image undoButtonImage;
     private Coroutine drawOfferCountdownCoroutine;
 
     // Always spawned centered on screen (floatingTextParent is a fixed, board-independent anchor),
@@ -210,10 +213,12 @@ public class GamePage : Page
         RefreshHintUndoButtons();
     }
 
-    // Restarting is only ever gated by this one confirmation, regardless of mode - see
-    // GameManager.StartRematch for what it actually does. A misclick here is otherwise a single tap
-    // away from wiping the current match, since (unlike the old QuitPage-only Restart) this button is
-    // always on screen rather than behind Home's own quit confirmation.
+    // Offline-only (see RefreshHintUndoButtons) - a real Multiplayer opponent has no equivalent way
+    // to restart, so the button is hidden entirely there rather than shown but meaningless.
+    // Restarting is only ever gated by this one confirmation - see GameManager.StartRematch for what
+    // it actually does. A misclick here is otherwise a single tap away from wiping the current match,
+    // since (unlike the old QuitPage-only Restart) this button sits on the main HUD rather than
+    // behind Home's own quit confirmation.
     public void OnRestartButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
@@ -268,7 +273,13 @@ public class GamePage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
         GameManager gameManager = ServiceLocator.Get<GameManager>();
-        if (gameManager.GetPlayer(gameManager.CurrentTurn) is Gameplay.HumanPlayer humanPlayer)
+        // Enforced here too, not just via the button's own interactable state (same "don't just
+        // trust the button" philosophy as HumanPlayer.ShowHint's own IsChainInProgress re-check) -
+        // in real Multiplayer the opponent's Player object is a HumanPlayer too, so without
+        // IsLocalPlayer this would let a click during their turn request a hint (and run its search)
+        // against their own Player instance instead of failing closed.
+        if (gameManager.GetPlayer(gameManager.CurrentTurn) is Gameplay.HumanPlayer humanPlayer
+            && (gameManager.GameMode != GameModeType.Multiplayer || humanPlayer.IsLocalPlayer))
         {
             humanPlayer.ShowHint();
         }
@@ -282,36 +293,68 @@ public class GamePage : Page
         ServiceLocator.Get<GameManager>().UndoLastMove();
     }
 
-    // Hidden entirely outside offline modes (or once the match is over); otherwise shown, with
-    // interactable reflecting whether it's currently a HumanPlayer's turn to act (undoButton also
-    // requires GameManager.CanUndo()). Called at every turn boundary via SetActiveTurn, including
-    // right after an Undo.
+    // restartButton/undoButton are hidden entirely outside offline modes (or once the match is
+    // over) - Undo has no sensible meaning once a move is already synced to a real opponent.
+    // hintButton, unlike those two, stays available in every mode including Multiplayer (it's a
+    // local-only suggestion, nothing to sync) - only its interactable state is turn-gated. Both
+    // buttons' interactable state reflects whether it's currently the local player's turn to act
+    // (undoButton also requires GameManager.CanUndo()). restartButton has no per-turn interactable
+    // state of its own, so its visibility is set here directly rather than through a
+    // SetXButtonClickable helper. Called at every turn boundary via SetActiveTurn, including right
+    // after an Undo - and also directly from GameManager.SetupLocalMatch/PrepareOnlineMode during
+    // match setup, since that runs before StartFirstTurn's first SetActiveTurn call and all three
+    // buttons default to active in the prefab: without that early call, a Multiplayer match would
+    // flash Undo/Restart visible for the whole pieces-appear animation.
     public void RefreshHintUndoButtons()
     {
         RefreshOfferDrawButtonVisibility();
 
-        // Buttons are wired in the Editor separately from this script (see plan) - no-op until then
-        // instead of throwing, since this runs every turn.
-        if (hintButton == null || undoButton == null) { return; }
-
         GameManager gameManager = ServiceLocator.Get<GameManager>();
-        bool offlineAndPlaying = gameManager.GameMode != GameModeType.Multiplayer && gameManager.GameState == GameState.Playing;
+        bool isPlaying = gameManager.GameState == GameState.Playing;
+        bool offlineAndPlaying = gameManager.GameMode != GameModeType.Multiplayer && isPlaying;
 
-        hintButton.gameObject.SetActive(offlineAndPlaying);
-        undoButton.gameObject.SetActive(offlineAndPlaying);
+        if (restartButton != null)
+        {
+            restartButton.gameObject.SetActive(offlineAndPlaying);
+        }
 
-        if (!offlineAndPlaying) { return; }
+        if (hintButton != null)
+        {
+            hintButton.gameObject.SetActive(isPlaying);
+        }
+
+        if (undoButton != null)
+        {
+            undoButton.gameObject.SetActive(offlineAndPlaying);
+        }
+
+        if (!isPlaying) { return; }
 
         Gameplay.HumanPlayer humanPlayer = gameManager.GetPlayer(gameManager.CurrentTurn) as Gameplay.HumanPlayer;
-        bool isHumanTurn = humanPlayer != null;
+
+        // In VsBot/VsPlayer, "is this a HumanPlayer" alone already correctly identifies whoever's
+        // physically at this device (VsPlayer's two seats are both HumanPlayer for the same local
+        // player passing the device back and forth; VsBot's only human seat is player 1). In real
+        // Multiplayer, though, the opponent's Player object is ALSO a HumanPlayer on this client, so
+        // that alone can't tell your turn from theirs - IsLocalPlayer (PhotonView.IsMine under the
+        // hood) is the only reliable check there.
+        bool isHumanTurn = humanPlayer != null
+            && (gameManager.GameMode != GameModeType.Multiplayer || humanPlayer.IsLocalPlayer);
 
         // Neither button is meaningful mid-capture-chain (a hint could suggest an unrelated piece,
         // and both would corrupt the in-progress chain's bookkeeping the same way an abandoned chain
         // does - see HumanPlayer.ShowHint's and GameManager.CanUndo's own guards for the full story).
         // CanUndo already accounts for this itself; Hint has no equivalent method for this button to
         // defer to, so it's checked directly here instead.
-        hintButton.interactable = isHumanTurn && !humanPlayer.IsChainInProgress;
-        undoButton.interactable = isHumanTurn && gameManager.CanUndo();
+        if (hintButton != null)
+        {
+            SetHintButtonClickable(isHumanTurn && !humanPlayer.IsChainInProgress);
+        }
+
+        if (undoButton != null && offlineAndPlaying)
+        {
+            SetUndoButtonClickable(isHumanTurn && gameManager.CanUndo());
+        }
     }
 
     // Immediately silences both buttons the moment a move commits (Player.HandlePieceMovementAndPieceDelete),
@@ -320,17 +363,30 @@ public class GamePage : Page
     {
         if (hintButton == null || undoButton == null) { return; }
 
-        hintButton.interactable = interactable;
-        undoButton.interactable = interactable;
+        SetHintButtonClickable(interactable);
+        SetUndoButtonClickable(interactable);
+    }
+
+    // CustomButton (unlike a standard UI Button) has no built-in disabled state - gating each
+    // button's own Image's raycast target is what actually stops IPointerDown/IPointerUp/OnClick
+    // from ever reaching it (same trick as SetOfferDrawButtonClickable below).
+    private void SetHintButtonClickable(bool clickable)
+    {
+        if (hintButtonImage == null) { hintButtonImage = hintButton.GetComponent<Image>(); }
+        hintButtonImage.raycastTarget = clickable;
+    }
+
+    private void SetUndoButtonClickable(bool clickable)
+    {
+        if (undoButtonImage == null) { undoButtonImage = undoButton.GetComponent<Image>(); }
+        undoButtonImage.raycastTarget = clickable;
     }
 
     // Multiplayer is the only mode that keeps the draw-offer feature: VsBot's "opponent" always
     // accepts anyway (see GameManager.OfferDraw), and VsPlayer is local pass-and-play with no one
     // else to negotiate a draw with, so the button is hidden entirely rather than shown but inert.
-    // Public so GameManager can apply it immediately during match setup (see SetupLocalMatch/
-    // PrepareOnlineMode), rather than waiting for RefreshHintUndoButtons' first call from
-    // StartFirstTurn - that runs only after the pieces-appear animation, which left the button
-    // showing its prefab-default state (active) for that whole stretch in offline modes.
+    // Public so it can also be called standalone (RefreshHintUndoButtons already calls this itself
+    // as its first line, covering the match-setup timing this comment used to describe).
     public void RefreshOfferDrawButtonVisibility()
     {
         if (offerDrawButton == null) { return; }
