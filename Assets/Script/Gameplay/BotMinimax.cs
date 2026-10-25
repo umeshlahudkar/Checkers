@@ -10,6 +10,10 @@ using UnityEngine;
 // the task completes.
 public static class BotMinimax
 {
+    // Search scores a side with no legal moves at +/-10000 (see Search). Anything at or beyond
+    // this is a decided game rather than a positional edge.
+    private const int WinThreshold = 10000;
+
     public struct AIMove
     {
         public Piece Piece;
@@ -21,6 +25,14 @@ public static class BotMinimax
     // this on the main thread; poll the returned task's IsCompleted (e.g. from a coroutine) rather
     // than blocking on it.
     public static Task<AIMoveOption?> StartSearch(int playerID, int depth)
+    {
+        return StartSearch(playerID, depth, false);
+    }
+
+    // sacrifice true makes the bot deliberately concede about a man this move, to break a game
+    // where neither side has captured anything for a while - see
+    // BotAISettingsSO.StallSacrificeMoveLimit.
+    public static Task<AIMoveOption?> StartSearch(int playerID, int depth, bool sacrifice)
     {
         GameplayController gameplayController = ServiceLocator.Get<GameplayController>();
         IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
@@ -71,7 +83,7 @@ public static class BotMinimax
             }
         }
 
-        return Task.Run(() => GetBestMove(snapshot, rules, weights, playerID, depth));
+        return Task.Run(() => GetBestMove(snapshot, rules, weights, playerID, depth, sacrifice));
     }
 
     // Translates a completed search's plain-int result back into a real Piece/CaptureSequence/
@@ -102,12 +114,17 @@ public static class BotMinimax
         return new AIMove { Piece = piece, Position = new BoardPosition(move.Position.Row, move.Position.Col) };
     }
 
-    private static AIMoveOption? GetBestMove(AICell[,] cells, AIRules rules, AIWeights weights, int playerID, int depth)
+    private static AIMoveOption? GetBestMove(AICell[,] cells, AIRules rules, AIWeights weights, int playerID, int depth, bool sacrifice)
     {
         List<AIMoveOption> moves = BoardState.GetLegalMoves(cells, playerID, rules);
         if (moves.Count == 0) { return null; }
 
         int opponent = playerID == 1 ? 2 : 1;
+
+        if (sacrifice)
+        {
+            return ChooseSacrifice(cells, rules, weights, moves, opponent, playerID, depth);
+        }
         int bestScore = int.MinValue;
         AIMoveOption bestMove = moves[0];
         int alpha = int.MinValue;
@@ -127,6 +144,105 @@ public static class BotMinimax
         }
 
         return bestMove;
+    }
+
+    // Deliberately offers the player a piece, to break a game where nothing has been captured
+    // for a while and neither side can make progress.
+    //
+    // Works by testing the position directly: apply each legal move, then ask whether the
+    // opponent now HAS a capture. That is the literal thing wanted - "move somewhere the player
+    // can take it" - and it is checked rather than inferred from the score, for two reasons.
+    // A score drop of about a man can come from things that are not a capture at all (losing
+    // mobility, allowing a promotion), and at Easy's search depth of 1 the opponent's reply is
+    // never examined: Search returns EvaluateBoard at depth 0, so a hung piece registers only as
+    // the static vulnerablePenalty and not as the piece actually being taken.
+    //
+    // Because capture is mandatory in every ruleset here (GetLegalMoves returns only captures
+    // when any exist), a move that offers one is a move the player is FORCED to accept - so the
+    // offer always lands and movesWithoutProgress always resets.
+    //
+    // Among the moves that offer a capture it takes the cheapest: fewest pieces the opponent can
+    // take, then the best score. Conceding one man reads as a slip; conceding a three-piece
+    // chain reads as the bot giving up, and the player\'s win still has to feel like theirs.
+    //
+    // If nothing is directly capturable this turn it still concedes, by playing its most
+    // self-exposing move instead - walking a piece toward being takeable so the offer lands on
+    // a later turn rather than never. The only move it will not play is one that loses the game
+    // outright: that is not conceding a piece, it is throwing the match in a single move.
+    private static AIMoveOption? ChooseSacrifice(AICell[,] cells, AIRules rules, AIWeights weights, List<AIMoveOption> moves, int opponent, int playerID, int depth)
+    {
+        int[] scores = new int[moves.Count];
+        int[] giveaway = new int[moves.Count]; // pieces the opponent could take, 0 if none
+        int bestScore = int.MinValue;
+
+        for (int i = 0; i < moves.Count; i++)
+        {
+            AIUndoInfo undo = BoardState.ApplyMove(cells, moves[i], rules);
+
+            giveaway[i] = OpponentCaptureSize(cells, rules, opponent);
+            scores[i] = Search(cells, rules, weights, opponent, playerID, depth - 1, int.MinValue, int.MaxValue);
+
+            BoardState.UndoMove(cells, undo);
+
+            if (scores[i] > bestScore) { bestScore = scores[i]; }
+        }
+
+        int chosen = -1;
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if (giveaway[i] == 0) { continue; }
+
+            // Never concede by walking into a lost game - that is throwing the match, not
+            // handing over a piece.
+            if (scores[i] <= -WinThreshold) { continue; }
+
+            if (chosen < 0
+                || giveaway[i] < giveaway[chosen]
+                || (giveaway[i] == giveaway[chosen] && scores[i] > scores[chosen]))
+            {
+                chosen = i;
+            }
+        }
+
+        if (chosen >= 0) { return moves[chosen]; }
+
+        // Nothing is capturable this turn, so move toward being capturable: the lowest-scoring
+        // move that does not lose outright is the one that gives up the most ground.
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if (scores[i] <= -WinThreshold) { continue; }
+            if (chosen < 0 || scores[i] < scores[chosen]) { chosen = i; }
+        }
+
+        return chosen >= 0 ? moves[chosen] : BestOf(moves, scores, bestScore);
+    }
+
+    // How many pieces the side to move can capture, or 0 if it has no capture available.
+    // Mandatory capture means GetLegalMoves returns captures exclusively whenever any exist, so
+    // the first entry carrying a sequence is enough to tell, and the longest sequence is what
+    // the opponent would actually be allowed to play under MustCaptureMaximum.
+    private static int OpponentCaptureSize(AICell[,] cells, AIRules rules, int opponent)
+    {
+        List<AIMoveOption> replies = BoardState.GetLegalMoves(cells, opponent, rules);
+        int longest = 0;
+
+        for (int i = 0; i < replies.Count; i++)
+        {
+            if (replies[i].Sequence == null) { continue; }
+            if (replies[i].Sequence.Length > longest) { longest = replies[i].Sequence.Length; }
+        }
+
+        return longest;
+    }
+
+    private static AIMoveOption BestOf(List<AIMoveOption> moves, int[] scores, int bestScore)
+    {
+        for (int i = 0; i < moves.Count; i++)
+        {
+            if (scores[i] == bestScore) { return moves[i]; }
+        }
+
+        return moves[0];
     }
 
     // Alpha-beta pruned minimax - same result plain minimax would return (same best move, same

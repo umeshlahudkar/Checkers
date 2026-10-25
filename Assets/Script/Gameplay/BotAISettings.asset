@@ -24,3 +24,6 @@ MonoBehaviour:
   centerMargin: 2
   centerBonus: 10
   mobilityWeight: 2
+  easyStallSacrificeMoveLimit: 4
+  mediumStallSacrificeMoveLimit: 6
+  hardStallSacrificeMoveLimit: 10

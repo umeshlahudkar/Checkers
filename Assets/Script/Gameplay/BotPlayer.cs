@@ -37,7 +37,18 @@ namespace Gameplay
 
             // The search runs on a background thread (see BotMinimax.StartSearch) - poll instead of
             // blocking so Hard's deeper search doesn't stall the main thread for a frame.
-            Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, depth);
+            // Nothing captured or promoted for this many turns: concede a piece and get the
+            // game moving again. The counter is the only trigger - no phase, material or piece
+            // count conditions on top of it. Note this means the limit alone decides whether
+            // the opening is included: a checkers game naturally opens with several capture-free
+            // moves, so a limit shorter than that will fire before the sides have made contact.
+            GameManager gameManager = ServiceLocator.Get<GameManager>();
+            int stallLimit = settings.StallSacrificeMoveLimit(gameManager.BotDifficulty);
+
+            bool breakStalemate = stallLimit > 0
+                && gameManager.MovesWithoutProgress >= stallLimit;
+
+            Task<AIMoveOption?> task = BotMinimax.StartSearch(Player_ID, depth, breakStalemate);
             while (!task.IsCompleted)
             {
                 yield return null;

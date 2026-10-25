@@ -133,6 +133,13 @@ public class GameManager : Service<GameManager>
         get { return gameDataSO.botAISettings; }
     }
 
+    // Turn transitions since the last capture or promotion - the same counter the no-progress
+    // draw runs on (see SwitchTurn). Read by BotPlayer to notice a stalled game.
+    public int MovesWithoutProgress
+    {
+        get { return movesWithoutProgress; }
+    }
+
     private IRuleSet ruleSet;
     public IRuleSet RuleSet { get { return ruleSet; } }
 
