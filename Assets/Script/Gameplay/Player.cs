@@ -26,8 +26,8 @@ namespace Gameplay
         // the same continuation without this method needing to run again.
         protected BoardPosition lastCapturedPosition;
 
-        // Counts captures across an entire move (including every hop of a capture chain) - reported
-        // via ReportChainLength for longestChainCount tracking. Not reset between individual hops.
+        // Counts captures across an entire move (including every hop of a capture chain), which is
+        // what IsChainInProgress reads. Not reset between individual hops.
         // Reset to 0 by SelectPieceForNewMove (a fresh piece picked up), by
         // HandlePieceMovementAndPieceDelete's end-of-chain branch (the chain reaching its natural
         // end), and by ResetChainState (a timed-out mid-chain sweep, via GameManager.ChangeTurn) -
@@ -366,11 +366,6 @@ namespace Gameplay
                 }
                 capturedThisChain.Clear();
 
-                if (chainCaptureCount > 0)
-                {
-                    thisPhotonView.RPC(nameof(ReportChainLength), RpcTarget.All, chainCaptureCount);
-                }
-
                 // The move (the whole capture chain, if any) has now fully ended - reset so this
                 // player's *next* turn isn't wrongly treated as still mid-chain. Without this,
                 // IsChainInProgress stays true forever after this player's first-ever capturing
@@ -485,11 +480,6 @@ namespace Gameplay
             Piece capturedPiece = ServiceLocator.Get<GameplayController>().pieces[row, col];
             lastCapturedPieceSiblingIndex = capturedPiece.ThisTransform.GetSiblingIndex();
 
-            // Computed before either branch mutates IsCaptured, so a DeferCaptureRemoval piece -
-            // hit once here to mark it, then again from the end-of-chain sweep to actually destroy
-            // it - only counts toward captureCount on that first call.
-            bool isNewCapture = !capturedPiece.IsCaptured;
-
             if (ServiceLocator.Get<GameManager>().RuleSet.DeferCaptureRemoval && !capturedPiece.IsCaptured)
             {
                 capturedPiece.MarkCaptured();
@@ -499,11 +489,6 @@ namespace Gameplay
             {
                 capturedPiece.Destroy();
             }
-
-            if (isNewCapture)
-            {
-                ServiceLocator.Get<GameManager>().RegisterCapture(Player_ID);
-            }
         }
 
         [PunRPC]
@@ -512,19 +497,6 @@ namespace Gameplay
             if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
 
             ServiceLocator.Get<GameplayController>().pieces[row, col].SetCrownKing();
-            ServiceLocator.Get<GameManager>().RegisterKingCrowned(Player_ID);
-        }
-
-        // Reports how many captures this whole turn's chain ended up with, so GameManager can track
-        // each player's longest chain for the result screen. A PunRPC (like DestroyPieceAt/
-        // CrownPieceAt above) rather than a direct GameManager call, since HandlePieceMovementAndPieceDelete
-        // only runs on the client whose turn it is - every other client's GameManager needs this
-        // relayed the same way it already gets board-state changes.
-        [PunRPC]
-        public void ReportChainLength(int chainLength, PhotonMessageInfo info = default)
-        {
-            if (!ServiceLocator.Get<GameManager>().IsAuthorizedSender(info.Sender)) { return; }
-            ServiceLocator.Get<GameManager>().RegisterChainLength(Player_ID, chainLength);
         }
 
         // True for a single non-flying step in either scheme: a one-square diagonal move has both

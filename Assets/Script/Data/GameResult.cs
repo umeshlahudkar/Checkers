@@ -1,5 +1,3 @@
-using UnityEngine;
-
 public enum GameOutcome
 {
     Victory,
@@ -15,15 +13,8 @@ public class GameResult
 {
     public GameOutcome Outcome;
     public string OpponentName;
-    public Sprite OpponentAvatar;
     public int LocalPiecesLeft;
     public int OpponentPiecesLeft;
     public string Reason;
-    public int LocalCaptures;
-    public int OpponentCaptures;
-    public int LocalKingsCrowned;
-    public int OpponentKingsCrowned;
-    public int LocalLongestChain;
-    public int OpponentLongestChain;
     public string MatchDuration;
 }

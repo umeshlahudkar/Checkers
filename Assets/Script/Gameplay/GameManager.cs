@@ -48,14 +48,8 @@ public class GameManager : Service<GameManager>
     private string player1DisplayName;
     private string player2DisplayName;
 
-    // Match stats carried on the GameResult, indexed by playerNumber - 1. Captures/kings are
-    // updated from Player.DestroyPieceAt/CrownPieceAt (both PunRPCs, so every client's copy stays
-    // in sync the same way board state does) and longestChainCount from Player.ReportChainLength;
-    // matchStartTime is stamped once per client off PhotonNetwork.Time, the same synced clock
-    // TimerController already relies on, so match duration comes out consistent without an RPC.
-    private readonly int[] captureCount = new int[2];
-    private readonly int[] kingsCrownedCount = new int[2];
-    private readonly int[] longestChainCount = new int[2];
+    // Stamped once per client off PhotonNetwork.Time, the same synced clock TimerController already
+    // relies on, so the match duration shown on the result popup comes out consistent without an RPC.
     private double matchStartTime;
 
     // Board state at the start of every turn, offline modes only (see PushHistorySnapshot) - powers
@@ -179,7 +173,7 @@ public class GameManager : Service<GameManager>
 
     // True for exactly the two sources every gameplay-mutating RPC in this project is meant to
     // originate from: the player whose turn it currently is (the sole legitimate author of RPCs
-    // resulting from their own legal move - DestroyPieceAt/CrownPieceAt/ReportChainLength/
+    // resulting from their own legal move - DestroyPieceAt/CrownPieceAt/
     // PauseTurnTimerRPC/ResumeTurnTimerRPC, and SwitchTurn's own ChangeTurn), or the master client
     // (the sole authority for timeout/miss-driven actions - HandleTurnMissCount's ChangeTurn/
     // GameOver, and Player.FlushIncompleteChain sweeping an abandoned chain on a timed-out player's
@@ -1161,16 +1155,9 @@ public class GameManager : Service<GameManager>
         {
             Outcome = isLocalWin ? GameOutcome.Victory : GameOutcome.Defeat,
             OpponentName = isLocalWin ? loserName : winnerName,
-            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
             LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
             OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
             Reason = reason,
-            LocalCaptures = captureCount[localPlayerNumber - 1],
-            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
-            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
-            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
-            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
-            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
             MatchDuration = GetMatchDurationText()
         };
 
@@ -1210,16 +1197,9 @@ public class GameManager : Service<GameManager>
         {
             Outcome = GameOutcome.Draw,
             OpponentName = gameDataSO.opponentPlayer.userName,
-            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
             LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
             OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
             Reason = reason,
-            LocalCaptures = captureCount[localPlayerNumber - 1],
-            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
-            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
-            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
-            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
-            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
             MatchDuration = GetMatchDurationText()
         };
 
@@ -1240,24 +1220,6 @@ public class GameManager : Service<GameManager>
             return players[0].PhotonView.IsMine ? 1 : 2;
         }
         return 1;
-    }
-
-    public void RegisterCapture(int playerNumber)
-    {
-        captureCount[playerNumber - 1]++;
-    }
-
-    public void RegisterKingCrowned(int playerNumber)
-    {
-        kingsCrownedCount[playerNumber - 1]++;
-    }
-
-    public void RegisterChainLength(int playerNumber, int chainLength)
-    {
-        if (chainLength > longestChainCount[playerNumber - 1])
-        {
-            longestChainCount[playerNumber - 1] = chainLength;
-        }
     }
 
     private string GetMatchDurationText()
@@ -1285,16 +1247,9 @@ public class GameManager : Service<GameManager>
         {
             Outcome = GameOutcome.Victory,
             OpponentName = gameDataSO.opponentPlayer.userName,
-            OpponentAvatar = gameDataSO.opponentPlayer.avatar,
             LocalPiecesLeft = GetRemainingPieceCount(localPlayerNumber),
             OpponentPiecesLeft = GetRemainingPieceCount(opponentPlayerNumber),
             Reason = "Your opponent left the match",
-            LocalCaptures = captureCount[localPlayerNumber - 1],
-            OpponentCaptures = captureCount[opponentPlayerNumber - 1],
-            LocalKingsCrowned = kingsCrownedCount[localPlayerNumber - 1],
-            OpponentKingsCrowned = kingsCrownedCount[opponentPlayerNumber - 1],
-            LocalLongestChain = longestChainCount[localPlayerNumber - 1],
-            OpponentLongestChain = longestChainCount[opponentPlayerNumber - 1],
             MatchDuration = GetMatchDurationText()
         };
         ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
@@ -1376,13 +1331,6 @@ public class GameManager : Service<GameManager>
         positionRepetitionCounts.Clear();
         materialDrawPattern = MaterialDrawPattern.None;
         materialDrawCounter = 0;
-
-        for (int i = 0; i < 2; i++)
-        {
-            captureCount[i] = 0;
-            kingsCrownedCount[i] = 0;
-            longestChainCount[i] = 0;
-        }
     }
 
     public Gameplay.Player GetPlayer(int playerID)
