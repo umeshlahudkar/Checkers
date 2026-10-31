@@ -48,7 +48,7 @@ public class GameManager : Service<GameManager>
     private string player1DisplayName;
     private string player2DisplayName;
 
-    // Match stats shown on the result pages, indexed by playerNumber - 1. Captures/kings are
+    // Match stats carried on the GameResult, indexed by playerNumber - 1. Captures/kings are
     // updated from Player.DestroyPieceAt/CrownPieceAt (both PunRPCs, so every client's copy stays
     // in sync the same way board state does) and longestChainCount from Player.ReportChainLength;
     // matchStartTime is stamped once per client off PhotonNetwork.Time, the same synced clock
@@ -80,6 +80,9 @@ public class GameManager : Service<GameManager>
     // match has ended), so it only ever clears via ReceiveRematchResponse or a fresh match starting
     // (ResetGameManager).
     private bool rematchOfferPending;
+
+    // Read by the result popup so its Rematch button can show "waiting" once an offer is really out.
+    public bool RematchOfferPending => rematchOfferPending;
 
     // The bot's "thinking" delay before responding to a rematch request - same disguise purpose as
     // AutoAcceptDrawOffer's delay (see OfferRematch/ReceiveRematchOffer and
@@ -1003,8 +1006,8 @@ public class GameManager : Service<GameManager>
     // ReceiveDrawResponse above - see those for the reasoning behind IsOwnedBy vs IsAuthorizedSender,
     // RpcTarget.All (so the offerer's own client is told its offer went out rather than being shown a
     // prompt to respond to itself), and the disguised-bot-fallback branch. VsBot/VsPlayer never reach
-    // this at all - their result-page buttons call StartRematch() directly (see VictoryPage/
-    // DefeatPage/DrawPage), unchanged from before this feature existed.
+    // this at all - their result-popup button calls StartRematch() directly (see ResultPopupPage),
+    // unchanged from before this feature existed.
     //
     // Only reachable once the match has actually ended (gameState == Ending) - there's no scenario
     // where a rematch offer needs to be raised, or is safe to raise, while a match is still in
@@ -1027,6 +1030,7 @@ public class GameManager : Service<GameManager>
 
         rematchOfferPending = false;
         ServiceLocator.Get<WarningNotifier>().Show("No response from your opponent - rematch offer rejected, or they may be offline.");
+        ServiceLocator.Get<GamePageManager>().ResetRematchButton();
     }
 
     [PunRPC]
@@ -1427,8 +1431,8 @@ public class GameManager : Service<GameManager>
 
     // The single way back to the main menu from gameplay - called after a Quit confirmation
     // (GamePage.OnHomeButtonClick) and directly from the post-game result screens
-    // (VictoryPage/DefeatPage/DrawPage's Main Menu button, which need no confirmation since the
-    // match has already ended). Kept here rather than duplicated per caller so every path gets the
+    // (ResultPopupPage's Main Menu button, which needs no confirmation since the match has already
+    // ended). Kept here rather than duplicated per caller so every path gets the
     // same safe teardown instead of each hand-rolling its own PhotonNetwork.Disconnect().
     public void GoToMainMenu()
     {

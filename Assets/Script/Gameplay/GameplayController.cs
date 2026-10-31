@@ -20,6 +20,12 @@ public class GameplayController : Service<GameplayController>
 
     private const float PieceAnimStagger = 0.04f;
 
+    // The end-of-match vanish runs faster than the opening pop-in: a closing board shouldn't hold
+    // the result back. Capped by total span as well, so a full 40- or 60-piece board doesn't take
+    // twice as long as a sparse one - the per-piece gap shrinks to fit instead.
+    private const float DisappearStagger = 0.025f;
+    private const float DisappearMaxSpan = 0.7f;
+
     public void InitBoard(IRuleSet ruleSet)
     {
         this.ruleSet = ruleSet;
@@ -48,8 +54,8 @@ public class GameplayController : Service<GameplayController>
     // to hold off starting the first turn / showing the result screen until pieces have settled.
     public IEnumerator PlayPiecesAppearAnimation()
     {
-        int count = AnimateAll((piece, delay) => piece.PlayAppearAnimation(delay));
-        yield return new WaitForSeconds(StaggeredDuration(count, Piece.AppearDuration));
+        int count = AnimateAll((piece, delay) => piece.PlayAppearAnimation(delay), PieceAnimStagger);
+        yield return new WaitForSeconds(StaggeredDuration(count, Piece.AppearDuration, PieceAnimStagger));
     }
 
     // Piece.SetPiece leaves a freshly spawned piece at full scale (RestorePieceLayout's Undo case
@@ -74,29 +80,34 @@ public class GameplayController : Service<GameplayController>
 
     public IEnumerator PlayPiecesDisappearAnimation()
     {
-        int count = AnimateAll((piece, delay) => piece.PlayDisappearAnimation(delay));
-        yield return new WaitForSeconds(StaggeredDuration(count, Piece.DisappearDuration));
+        int pieceCount = whitePieces.Count + blackPieces.Count;
+        float stagger = pieceCount > 1
+            ? Mathf.Min(DisappearStagger, DisappearMaxSpan / (pieceCount - 1))
+            : DisappearStagger;
+
+        int count = AnimateAll((piece, delay) => piece.PlayDisappearAnimation(delay), stagger);
+        yield return new WaitForSeconds(StaggeredDuration(count, Piece.DisappearDuration, stagger));
     }
 
-    private int AnimateAll(System.Action<Piece, float> playAnimation)
+    private int AnimateAll(System.Action<Piece, float> playAnimation, float stagger)
     {
         int index = 0;
         for (int i = 0; i < whitePieces.Count; i++)
         {
-            playAnimation(whitePieces[i], index * PieceAnimStagger);
+            playAnimation(whitePieces[i], index * stagger);
             index++;
         }
         for (int i = 0; i < blackPieces.Count; i++)
         {
-            playAnimation(blackPieces[i], index * PieceAnimStagger);
+            playAnimation(blackPieces[i], index * stagger);
             index++;
         }
         return index;
     }
 
-    private static float StaggeredDuration(int pieceCount, float perPieceDuration)
+    private static float StaggeredDuration(int pieceCount, float perPieceDuration, float stagger)
     {
-        return (pieceCount > 0 ? (pieceCount - 1) * PieceAnimStagger : 0f) + perPieceDuration;
+        return (pieceCount > 0 ? (pieceCount - 1) * stagger : 0f) + perPieceDuration;
     }
 
     public void ResetGameplay()

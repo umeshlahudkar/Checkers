@@ -4,7 +4,9 @@ using UnityEngine;
 public class TimerController : MonoBehaviour
 {
     private PlayerCardUI activeCard;
-    private readonly float turnTime = 15f;
+    public const float TurnTimeSeconds = 15f;
+
+    private readonly float turnTime = TurnTimeSeconds;
     private float currentTime = 0f;
     private double turnDeadline = 0;
     private bool hasPlayedTickingSound = false;

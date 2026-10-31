@@ -3,6 +3,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// One square tile in the main menu's 2x2 mode grid. Every tile shares the same head - icon, name,
+// description, online badge - and differs only in its footer strip, which is one of three things
+// depending on the mode: the bot difficulty buttons, a plain label, or the private-room Create/Join
+// pair. Exactly one of those three is active at a time, chosen in Setup.
 public class ModeTile : MonoBehaviour
 {
     [SerializeField] private Image iconImage;
@@ -10,10 +14,22 @@ public class ModeTile : MonoBehaviour
     [SerializeField] private TextMeshProUGUI descriptionText;
     [SerializeField] private GameObject onlineBadge;
 
-    // Shown only on the VsBot tile - a sub-choice inline on the tile itself rather than a
-    // click-to-reveal step, since tapping the tile's own button still starts the match immediately
-    // (see ModeSelectionPage.OnModeSelected). Defaults to whatever difficulty was last picked.
-    [Header("Bot Difficulty (VsBot tile only)")]
+    // Gold outline plus the "LAST PLAYED" pill, kept under one parent so the tile only needs a
+    // single toggle. Driven by SetLastPlayed rather than Setup, because the last-played mode
+    // changes between menu opens while the tile itself is created only once.
+    [Header("Last Played")]
+    [SerializeField] private GameObject lastPlayedHighlight;
+
+    // Footer variant 1 - a static line of detail (VsPlayer, Multiplayer). Text comes from
+    // ModeInfo.footerLabel.
+    [Header("Footer - Label")]
+    [SerializeField] private GameObject labelFooter;
+    [SerializeField] private TextMeshProUGUI footerLabelText;
+
+    // Footer variant 2 - a sub-choice inline on the tile itself rather than a click-to-reveal step,
+    // since tapping the tile's own button still starts the match immediately (see
+    // MainMenuPage.OnModeSelected). Defaults to whatever difficulty was last picked.
+    [Header("Footer - Bot Difficulty (VsBot only)")]
     [SerializeField] private GameObject difficultySection;
 
     [SerializeField] private TextMeshProUGUI easyLabel;
@@ -31,13 +47,24 @@ public class ModeTile : MonoBehaviour
     [SerializeField] private Sprite selectedSprite;
     [SerializeField] private Sprite unSelectedSprite;
 
+    // Footer variant 3 - Create and Join sit on the tile for the same reason the difficulty buttons
+    // do: the branch is the choice, so putting it here saves the player a whole screen.
+    [Header("Footer - Private Room (PrivateRoom only)")]
+    [SerializeField] private GameObject roomSection;
+
     private ModeInfo modeInfo;
     private Action<ModeInfo> onButtonClick;
+    private Action onCreateRoomClick;
+    private Action onJoinRoomClick;
 
-    public void Setup(ModeInfo info, Action<ModeInfo> onSelected)
+    public GameModeType Mode => modeInfo != null ? modeInfo.mode : GameModeType.None;
+
+    public void Setup(ModeInfo info, Action<ModeInfo> onSelected, Action onCreateRoom, Action onJoinRoom)
     {
         modeInfo = info;
         onButtonClick = onSelected;
+        onCreateRoomClick = onCreateRoom;
+        onJoinRoomClick = onJoinRoom;
 
         iconImage.sprite = info.modeIcon;
         nameText.text = info.modeName;
@@ -45,17 +72,48 @@ public class ModeTile : MonoBehaviour
         onlineBadge.SetActive(info.showOnlineBadge);
 
         bool isVsBot = info.mode == GameModeType.VsBot;
+        bool isPrivateRoom = info.mode == GameModeType.PrivateRoom;
+
         difficultySection.SetActive(isVsBot);
+        roomSection.SetActive(isPrivateRoom);
+        labelFooter.SetActive(!isVsBot && !isPrivateRoom);
 
         if (isVsBot)
         {
             HighlightDifficulty(ServiceLocator.Get<GameSettingsManager>().GetBotDifficulty());
         }
+        else if (!isPrivateRoom)
+        {
+            footerLabelText.text = info.footerLabel;
+        }
+
+        SetLastPlayed(false);
+    }
+
+    public void SetLastPlayed(bool isLastPlayed)
+    {
+        lastPlayedHighlight.SetActive(isLastPlayed);
     }
 
     public void OnButtonClick()
     {
+        // The private-room tile has no whole-tile action - Create and Join in its footer are the two
+        // things it can do - so a tap on the body itself is deliberately inert.
+        if (modeInfo == null || modeInfo.mode == GameModeType.PrivateRoom) { return; }
+
         onButtonClick?.Invoke(modeInfo);
+    }
+
+    public void OnCreateRoomButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        onCreateRoomClick?.Invoke();
+    }
+
+    public void OnJoinRoomButtonClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        onJoinRoomClick?.Invoke();
     }
 
     public void OnEasyButtonClick()

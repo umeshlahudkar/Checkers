@@ -9,6 +9,7 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
     private bool vibrationEnabled;
     private int ruleSetIndex;
     private BotDifficulty botDifficulty;
+    private GameModeType lastMode;
 
     public bool ShowMoveHints { get { return showMoveHints; } }
     public bool VibrationEnabled { get { return vibrationEnabled; } }
@@ -20,6 +21,7 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
         vibrationEnabled = true;
         ruleSetIndex = 0;
         botDifficulty = BotDifficulty.Easy;
+        lastMode = GameModeType.None;
 
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
         if (SavingSystem.Exists(GameSettingsData.FileName))
@@ -30,6 +32,7 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
             vibrationEnabled = data.vibrationEnabled;
             ruleSetIndex = data.ruleSetIndex;
             botDifficulty = data.botDifficulty;
+            lastMode = data.lastMode;
         }
 #endif
 
@@ -75,6 +78,17 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
         Save();
     }
 
+    public GameModeType GetLastMode()
+    {
+        return lastMode;
+    }
+
+    public void SetLastMode(GameModeType value)
+    {
+        lastMode = value;
+        Save();
+    }
+
     private void Save()
     {
 #if UNITY_ANDROID || UNITY_STANDALONE_WIN || UNITY_EDITOR
@@ -83,7 +97,8 @@ public class GameSettingsManager : Service<GameSettingsManager>, IInitializable
             showMoveHints = showMoveHints,
             vibrationEnabled = vibrationEnabled,
             ruleSetIndex = ruleSetIndex,
-            botDifficulty = botDifficulty
+            botDifficulty = botDifficulty,
+            lastMode = lastMode
         };
 
         SavingSystem.Save(GameSettingsData.FileName, data);

@@ -52,6 +52,10 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     public int Columns => columns;
     public int PieceRowsPerSide => pieceRowsPerSide;
 
+    // Display only: draughts-style variants fill alternating dark squares, so a row holds half the
+    // columns; Turkish dama fills every square of its rows.
+    public int PiecesPerSide => piecesOnAllSquares ? pieceRowsPerSide * columns : pieceRowsPerSide * (columns / 2);
+
     public MovementScheme MovementScheme => movementScheme;
     public bool PiecesOnAllSquares => piecesOnAllSquares;
     public bool LeaveBackRowEmpty => leaveBackRowEmpty;

@@ -253,6 +253,20 @@ public class GamePage : Page
         ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
     }
 
+    // The device back button mid-match is the Home button: the same "Quit match?" prompt, so a stray
+    // press can't throw the game away. Once the match has ended there is nothing left to quit - the
+    // result is already on its way - so it is swallowed until the result popup takes over.
+    public override bool OnBackPressed()
+    {
+        if (ServiceLocator.Get<GameManager>().GameState == GameState.Ending)
+        {
+            return true;
+        }
+
+        OnHomeButtonClick();
+        return true;
+    }
+
     public void OnOfferDrawButtonClick()
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();

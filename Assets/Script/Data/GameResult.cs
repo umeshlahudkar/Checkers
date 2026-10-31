@@ -7,9 +7,10 @@ public enum GameOutcome
     Draw
 }
 
-// Single payload carrying everything the post-match pages (VictoryPage/DefeatPage/DrawPage) need -
+// Single payload carrying everything the post-match popup (ResultPopupPage) needs -
 // built once by GameManager for every match-end path (decisive win/loss, draw, forfeit) and handed
-// to GamePageManager.ShowGameResult, which is the single entry point that opens the right page.
+// to GamePageManager.ShowGameResult, which is the single entry point that plays the banner and
+// opens the popup.
 public class GameResult
 {
     public GameOutcome Outcome;

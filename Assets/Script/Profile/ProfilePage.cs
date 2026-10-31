@@ -160,4 +160,14 @@ public class ProfilePage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<MenuPageManager>().GoBack();
     }
+
+    // Back from here goes home, the same way the Home tab does. GoBack() can't be used for it: this
+    // page keeps the top and bottom bars open as overlays, and GoBack() refuses to run while any
+    // overlay is up.
+    public override bool OnBackPressed()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<MenuPageManager>().OpenPage(MenuPageType.MainMenuPage);
+        return true;
+    }
 }

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 // different places with two different page managers: RuleSetCard's "view rules" button on the
 // mode-selection carousel (MenuPageManager, mode-selection scene) and GamePage.OnRulesButtonClick
 // (GamePageManager, gameplay scene). Follows the same Show(...)-then-OpenPageAsOverlay(...)
-// pattern as VictoryPage/DefeatPage/DrawPage, just with no win/loss branching.
+// pattern as ResultPopupPage, just with no win/loss branching.
 public class RuleSetInfoPage : Page
 {
     [SerializeField] private TextMeshProUGUI variantLabelText;
@@ -60,22 +60,38 @@ public class RuleSetInfoPage : Page
     protected override void OnOpened()
     {
         isClosing = false;
-        PlayEntranceAnimation();
 
         // bodyScrollRect.content sits under a VerticalLayoutGroup/ContentSizeFitter chain that
         // measures off bodyText's height - Unity doesn't always re-measure that same frame a
-        // script changes .text (same gap ModeSelectionPage.RefreshLayout works around for its own
-        // scroll content), so a shorter ruleset's stale height can silently cap how far this one
-        // scrolls. Forcing the rebuild, then resetting to the top, makes every open start correct
-        // regardless of how long the previous ruleset's text was.
+        // script changes .text, so a shorter ruleset's stale height can silently cap how far this
+        // one scrolls. Forcing the rebuild, then resetting to the top, makes every open start
+        // correct regardless of how long the previous ruleset's text was.
+        //
+        // This has to run with the panel at full scale: the entrance (and the previous exit) leaves
+        // it at zero scale, and ScrollRect works out its view and content bounds through the
+        // world-to-local matrix, which is degenerate at zero scale - setting the position then lands
+        // it at a garbage offset (the text opened already scrolled to the middle).
+        contentTransform.localScale = Vector3.one;
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(bodyScrollRect.content);
+        bodyScrollRect.StopMovement();
         bodyScrollRect.verticalNormalizedPosition = 1f;
+
+        // The same degenerate matrix bites ScrollRect's own per-frame elastic clamping while the
+        // panel scales up from nothing - it reads the content as out of bounds and springs it away
+        // from the top. So it stays off until the pop-in lands, then is put back at the top.
+        bodyScrollRect.enabled = false;
+        PlayEntranceAnimation(() =>
+        {
+            bodyScrollRect.enabled = true;
+            bodyScrollRect.StopMovement();
+            bodyScrollRect.verticalNormalizedPosition = 1f;
+        });
     }
 
     // Same quick pop-in as ConfirmationPopup: the dim backdrop fades in to its authored (not full)
     // alpha while the panel scales up from nothing with a slight overshoot.
-    private void PlayEntranceAnimation()
+    private void PlayEntranceAnimation(Action onComplete)
     {
         DOTween.Kill(bgImage);
         Color bgColor = bgImage.color;
@@ -84,7 +100,8 @@ public class RuleSetInfoPage : Page
 
         DOTween.Kill(contentTransform);
         contentTransform.localScale = Vector3.zero;
-        contentTransform.DOScale(1f, ContentPopInDuration).SetEase(Ease.OutBack);
+        contentTransform.DOScale(1f, ContentPopInDuration).SetEase(Ease.OutBack)
+            .OnComplete(() => onComplete?.Invoke());
     }
 
     // Mirror of the pop-in (shrink with Ease.InBack) played BEFORE actually closing - Page.Close
@@ -95,9 +112,18 @@ public class RuleSetInfoPage : Page
         DOTween.Kill(bgImage);
         bgImage.DOFade(0f, BgFadeOutDuration);
 
+        // Same reason as the entrance: ScrollRect must not run while the panel shrinks to zero.
+        bodyScrollRect.enabled = false;
+
         DOTween.Kill(contentTransform);
         contentTransform.DOScale(0f, ContentPopOutDuration).SetEase(Ease.InBack)
             .OnComplete(() => onComplete?.Invoke());
+    }
+
+    public override bool OnBackPressed()
+    {
+        OnCloseButtonClick();
+        return true;
     }
 
     // Only one of MenuPageManager/GamePageManager is ever registered at a time (each is scene-

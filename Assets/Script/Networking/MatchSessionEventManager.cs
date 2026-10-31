@@ -18,13 +18,11 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         GamePageManager pageManager = ServiceLocator.Get<GamePageManager>();
-        bool canOpenGameOverScreen = !pageManager.IsPageOpen(GamePageType.VictoryPage)
-            && !pageManager.IsPageOpen(GamePageType.DefeatPage)
-            && !pageManager.IsPageOpen(GamePageType.DrawPage)
+        bool canOpenGameOverScreen = !pageManager.IsResultShowing
             // A GameOver/Draw RPC that already resolved the match this same frame (see H5/H6, and
             // GameManager.GameOver/Draw's own matching gameState guard) may not have finished
-            // opening its result page yet even though the match is already over - checking
-            // GameState directly closes that gap instead of relying solely on page-open state.
+            // opening its result yet even though the match is already over - checking GameState
+            // directly closes that gap instead of relying solely on page-open state.
             && ServiceLocator.Get<GameManager>().GameState == GameState.Playing;
 
         if(canOpenGameOverScreen)

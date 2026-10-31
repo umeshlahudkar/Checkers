@@ -104,4 +104,10 @@ public class SettingPage : Page
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<MenuPageManager>().GoBack();
     }
+
+    public override bool OnBackPressed()
+    {
+        OnCloseButtonClick();
+        return true;
+    }
 }

@@ -131,6 +131,15 @@ public class MatchmakingPage : Page
         ServiceLocator.Get<MatchmakingConnectionManager>().CancelMatch();
     }
 
+    // Back cancels the search, exactly like the page's own back button - which already refuses once
+    // an opponent has been found, so the press is swallowed rather than leaving a match that is
+    // about to start.
+    public override bool OnBackPressed()
+    {
+        OnBackButtonClick();
+        return true;
+    }
+
     private void StartSearchIconAnimation()
     {
         StopSearchIconAnimation();

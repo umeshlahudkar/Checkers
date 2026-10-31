@@ -25,6 +25,12 @@ public class UserNameInputScreen : Page
         ServiceLocator.Get<MenuPageManager>().CloseCurrentPage();
     }
 
+    public override bool OnBackPressed()
+    {
+        OnCloseButtonClick();
+        return true;
+    }
+
     protected override void OnClosed()
     {
         usernameInputField.text = string.Empty;

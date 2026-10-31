@@ -34,9 +34,9 @@ public class ConfirmationPopup : Page
     // Bg is authored as a partly-transparent dim overlay (not fully opaque), so its rest alpha has to
     // be captured once here rather than assumed to be 1 - fading to 1 (as the shared Graphic.FadeIn
     // helper does) would leave it fully opaque, hiding whatever's behind the popup instead of dimming
-    // it. Cached once at Awake rather than re-read at animation time for the same reason as
-    // DefeatPage.bgRestColor: re-reading a possibly mid-tween alpha as "rest" would drift on repeated
-    // opens (this popup is a single reused instance across many draw/rematch offers in a match).
+    // it. Cached once at Awake rather than re-read at animation time: re-reading a possibly
+    // mid-tween alpha as "rest" would drift on repeated opens (this popup is a single reused
+    // instance across many draw/rematch offers in a match).
     private float bgRestAlpha;
 
     // Guards against a second button click landing while the exit animation is still shrinking the
@@ -86,6 +86,14 @@ public class ConfirmationPopup : Page
             ServiceLocator.Get<DDOLPageManager>().CloseOverlay(DDOLPageType.ConfirmationPopup);
             onDecline?.Invoke();
         });
+    }
+
+    // Back is always the "no" answer, which in every prompt that uses this popup is the safe one
+    // (Keep Playing, Cancel, Decline, No).
+    public override bool OnBackPressed()
+    {
+        OnDeclineButtonClick();
+        return true;
     }
 
     protected override void OnOpened()

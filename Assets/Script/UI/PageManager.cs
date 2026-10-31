@@ -59,6 +59,22 @@ public abstract class PageManager<TSelf, TEnum> : Service<TSelf>
         }
     }
 
+    // The device back button: the topmost open overlay that wants it gets it first, and only if none
+    // does (the shared top and bottom bars never do) does it go to the current page. Returns false
+    // when nothing here handled it.
+    public bool HandleBack()
+    {
+        for (int i = overlayPages.Count - 1; i >= 0; i--)
+        {
+            if (overlayPages[i].OnBackPressed())
+            {
+                return true;
+            }
+        }
+
+        return currentPage != null && currentPage.OnBackPressed();
+    }
+
     public void GoBack()
     {
         if (overlayPages.Count > 0)
