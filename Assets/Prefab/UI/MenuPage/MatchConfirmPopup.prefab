@@ -778,6 +778,7 @@ MonoBehaviour:
   menCaptureValueText: {fileID: 6386615096571605207}
   turnTimerRow: {fileID: 3902397113663395223}
   turnTimerValueText: {fileID: 4721933332609199502}
+  nextButtonText: {fileID: 3319648916022267435}
   bgImage: {fileID: 1547723234266943842}
   contentTransform: {fileID: 700000000000000420}
 --- !u!1 &700000000000000410

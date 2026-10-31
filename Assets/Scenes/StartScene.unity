@@ -1329,6 +1329,7 @@ GameObject:
   - component: {fileID: 800000000007}
   - component: {fileID: 800000000011}
   - component: {fileID: 800000000012}
+  - component: {fileID: 800000000013}
   m_Layer: 5
   m_Name: DDOL_Canvas
   m_TagString: Untagged
@@ -1582,6 +1583,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f6dc390b424b854096789435e5f023c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackButtonHandler
+--- !u!114 &800000000013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 601b8df7e89ea16418c178c384b0cb28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeepLinkService
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

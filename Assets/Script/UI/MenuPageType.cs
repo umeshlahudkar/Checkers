@@ -20,5 +20,6 @@ public enum MenuPageType
     MenuTopPanel = 9,
     MenuBottomPanel = 10,
 
-    MatchConfirm = 11
+    MatchConfirm = 11,
+    JoinRoom = 12
 }

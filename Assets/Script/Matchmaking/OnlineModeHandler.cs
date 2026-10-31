@@ -7,19 +7,19 @@ public class OnlineModeHandler : MatchModeHandler
     private const float BotFallbackLeadTimeSeconds = 3f;
     private const float PreGameCountdownSeconds = 3f;
 
-    private bool isCancelled;
+    protected bool isCancelled;
     private bool isTimerRunning;
     private float matchmakingElapsed;
     private int lastDisplayedSeconds;
 
-    private bool isPreGameCountdownRunning;
+    protected bool isPreGameCountdownRunning;
     private float preGameCountdownElapsed;
     private int lastDisplayedCountdown;
 
     // True once the pre-game countdown has finished on a client that is not the master: only the
     // master loads the gameplay scene, so this client is now just waiting for that load to reach it.
     // See OnMasterClientSwitched for what happens if the master leaves before it does.
-    private bool isWaitingForSceneLoad;
+    protected bool isWaitingForSceneLoad;
 
     private bool isBotFallbackPending;
     private string pendingDisguisedName;
@@ -281,11 +281,11 @@ public class OnlineModeHandler : MatchModeHandler
         connectionManager.CloseRoomAndLoadOnlineScene(GameConstants.Scenes.GameplayScene);
     }
 
-    private void TryStartGameplay()
+    protected void TryStartGameplay()
     {
         Debug.Log($"[OnlineModeHandler] TryStartGameplay - isCancelled: {isCancelled}, isPreGameCountdownRunning: {isPreGameCountdownRunning}, IsRoomFull: {connectionManager.IsRoomFull}, time: {Time.realtimeSinceStartup}");
 
-        if(isCancelled || isPreGameCountdownRunning || !connectionManager.IsRoomFull)
+        if(isCancelled || isPreGameCountdownRunning || !connectionManager.IsRoomFull || !CanStartGameplay())
         {
             return;
         }
@@ -298,6 +298,12 @@ public class OnlineModeHandler : MatchModeHandler
         matchmakingPage.ShowOpponentFound(gameDataSO.opponentPlayer.userName, gameDataSO.opponentPlayer.avatar);
 
         StartPreGameCountdown();
+    }
+
+    // Extra condition a subclass can put on top of "the room is full" before the countdown begins.
+    protected virtual bool CanStartGameplay()
+    {
+        return true;
     }
 
     private void StartPreGameCountdown()
@@ -341,12 +347,12 @@ public class OnlineModeHandler : MatchModeHandler
         isTimerRunning = false;
     }
 
-    private void StopPreGameCountdown()
+    protected void StopPreGameCountdown()
     {
         isPreGameCountdownRunning = false;
     }
 
-    private void ResetMatchState()
+    protected void ResetMatchState()
     {
         isCancelled = false;
         isWaitingForSceneLoad = false;

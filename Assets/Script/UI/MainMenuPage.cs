@@ -47,6 +47,61 @@ public class MainMenuPage : Page
         int startIndex = settings.GetRuleSetIndex();
         ruleSetCarousel.Setup(settings.RuleSetCount, startIndex, OnRuleSetIndexChanged);
         OnRuleSetIndexChanged(startIndex);
+
+        ListenForRoomLinks();
+    }
+
+    protected override void OnClosed()
+    {
+        StopListeningForRoomLinks();
+    }
+
+    private void OnDestroy()
+    {
+        StopListeningForRoomLinks();
+    }
+
+    // A room link can reach the game while this menu is open, or have launched it before the menu
+    // existed (DeepLinkService keeps that one for a moment) - both end in the same place.
+    private void ListenForRoomLinks()
+    {
+        if (!ServiceLocator.TryGet(out DeepLinkService links))
+        {
+            return;
+        }
+
+        links.RoomCodeReceived -= OpenJoinFromLink;
+        links.RoomCodeReceived += OpenJoinFromLink;
+
+        if (links.TryTakePendingCode(out string pendingCode))
+        {
+            OpenJoinFromLink(pendingCode);
+        }
+    }
+
+    private void StopListeningForRoomLinks()
+    {
+        if (ServiceLocator.TryGet(out DeepLinkService links))
+        {
+            links.RoomCodeReceived -= OpenJoinFromLink;
+        }
+    }
+
+    // Opens the Join popup with the link's code already in and joins straight away. If the popup is
+    // already open the code is just put in the field, so it doesn't fight whatever is being typed.
+    private void OpenJoinFromLink(string roomCode)
+    {
+        MenuPageManager pageManager = ServiceLocator.Get<MenuPageManager>();
+        JoinRoomPage joinPage = pageManager.JoinRoomPage;
+
+        if (pageManager.IsPageOpen(MenuPageType.JoinRoom))
+        {
+            joinPage.PrefillCode(roomCode);
+            return;
+        }
+
+        ShowJoinPopup();
+        joinPage.SubmitCode(roomCode);
     }
 
     // The device back button on the home screen asks before leaving the game - there is no deeper
@@ -147,16 +202,58 @@ public class MainMenuPage : Page
         ServiceLocator.Get<MatchmakingConnectionManager>().StartMatch(info.mode);
     }
 
-    // The private-room flow - host creates a room and shares its code, guest joins by typing it -
-    // is not built yet. The tile and its two buttons are in place so the menu layout is final, and
-    // these two methods are where that flow hooks in.
+    // Private rooms: the Friends tile's Create and Join buttons. Create goes through the same confirm
+    // popup as every other mode and then opens the matchmaking page with the room code; Join opens a
+    // popup where the guest types the code.
     private void OnCreateRoom()
     {
-        ServiceLocator.Get<WarningNotifier>().Show("Private rooms are coming soon.");
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+
+        ModeInfo info = FindMode(GameModeType.PrivateRoom);
+        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
+        RuleSetSO ruleSet = settings.GetRuleSet(selectedRuleSetIndex);
+
+        MenuPageManager pageManager = ServiceLocator.Get<MenuPageManager>();
+        pageManager.MatchConfirmPage.Show(info, ruleSet, null, () => StartMatch(info, ruleSet, settings));
+        pageManager.OpenPageAsOverlay(MenuPageType.MatchConfirm);
     }
 
     private void OnJoinRoom()
     {
-        ServiceLocator.Get<WarningNotifier>().Show("Private rooms are coming soon.");
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ShowJoinPopup();
+    }
+
+    private void ShowJoinPopup()
+    {
+        ModeInfo info = FindMode(GameModeType.PrivateRoom);
+
+        MenuPageManager pageManager = ServiceLocator.Get<MenuPageManager>();
+        JoinRoomPage joinPage = pageManager.JoinRoomPage;
+        MatchmakingConnectionManager connection = ServiceLocator.Get<MatchmakingConnectionManager>();
+
+        // The guest plays by the host's ruleset (adopted once the room is joined), but the turn timer
+        // comes from the mode itself, same as for the host.
+        joinPage.Show(
+            code =>
+            {
+                gameDataSO.enableTurnTimer = info.enableTurnTimer;
+                connection.JoinPrivateRoom(code, joinPage.OnJoinSucceeded, joinPage.ShowError);
+            },
+            connection.CancelPrivateRoomJoin);
+        pageManager.OpenPageAsOverlay(MenuPageType.JoinRoom);
+    }
+
+    private ModeInfo FindMode(GameModeType mode)
+    {
+        foreach (ModeInfo info in modeList.modes)
+        {
+            if (info.mode == mode)
+            {
+                return info;
+            }
+        }
+
+        return null;
     }
 }

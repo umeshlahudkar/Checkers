@@ -31,6 +31,11 @@ public class MatchConfirmPage : Page
     [SerializeField] private GameObject turnTimerRow;
     [SerializeField] private TextMeshProUGUI turnTimerValueText;
 
+    // The confirm button's label: "START" for most modes, but creating a private room isn't starting
+    // a match yet - it opens a room and waits for a friend - so that mode says what it does.
+    [Header("Confirm Button")]
+    [SerializeField] private TextMeshProUGUI nextButtonText;
+
     [Header("Entrance Animation")]
     [SerializeField] private Image bgImage;
     [SerializeField] private RectTransform contentTransform;
@@ -50,6 +55,8 @@ public class MatchConfirmPage : Page
 
     private Action onConfirmed;
 
+    private string defaultNextButtonText;
+
     private void Awake()
     {
         bgRestAlpha = bgImage.color.a;
@@ -63,6 +70,15 @@ public class MatchConfirmPage : Page
 
         ShowOpponent(info, modeDetail);
         ShowRules(info, ruleSet);
+
+        // Read here, not in Awake: the popup is inactive until first opened, so Awake only runs after
+        // the first Show - by which point the label could already have been changed.
+        if (defaultNextButtonText == null)
+        {
+            defaultNextButtonText = nextButtonText.text;
+        }
+
+        nextButtonText.text = info.mode == GameModeType.PrivateRoom ? "CREATE ROOM" : defaultNextButtonText;
     }
 
     private void ShowOpponent(ModeInfo info, string modeDetail)
