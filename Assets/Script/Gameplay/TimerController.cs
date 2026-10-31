@@ -18,6 +18,13 @@ public class TimerController : MonoBehaviour
     // meant to be running at all.
     private bool wasPausedForCommit;
 
+    // Set when the countdown ran out on a client that was not the master at that moment - only the
+    // master may act on a timeout (see GameManager.HandleTurnMissCount), so this client dropped it.
+    // If the master role is handed to this client afterwards (see FirePendingTimeout), the turn it
+    // missed is still owed a timeout. Cleared by ResetTimer, i.e. when the next turn or the match end
+    // comes.
+    private bool timeoutPendingMaster;
+
     public float CurrentTime { get { return currentTime; } }
 
     public void StartTimer()
@@ -32,10 +39,33 @@ public class TimerController : MonoBehaviour
         activeCard.UpdateTimer(currentTime, turnTime);
     }
 
+    // Called when this client has just been made master. A turn whose deadline already passed while
+    // this client was still a non-master was never timed out by anyone, so do it now - the same call
+    // the countdown itself would have made. A countdown still running needs nothing: it will expire
+    // normally, now as master.
+    public void FirePendingTimeout()
+    {
+        if (!timeoutPendingMaster) { return; }
+
+        timeoutPendingMaster = false;
+
+        if (!PhotonNetwork.IsMasterClient || ServiceLocator.Get<GameManager>().GameState != GameState.Playing)
+        {
+            return;
+        }
+
+        ServiceLocator.Get<GameManager>().HandleTurnMissCount();
+    }
+
     public void ResetTimer()
     {
         isRunning = false;
         wasPausedForCommit = false;
+
+        // Every new turn (GameManager.StartTurn) and every match end passes through here, so a
+        // pending timeout never outlives the turn it belonged to. The expiry path below sets the
+        // flag only after calling this.
+        timeoutPendingMaster = false;
         currentTime = 0;
         hasPlayedTickingSound = false;
         ServiceLocator.Get<AudioManager>().StopTimeTickingSound();
@@ -86,6 +116,7 @@ public class TimerController : MonoBehaviour
         {
             currentTime = 0;
             ResetTimer();
+            timeoutPendingMaster = !PhotonNetwork.IsMasterClient;
             ServiceLocator.Get<GameManager>().HandleTurnMissCount();
             return;
         }

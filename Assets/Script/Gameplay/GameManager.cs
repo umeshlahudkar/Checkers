@@ -140,6 +140,13 @@ public class GameManager : Service<GameManager>
     private IRuleSet ruleSet;
     public IRuleSet RuleSet { get { return ruleSet; } }
 
+    // This client has just become master (see MatchSessionEventManager.OnMasterClientSwitched) -
+    // timeouts are only ever enforced by the master, so catch up on one that expired just before.
+    public void OnBecameMaster()
+    {
+        timer.FirePendingTimeout();
+    }
+
     // Broadcasts to every client rather than just pausing the mover's own local TimerController
     // instance - every client runs its own independent countdown off the synced PhotonNetwork.Time
     // baseline (see TimerController.StartTimer), and it's specifically the MASTER client's own copy

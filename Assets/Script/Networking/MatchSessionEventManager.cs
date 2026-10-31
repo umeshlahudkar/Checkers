@@ -30,6 +30,14 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks
         }
     }
 
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        if (newMasterClient.IsLocal && ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer)
+        {
+            ServiceLocator.Get<GameManager>().OnBecameMaster();
+        }
+    }
+
     public override void OnDisconnected(DisconnectCause cause)
     {
         if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
