@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 // The main menu is now the mode picker: the grid of mode tiles and the rules strip that used to
@@ -18,7 +17,6 @@ public class MainMenuPage : Page
 
     [SerializeField] private GameDataSO gameDataSO;
 
-    private readonly List<ModeTile> tiles = new List<ModeTile>();
     private bool tilesCreated;
     private int selectedRuleSetIndex;
 
@@ -49,10 +47,6 @@ public class MainMenuPage : Page
         int startIndex = settings.GetRuleSetIndex();
         ruleSetCarousel.Setup(settings.RuleSetCount, startIndex, OnRuleSetIndexChanged);
         OnRuleSetIndexChanged(startIndex);
-
-        // Refreshed on every open rather than only when the tiles are built: the player lands back
-        // here after a match, and the mode they just played is the one that should be lit.
-        RefreshLastPlayed();
     }
 
     // The device back button on the home screen asks before leaving the game - there is no deeper
@@ -99,20 +93,9 @@ public class MainMenuPage : Page
             ModeTile tile = Instantiate(tileTemplate, tileContainer);
             tile.gameObject.SetActive(true);
             tile.Setup(info, OnModeSelected, OnCreateRoom, OnJoinRoom);
-            tiles.Add(tile);
         }
 
         tilesCreated = true;
-    }
-
-    private void RefreshLastPlayed()
-    {
-        GameModeType lastMode = ServiceLocator.Get<GameSettingsManager>().GetLastMode();
-
-        for (int i = 0; i < tiles.Count; i++)
-        {
-            tiles[i].SetLastPlayed(tiles[i].Mode == lastMode);
-        }
     }
 
     // Called on open and whenever the strip's arrows move - refreshes the name, the "1 / 9" counter
@@ -160,9 +143,6 @@ public class MainMenuPage : Page
         {
             gameDataSO.botDifficulty = settings.GetBotDifficulty();
         }
-
-        settings.SetLastMode(info.mode);
-        RefreshLastPlayed();
 
         ServiceLocator.Get<MatchmakingConnectionManager>().StartMatch(info.mode);
     }

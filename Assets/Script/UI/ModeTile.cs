@@ -14,12 +14,6 @@ public class ModeTile : MonoBehaviour
     [SerializeField] private TextMeshProUGUI descriptionText;
     [SerializeField] private GameObject onlineBadge;
 
-    // Gold outline plus the "LAST PLAYED" pill, kept under one parent so the tile only needs a
-    // single toggle. Driven by SetLastPlayed rather than Setup, because the last-played mode
-    // changes between menu opens while the tile itself is created only once.
-    [Header("Last Played")]
-    [SerializeField] private GameObject lastPlayedHighlight;
-
     // Footer variant 1 - a static line of detail (VsPlayer, Multiplayer). Text comes from
     // ModeInfo.footerLabel.
     [Header("Footer - Label")]
@@ -57,8 +51,6 @@ public class ModeTile : MonoBehaviour
     private Action onCreateRoomClick;
     private Action onJoinRoomClick;
 
-    public GameModeType Mode => modeInfo != null ? modeInfo.mode : GameModeType.None;
-
     public void Setup(ModeInfo info, Action<ModeInfo> onSelected, Action onCreateRoom, Action onJoinRoom)
     {
         modeInfo = info;
@@ -86,13 +78,6 @@ public class ModeTile : MonoBehaviour
         {
             footerLabelText.text = info.footerLabel;
         }
-
-        SetLastPlayed(false);
-    }
-
-    public void SetLastPlayed(bool isLastPlayed)
-    {
-        lastPlayedHighlight.SetActive(isLastPlayed);
     }
 
     public void OnButtonClick()
