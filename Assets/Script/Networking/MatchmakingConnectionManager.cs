@@ -202,6 +202,26 @@ public class MatchmakingConnectionManager : MonoBehaviourPunCallbacks
         PhotonNetwork.Disconnect();
     }
 
+    // Player-facing text for an unexpected disconnect, shared by matchmaking and gameplay so both
+    // read the same instead of showing the raw DisconnectCause name.
+    public static string GetDisconnectMessage(DisconnectCause cause)
+    {
+        switch (cause)
+        {
+            case DisconnectCause.MaxCcuReached:
+                return "Servers are busy. Try again soon.";
+
+            case DisconnectCause.ExceptionOnConnect:
+            case DisconnectCause.Exception:
+            case DisconnectCause.ServerTimeout:
+            case DisconnectCause.ClientTimeout:
+                return "Connection lost. Check your internet.";
+
+            default:
+                return "Connection lost. Please try again.";
+        }
+    }
+
     public override void OnConnected()
     {
         Debug.Log("[MatchmakingConnectionManager] OnConnected");

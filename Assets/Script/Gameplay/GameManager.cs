@@ -336,6 +336,12 @@ public class GameManager : Service<GameManager>
 
         while(!HasBothPlayerReady())
         {
+            if (ShouldAbortOnlineSetup())
+            {
+                yield return StartCoroutine(AbortOnlineSetup());
+                yield break;
+            }
+
             yield return null;
         }
 
@@ -356,12 +362,50 @@ public class GameManager : Service<GameManager>
 
         while (!AreBothPlayersGameplayReady())
         {
+            if (ShouldAbortOnlineSetup())
+            {
+                yield return StartCoroutine(AbortOnlineSetup());
+                yield break;
+            }
+
             yield return null;
         }
 
         yield return StartCoroutine(ServiceLocator.Get<GameplayController>().PlayPiecesAppearAnimation());
 
+        // The opponent can leave (or this player can quit) while the pieces are still animating in;
+        // that path has already ended the match, so the first turn must not start on top of it.
+        if (gameState == GameState.Ending) { yield break; }
+
         StartFirstTurn();
+    }
+
+    // The opponent's leave can already be history by the time this scene loads (it left during
+    // matchmaking, when MatchSessionEventManager did not exist yet), so OnPlayerLeftRoom will never
+    // fire for it here - the room itself is the only place that still says so. Not being in a room
+    // at all is a lost connection, which MatchSessionEventManager.OnDisconnected already handles.
+    private bool ShouldAbortOnlineSetup()
+    {
+        return gameState == GameState.Ending
+            || !PhotonNetwork.InRoom
+            || PhotonNetwork.CurrentRoom.PlayerCount < 2;
+    }
+
+    // Ending means another path (the player-left callback, or this player quitting) already ended
+    // the match, so there is nothing left to do here.
+    private IEnumerator AbortOnlineSetup()
+    {
+        if (gameState == GameState.Playing && PhotonNetwork.InRoom)
+        {
+            yield return StartCoroutine(PlayForfeitSequence());
+        }
+    }
+
+    // Shared by the player-left callback (MatchSessionEventManager) and the setup abort above.
+    public IEnumerator PlayForfeitSequence()
+    {
+        yield return StartCoroutine(PrepareGameOverVisuals());
+        ShowVictoryByForfeit();
     }
 
     private void GeneratePiecesAndInitUI()
@@ -404,6 +448,10 @@ public class GameManager : Service<GameManager>
 
     private bool AreBothPlayersGameplayReady()
     {
+        // The loop below only inspects whoever is still in the room, so a room the opponent already
+        // left would pass it with just this player's own flag.
+        if (!PhotonNetwork.InRoom || PhotonNetwork.CurrentRoom.PlayerCount < 2) { return false; }
+
         foreach (Photon.Realtime.Player player in PhotonNetwork.CurrentRoom.Players.Values)
         {
             if (!player.CustomProperties.TryGetValue(GameplayReadyPropertyKey, out object isReady) || !(bool)isReady)
@@ -1217,7 +1265,9 @@ public class GameManager : Service<GameManager>
     {
         if (gameMode == GameModeType.Multiplayer)
         {
-            return players[0].PhotonView.IsMine ? 1 : 2;
+            // players[0] can still be unlisted when the match ends during setup (see
+            // AbortOnlineSetup), in which case this device must be the other seat.
+            return players[0] != null && players[0].PhotonView.IsMine ? 1 : 2;
         }
         return 1;
     }
@@ -1228,11 +1278,11 @@ public class GameManager : Service<GameManager>
         return $"{totalSeconds / 60}:{totalSeconds % 60:D2}";
     }
 
-    // Called when the opponent leaves the match (see MatchSessionEventManager.PlayForfeitSequence) -
+    // Called when the opponent leaves the match (see PlayForfeitSequence) -
     // always a local win since the only way to forfeit is for the *other* side to leave.
     //
     // Deliberately has no gameState guard of its own, unlike GameOver/Draw above: its caller
-    // (MatchSessionEventManager.PlayForfeitSequence) already runs PrepareGameOverVisuals - which
+    // (PlayForfeitSequence) already runs PrepareGameOverVisuals - which
     // sets gameState to Ending as its first synchronous action - immediately before calling this,
     // every time, including on a legitimate first call. A guard here would see its own caller's
     // transition and always reject, never actually running. The equivalent protection for THIS
@@ -1240,6 +1290,10 @@ public class GameManager : Service<GameManager>
     // before ever starting that sequence in the first place - see there.
     public void ShowVictoryByForfeit()
     {
+        // The opponent can leave before the first turn ever started (see AbortOnlineSetup), in which
+        // case there is no start time yet and the duration would otherwise read as time since 0.
+        if (currentTurn < 1) { matchStartTime = PhotonNetwork.Time; }
+
         int localPlayerNumber = GetLocalPlayerNumber();
         int opponentPlayerNumber = localPlayerNumber == 1 ? 2 : 1;
 
@@ -1252,7 +1306,12 @@ public class GameManager : Service<GameManager>
             Reason = "Your opponent left the match",
             MatchDuration = GetMatchDurationText()
         };
-        ServiceLocator.Get<GamePageManager>().ShowGameResult(result);
+        GamePageManager gamePageManager = ServiceLocator.Get<GamePageManager>();
+        gamePageManager.ShowGameResult(result);
+
+        // Nobody is left to accept a rematch. Applied after ShowGameResult, which is what lets the
+        // manager hold it until the popup opens behind the banner.
+        gamePageManager.DisableRematchButton();
     }
 
     // Shared by every end-of-match path (a decisive winner, a no-progress draw, or the opponent

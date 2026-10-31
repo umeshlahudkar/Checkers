@@ -16,6 +16,11 @@ public class OnlineModeHandler : MatchModeHandler
     private float preGameCountdownElapsed;
     private int lastDisplayedCountdown;
 
+    // True once the pre-game countdown has finished on a client that is not the master: only the
+    // master loads the gameplay scene, so this client is now just waiting for that load to reach it.
+    // See OnMasterClientSwitched for what happens if the master leaves before it does.
+    private bool isWaitingForSceneLoad;
+
     private bool isBotFallbackPending;
     private string pendingDisguisedName;
     private Sprite pendingDisguisedAvatar;
@@ -54,6 +59,7 @@ public class OnlineModeHandler : MatchModeHandler
     public override void CancelMatch()
     {
         isCancelled = true;
+        isWaitingForSceneLoad = false;
         StopMatchmakingTimer();
         StopPreGameCountdown();
         // Disconnect entirely (not just leave the room) - canceling means the player isn't
@@ -133,6 +139,7 @@ public class OnlineModeHandler : MatchModeHandler
             }
             else
             {
+                isWaitingForSceneLoad = !connectionManager.IsMasterClient;
                 connectionManager.CloseRoomAndLoadOnlineScene(GameConstants.Scenes.GameplayScene);
             }
 
@@ -187,7 +194,7 @@ public class OnlineModeHandler : MatchModeHandler
             return;
         }
 
-        ServiceLocator.Get<WarningNotifier>().Show($"Connection lost ({cause}). Please try again.");
+        ServiceLocator.Get<WarningNotifier>().Show(MatchmakingConnectionManager.GetDisconnectMessage(cause));
         CancelMatch();
     }
 
@@ -253,6 +260,25 @@ public class OnlineModeHandler : MatchModeHandler
     {
         base.OnPlayerEnteredRoom(newPlayer);
         TryStartGameplay();
+    }
+
+    // The master may leave after this client's countdown already ended but before its own
+    // LoadLevel went out, in which case nothing would ever load the scene and this client would sit
+    // on "GO!" with Back disabled. Photon promotes this client to master when that happens, so it
+    // finishes the load itself. GameplayScene then opens with one player in the room, which
+    // GameManager.PrepareOnlineMode already turns into a forfeit win. A master that left earlier,
+    // mid-countdown, needs no help: this client is already master by the time its countdown ends.
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        base.OnMasterClientSwitched(newMasterClient);
+
+        if (isCancelled || !isWaitingForSceneLoad || !connectionManager.IsMasterClient)
+        {
+            return;
+        }
+
+        isWaitingForSceneLoad = false;
+        connectionManager.CloseRoomAndLoadOnlineScene(GameConstants.Scenes.GameplayScene);
     }
 
     private void TryStartGameplay()
@@ -323,6 +349,7 @@ public class OnlineModeHandler : MatchModeHandler
     private void ResetMatchState()
     {
         isCancelled = false;
+        isWaitingForSceneLoad = false;
         isBotFallbackPending = false;
         pendingDisguisedName = null;
         pendingDisguisedAvatar = null;

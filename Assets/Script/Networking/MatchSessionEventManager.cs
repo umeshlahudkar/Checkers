@@ -1,4 +1,3 @@
-using System.Collections;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -27,22 +26,16 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks
 
         if(canOpenGameOverScreen)
         {
-            StartCoroutine(PlayForfeitSequence());
+            StartCoroutine(ServiceLocator.Get<GameManager>().PlayForfeitSequence());
         }
-    }
-
-    private IEnumerator PlayForfeitSequence()
-    {
-        yield return StartCoroutine(ServiceLocator.Get<GameManager>().PrepareGameOverVisuals());
-
-        //ServiceLocator.Get<CoinManager>().AddCoin(500);
-        ServiceLocator.Get<GameManager>().ShowVictoryByForfeit();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
         if(ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer && ServiceLocator.Get<GameManager>().GameState != GameState.Ending)
         {
+            // The toast lives on the DDOL canvas, so it stays up through the menu load below.
+            ServiceLocator.Get<WarningNotifier>().Show(MatchmakingConnectionManager.GetDisconnectMessage(cause));
             StartCoroutine(ServiceLocator.Get<GameManager>().LoadMainMenu());
         }
     }
