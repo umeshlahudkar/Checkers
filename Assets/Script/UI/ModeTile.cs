@@ -35,6 +35,7 @@ public class ModeTile : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hardLabel;
     [SerializeField] private Image hardImg;
 
+    // Selected / unselected look, shared by the difficulty buttons and the Create / Join pair.
     [SerializeField] private Color SelectedLabelColor;
     [SerializeField] private Color UnselectedLabelColor;
 
@@ -46,10 +47,19 @@ public class ModeTile : MonoBehaviour
     [Header("Footer - Private Room (PrivateRoom only)")]
     [SerializeField] private GameObject roomSection;
 
+    [SerializeField] private TextMeshProUGUI createLabel;
+    [SerializeField] private Image createImg;
+
+    [SerializeField] private TextMeshProUGUI joinLabel;
+    [SerializeField] private Image joinImg;
+
     private ModeInfo modeInfo;
     private Action<ModeInfo> onButtonClick;
     private Action onCreateRoomClick;
     private Action onJoinRoomClick;
+
+    // Which of Create / Join a tap on the tile body goes with - Create until the player picks Join.
+    private bool joinSelected;
 
     public void Setup(ModeInfo info, Action<ModeInfo> onSelected, Action onCreateRoom, Action onJoinRoom)
     {
@@ -74,30 +84,42 @@ public class ModeTile : MonoBehaviour
         {
             HighlightDifficulty(ServiceLocator.Get<GameSettingsManager>().GetBotDifficulty());
         }
-        else if (!isPrivateRoom)
+        else if (isPrivateRoom)
+        {
+            HighlightRoomAction(joinSelected);
+        }
+        else
         {
             footerLabelText.text = info.footerLabel;
         }
     }
 
+    // A tap anywhere on the tile moves on with the tile's current choice: the selected difficulty for
+    // VsBot, the selected Create / Join for the private-room tile, nothing extra for the rest.
     public void OnButtonClick()
     {
-        // The private-room tile has no whole-tile action - Create and Join in its footer are the two
-        // things it can do - so a tap on the body itself is deliberately inert.
-        if (modeInfo == null || modeInfo.mode == GameModeType.PrivateRoom) { return; }
+        if (modeInfo == null) { return; }
+
+        if (modeInfo.mode == GameModeType.PrivateRoom)
+        {
+            (joinSelected ? onJoinRoomClick : onCreateRoomClick)?.Invoke();
+            return;
+        }
 
         onButtonClick?.Invoke(modeInfo);
     }
 
     public void OnCreateRoomButtonClick()
     {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        joinSelected = false;
+        HighlightRoomAction(false);
         onCreateRoomClick?.Invoke();
     }
 
     public void OnJoinRoomButtonClick()
     {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        joinSelected = true;
+        HighlightRoomAction(true);
         onJoinRoomClick?.Invoke();
     }
 
@@ -116,11 +138,22 @@ public class ModeTile : MonoBehaviour
         SelectDifficulty(BotDifficulty.Hard);
     }
 
+    // Picking a difficulty also moves on, same as tapping the tile - the confirm popup then shows
+    // the difficulty that was just picked.
     private void SelectDifficulty(BotDifficulty difficulty)
     {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<GameSettingsManager>().SetBotDifficulty(difficulty);
         HighlightDifficulty(difficulty);
+        onButtonClick?.Invoke(modeInfo);
+    }
+
+    private void HighlightRoomAction(bool joinIsSelected)
+    {
+        createLabel.color = joinIsSelected ? UnselectedLabelColor : SelectedLabelColor;
+        joinLabel.color = joinIsSelected ? SelectedLabelColor : UnselectedLabelColor;
+
+        createImg.sprite = joinIsSelected ? unSelectedSprite : selectedSprite;
+        joinImg.sprite = joinIsSelected ? selectedSprite : unSelectedSprite;
     }
 
     private void HighlightDifficulty(BotDifficulty difficulty)

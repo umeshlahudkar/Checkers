@@ -44,6 +44,8 @@ public class JoinRoomPage : Page
     private const float JoiningCodeAlpha = 0.5f;
 
     private static readonly Color ErrorColor = new Color(0.95f, 0.42f, 0.42f, 1f);
+    private static readonly Color JoinReadyTextColor = Color.black;
+    private static readonly Color JoinIdleTextColor = Color.white;
     private static readonly Color NormalTint = Color.white;
     private static readonly Color ErrorTint = new Color(1f, 0.55f, 0.55f, 1f);
 
@@ -145,7 +147,11 @@ public class JoinRoomPage : Page
         fieldImage.color = hasError ? ErrorTint : NormalTint;
         pasteButton.SetActive(!isJoining);
         pasteButtonText.text = code.Length == 0 ? "PASTE CODE" : "CLEAR";
-        joinButtonImage.sprite = RoomCode.IsComplete(code) && !isJoining ? joinReadySprite : joinIdleSprite;
+
+        // The gold ready look takes dark text, the idle (and JOINING) look light text.
+        bool joinReady = RoomCode.IsComplete(code) && !isJoining;
+        joinButtonImage.sprite = joinReady ? joinReadySprite : joinIdleSprite;
+        joinButtonText.color = joinReady ? JoinReadyTextColor : JoinIdleTextColor;
     }
 
     public void OnPasteButtonClick()

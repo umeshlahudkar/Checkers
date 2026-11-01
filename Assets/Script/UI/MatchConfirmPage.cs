@@ -26,11 +26,6 @@ public class MatchConfirmPage : Page
     [SerializeField] private TextMeshProUGUI captureValueText;
     [SerializeField] private TextMeshProUGUI menCaptureValueText;
 
-    // The whole row (label, value and its divider) rather than just the value: modes without a turn
-    // timer drop the row, and the table's layout group closes the gap.
-    [SerializeField] private GameObject turnTimerRow;
-    [SerializeField] private TextMeshProUGUI turnTimerValueText;
-
     // The confirm button's label: "START" for most modes, but creating a private room isn't starting
     // a match yet - it opens a room and waits for a friend - so that mode says what it does.
     [Header("Confirm Button")]
@@ -69,7 +64,7 @@ public class MatchConfirmPage : Page
         onConfirmed = onNext;
 
         ShowOpponent(info, modeDetail);
-        ShowRules(info, ruleSet);
+        ShowRules(ruleSet);
 
         // Read here, not in Awake: the popup is inactive until first opened, so Awake only runs after
         // the first Show - by which point the label could already have been changed.
@@ -117,16 +112,13 @@ public class MatchConfirmPage : Page
 
     // Only the rules that actually change how a game plays - board, material, kings and capture
     // obligation. The full prose lives in RuleSetInfoPage; this is the at-a-glance version.
-    private void ShowRules(ModeInfo info, RuleSetSO ruleSet)
+    private void ShowRules(RuleSetSO ruleSet)
     {
         rulesValueText.text = $"{ruleSet.DisplayName}  ·  {ruleSet.Rows}×{ruleSet.Columns}";
         piecesValueText.text = $"{ruleSet.PiecesPerSide} each";
         kingsValueText.text = ruleSet.FlyingKings ? "Flying kings" : "No flying kings";
         captureValueText.text = ruleSet.MustCaptureMaximum ? "Longest forced" : "Any capture";
         menCaptureValueText.text = ruleSet.MenCaptureBackward ? "Forward and backward" : "Forward only";
-
-        turnTimerRow.SetActive(info.enableTurnTimer);
-        turnTimerValueText.text = $"{TimerController.TurnTimeSeconds:0} seconds";
     }
 
     public void OnNextButtonClick()

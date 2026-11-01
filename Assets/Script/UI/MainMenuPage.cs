@@ -8,7 +8,10 @@ public class MainMenuPage : Page
 {
     [Header("Modes")]
     [SerializeField] private ModeListSO modeList;
-    [SerializeField] private ModeTile tileTemplate;
+
+    // The mode tiles are placed in the prefab, under this container - one ModeTile per active mode,
+    // in the same order as the active entries of the mode list. Nothing is created at runtime; this
+    // page only fills each tile in (see SetupTiles).
     [SerializeField] private Transform tileContainer;
 
     [Header("Rules Strip")]
@@ -17,7 +20,7 @@ public class MainMenuPage : Page
 
     [SerializeField] private GameDataSO gameDataSO;
 
-    private bool tilesCreated;
+    private bool tilesSetUp;
     private int selectedRuleSetIndex;
 
     private void Awake()
@@ -28,7 +31,7 @@ public class MainMenuPage : Page
     private void Start()
     {
         // MainMenuPage starts active in the scene rather than being opened via MenuPageManager, so
-        // OnOpened() (which shows the shared top/bottom bars and builds the grid) would otherwise
+        // OnOpened() (which shows the shared top/bottom bars and fills in the tiles) would otherwise
         // never fire on first launch.
         if (ServiceLocator.Get<MenuPageManager>().CurrentActivePage == null)
         {
@@ -41,7 +44,7 @@ public class MainMenuPage : Page
         ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuTopPanel);
         ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuBottomPanel);
 
-        CreateTiles();
+        SetupTiles();
 
         GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
         int startIndex = settings.GetRuleSetIndex();
@@ -131,12 +134,18 @@ public class MainMenuPage : Page
 #endif
     }
 
-    private void CreateTiles()
+    // Fills in the tiles that are already in the prefab: the first tile gets the first active mode, the
+    // second the second, and so on, in hierarchy order. A tile with no mode left is hidden, and a mode
+    // with no tile is reported rather than silently missing from the menu.
+    private void SetupTiles()
     {
-        if (tilesCreated)
+        if (tilesSetUp)
         {
             return;
         }
+
+        ModeTile[] tiles = tileContainer.GetComponentsInChildren<ModeTile>(true);
+        int tileIndex = 0;
 
         foreach (ModeInfo info in modeList.modes)
         {
@@ -145,12 +154,23 @@ public class MainMenuPage : Page
                 continue;
             }
 
-            ModeTile tile = Instantiate(tileTemplate, tileContainer);
+            if (tileIndex >= tiles.Length)
+            {
+                Debug.LogError($"[MainMenuPage] No tile in the prefab for mode '{info.modeName}'. Add a ModeTile under the tile container for every active mode.");
+                break;
+            }
+
+            ModeTile tile = tiles[tileIndex++];
             tile.gameObject.SetActive(true);
             tile.Setup(info, OnModeSelected, OnCreateRoom, OnJoinRoom);
         }
 
-        tilesCreated = true;
+        for (; tileIndex < tiles.Length; tileIndex++)
+        {
+            tiles[tileIndex].gameObject.SetActive(false);
+        }
+
+        tilesSetUp = true;
     }
 
     // Called on open and whenever the strip's arrows move - refreshes the name, the "1 / 9" counter

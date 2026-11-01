@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class SettingPage : Page
 {
+    private const string PrivacyPolicyUrl = "https://playeasygames.github.io/PrivacyPolicy/";
+
     [Header("Sound")]
     [SerializeField] private ToggleSwitch soundToggle;
     [SerializeField] private Slider soundVolumeSlider;
@@ -21,6 +23,9 @@ public class SettingPage : Page
     [SerializeField] private ToggleSwitch moveHintsToggle;
     [SerializeField] private ToggleSwitch vibrationToggle;
 
+    [Header("Footer")]
+    [SerializeField] private TMP_Text versionText;
+
     protected override void OnOpened()
     {
         soundVolume = ServiceLocator.Get<AudioManager>().SFXVolume;
@@ -35,6 +40,9 @@ public class SettingPage : Page
 
         moveHintsToggle.Setup(ServiceLocator.Get<GameSettingsManager>().ShowMoveHints, OnMoveHintsToggleChanged);
         vibrationToggle.Setup(ServiceLocator.Get<GameSettingsManager>().VibrationEnabled, OnVibrationToggleChanged);
+
+        // Application.version is the Version field in Project Settings > Player.
+        versionText.text = $"VERSION {Application.version}";
     }
 
     private void OnSoundToggleChanged(bool isOn)
@@ -91,6 +99,12 @@ public class SettingPage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
         ServiceLocator.Get<WarningNotifier>().Show("Coming Soon!");
+    }
+
+    public void OnPrivacyPolicyClick()
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        Application.OpenURL(PrivacyPolicyUrl);
     }
 
     public void OnCloseButtonClick()

@@ -60,9 +60,17 @@ public class Block : MonoBehaviour
         highlightImage.DOFade(maxAlpha, pulseDuration).SetLoops(-1, LoopType.Yoyo);
     }
 
+    // The squares stay clickable either way; the Move Hints setting only decides whether the pulsing
+    // target reticle is drawn on them.
     public void HighlightNextMoveBlock(bool nextToNextHighlighted = false)
     {
         MakeClickableTarget(nextToNextHighlighted);
+
+        if (!ServiceLocator.Get<GameSettingsManager>().ShowMoveHints)
+        {
+            return;
+        }
+
         targetImage.gameObject.SetActive(true);
 
         targetImage.rectTransform.DOKill();
