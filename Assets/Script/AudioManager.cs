@@ -15,7 +15,7 @@ public class AudioManager : Service<AudioManager>, IInitializable
     [SerializeField] private AudioSource timeTickingAudioSource;
 
     private float sfxVolume = 0.5f;
-    private float musicVolume = 0.5f;
+    private float musicVolume = 0.25f;
 
     private SoundLibrarySO.SoundEntry musicEntry;
     private SoundLibrarySO.SoundEntry timerTickEntry;
