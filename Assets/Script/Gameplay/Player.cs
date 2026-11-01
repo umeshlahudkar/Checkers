@@ -103,6 +103,18 @@ namespace Gameplay
             }
         }
 
+        // A Player is a network object, so it can be destroyed by the master (DestroyAll), by Photon
+        // cleaning up after a leave or a rejoin, or by a scene unload. Logged because each of those has
+        // a different cause to chase if a seat's Player disappears in the middle of a match.
+        private void OnDestroy()
+        {
+            if (!Application.isPlaying || !ServiceLocator.TryGet(out GameManager gameManager)) { return; }
+
+            Debug.LogWarning($"[Player] Seat {playerID} destroyed - gameState: {gameManager.GameState}, sceneLoaded: {gameObject.scene.isLoaded}, " +
+                $"inRoom: {PhotonNetwork.InRoom}, otherPlayers: {(PhotonNetwork.InRoom ? PhotonNetwork.PlayerListOthers.Length : 0)}, " +
+                $"isMaster: {PhotonNetwork.IsMasterClient}, time: {Time.realtimeSinceStartup:F2}");
+        }
+
         // Each seat's color comes from the owning Photon player's own "pieceType" custom property
         // (set from their ProfilePage preference before joining the room - see
         // MatchmakingConnectionManager.Connect/CreateRoom/JoinRandomRoom, which also guarantees the

@@ -129,7 +129,15 @@ public class Block : MonoBehaviour
     {
         if(isTargetBlockHighlighted)
         {
-            ServiceLocator.Get<GameManager>().GetPlayer(ServiceLocator.Get<GameManager>().CurrentTurn).OnHighlightedTargetBlockClick(this);
+            GameManager gameManager = ServiceLocator.Get<GameManager>();
+            Gameplay.Player player = gameManager.GetPlayer(gameManager.CurrentTurn);
+
+            // The seat's Player object is a network object and can already be gone while the board
+            // is still up - the master tore the match down (DestroyAll) a moment before this client
+            // heard that the opponent left. Nothing is left to move, so the click is just ignored.
+            if (player == null) { return; }
+
+            player.OnHighlightedTargetBlockClick(this);
         }
     }
 

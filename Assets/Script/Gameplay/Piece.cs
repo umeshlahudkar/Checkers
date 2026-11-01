@@ -243,7 +243,11 @@ public class Piece : MonoBehaviour
     {
         if(playerID == ServiceLocator.Get<GameManager>().CurrentTurn)
         {
-            ServiceLocator.Get<GameManager>().GetPlayer(playerID).OnHighlightedPieceClick(this);
+            // Same as Block.OnClick: the seat's Player object may already be destroyed.
+            Gameplay.Player player = ServiceLocator.Get<GameManager>().GetPlayer(playerID);
+            if (player == null) { return; }
+
+            player.OnHighlightedPieceClick(this);
         }
         else
         {
