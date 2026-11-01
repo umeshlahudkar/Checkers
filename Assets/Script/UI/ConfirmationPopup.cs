@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 // Generic Accept/Decline overlay popup - set header/description/button labels and the two callbacks
 // at runtime via Show(...), then ServiceLocator.Get<DDOLPageManager>().OpenPageAsOverlay(DDOLPageType.
-// ConfirmationPopup). Lives under DDOL_Canvas (see DDOLPageManager, alongside FaderPage/LoadingPage)
+// ConfirmationPopup). Lives under DDOL_Canvas (see DDOLPageManager, alongside FaderPage)
 // rather than GamePageManager's per-scene page set, so it's reachable from any scene - main menu,
 // matchmaking, gameplay - not just mid-match. Replaces what used to be three separate pages
 // (DrawOfferPage/RematchOfferPage, then QuitPage) - see GameManager.ReceiveDrawOffer/
