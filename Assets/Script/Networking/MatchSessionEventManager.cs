@@ -28,6 +28,13 @@ public class MatchSessionEventManager : MonoBehaviourPunCallbacks
         {
             StartCoroutine(ServiceLocator.Get<GameManager>().PlayForfeitSequence());
         }
+        else if (ServiceLocator.Get<GameManager>().GameMode == GameModeType.Multiplayer
+            && ServiceLocator.Get<GameManager>().GameState == GameState.Ending)
+        {
+            // The match was already over (result on screen or about to be) - the only thing the
+            // opponent leaving changes now is that a rematch can no longer happen.
+            ServiceLocator.Get<GameManager>().OnOpponentLeftAfterMatch();
+        }
     }
 
     public override void OnMasterClientSwitched(Player newMasterClient)

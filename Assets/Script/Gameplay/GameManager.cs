@@ -78,6 +78,20 @@ public class GameManager : Service<GameManager>
     // Read by the result popup so its Rematch button can show "waiting" once an offer is really out.
     public bool RematchOfferPending => rematchOfferPending;
 
+    // True while this client's own Rematch offer is out, as opposed to rematchOfferPending, which is
+    // also set by an offer received from the opponent. Lets ReceiveRematchOffer tell both players
+    // pressing Rematch at the same moment (each client then sees the other's offer arrive while its
+    // own is out) from an ordinary one-sided offer.
+    private bool rematchOfferSentLocally;
+
+    // True while the "Your opponent wants a rematch" prompt is on screen, so it can be closed again
+    // if the offer expires or a rematch starts some other way.
+    private bool rematchPromptOpen;
+
+    // The prompt for a received offer closes this much sooner than the offerer's own timeout, so
+    // it can never still be answerable after the offerer has already given up on that offer.
+    private const float IncomingRematchOfferGraceSeconds = 2f;
+
     // The bot's "thinking" delay before responding to a rematch request - same disguise purpose as
     // AutoAcceptDrawOffer's delay (see OfferRematch/ReceiveRematchOffer and
     // OnlineModeHandler.OnMatchmakingTimeout). Unlike a draw, the bot always accepts a rematch (per
@@ -1065,7 +1079,17 @@ public class GameManager : Service<GameManager>
     {
         if (gameState != GameState.Ending || rematchOfferPending) { return; }
 
+        // The opponent can leave from their own result screen before this one is pressed - an offer
+        // to nobody would only sit there until it timed out.
+        if (!IsOpponentPresent())
+        {
+            ServiceLocator.Get<WarningNotifier>().Show("Your opponent has left the match.");
+            ServiceLocator.Get<GamePageManager>().DisableRematchButton();
+            return;
+        }
+
         rematchOfferPending = true;
+        rematchOfferSentLocally = true;
         int expectedSequence = ++rematchOfferSequence;
         gameManagerPhotonView.RPC(nameof(ReceiveRematchOffer), RpcTarget.All, GetLocalPlayerNumber());
         StartCoroutine(WaitForRematchOfferResponse(expectedSequence));
@@ -1078,6 +1102,7 @@ public class GameManager : Service<GameManager>
         if (expectedSequence != rematchOfferSequence || !rematchOfferPending) { yield break; }
 
         rematchOfferPending = false;
+        rematchOfferSentLocally = false;
         ServiceLocator.Get<WarningNotifier>().Show("No response from your opponent - rematch offer rejected, or they may be offline.");
         ServiceLocator.Get<GamePageManager>().ResetRematchButton();
     }
@@ -1086,9 +1111,21 @@ public class GameManager : Service<GameManager>
     public void ReceiveRematchOffer(int offeringPlayerNumber, PhotonMessageInfo info = default)
     {
         if (gameState != GameState.Ending || !IsOwnedBy(offeringPlayerNumber, info.Sender)) { return; }
+
+        bool isOwnOffer = gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine;
+
+        // Both players pressed Rematch at once, so each client has its own offer out when the other's
+        // arrives. Both clearly want a rematch - start it, rather than asking either to accept an offer
+        // they just made themselves (and having one decline cancel the other's).
+        if (!isOwnOffer && rematchOfferSentLocally)
+        {
+            StartRematch();
+            return;
+        }
+
         rematchOfferPending = true;
 
-        if (gameMode == GameModeType.Multiplayer && players[offeringPlayerNumber - 1].PhotonView.IsMine)
+        if (isOwnOffer)
         {
             ServiceLocator.Get<WarningNotifier>().Show("Rematch offer sent");
 
@@ -1104,15 +1141,65 @@ public class GameManager : Service<GameManager>
             return;
         }
 
+        int expectedSequence = ++rematchOfferSequence;
+        StartCoroutine(ExpireIncomingRematchOffer(expectedSequence));
+
+        rematchPromptOpen = true;
         DDOLPageManager ddolPageManager = ServiceLocator.Get<DDOLPageManager>();
         ddolPageManager.ConfirmationPopup.Show(
             "Rematch",
             "Your opponent wants a rematch. Accept?",
             "Accept",
             "Decline",
-            () => RespondToRematchOffer(offeringPlayerNumber, true),
-            () => RespondToRematchOffer(offeringPlayerNumber, false));
+            () => { rematchPromptOpen = false; RespondToRematchOffer(offeringPlayerNumber, true); },
+            () => { rematchPromptOpen = false; RespondToRematchOffer(offeringPlayerNumber, false); });
         ddolPageManager.OpenPageAsOverlay(DDOLPageType.ConfirmationPopup);
+    }
+
+    // The offerer gives up on an unanswered offer after OfferResponseTimeoutSeconds and from then on
+    // ignores any response, so an Accept tapped after that would start the rematch on this client
+    // alone. This closes the prompt just before that can happen.
+    private IEnumerator ExpireIncomingRematchOffer(int expectedSequence)
+    {
+        yield return new WaitForSeconds(OfferResponseTimeoutSeconds - IncomingRematchOfferGraceSeconds);
+        if (expectedSequence != rematchOfferSequence || !rematchOfferPending) { yield break; }
+
+        rematchOfferPending = false;
+        CloseRematchPrompt();
+    }
+
+    private void CloseRematchPrompt()
+    {
+        if (!rematchPromptOpen) { return; }
+
+        rematchPromptOpen = false;
+        ServiceLocator.Get<DDOLPageManager>().CloseOverlay(DDOLPageType.ConfirmationPopup);
+    }
+
+    // True unless this is a real online match whose other player has already left the room. Offline
+    // modes, and the disguised bot-fallback match that runs in Photon's offline mode, always have one.
+    private bool IsOpponentPresent()
+    {
+        return gameMode != GameModeType.Multiplayer
+            || PhotonNetwork.OfflineMode
+            || PhotonNetwork.PlayerListOthers.Length > 0;
+    }
+
+    // The opponent left while the result screen was up (see MatchSessionEventManager.OnPlayerLeftRoom):
+    // nobody is left to accept, and an offer or prompt still open would otherwise start a rematch
+    // with an empty room.
+    public void OnOpponentLeftAfterMatch()
+    {
+        // This player is already on their way to the main menu - there is no result screen to update.
+        if (IsReadyToLeaveGameplay) { return; }
+
+        rematchOfferPending = false;
+        rematchOfferSentLocally = false;
+        rematchOfferSequence++;
+        CloseRematchPrompt();
+
+        ServiceLocator.Get<WarningNotifier>().Show("Your opponent has left the match.");
+        ServiceLocator.Get<GamePageManager>().DisableRematchButton();
     }
 
     // The bot always accepts a rematch (unlike a draw offer, there's no board state left to weigh) -
@@ -1133,6 +1220,7 @@ public class GameManager : Service<GameManager>
     {
         if (!rematchOfferPending || !IsOwnedBy(offeringPlayerNumber == 1 ? 2 : 1, info.Sender)) { return; }
         rematchOfferPending = false;
+        rematchOfferSentLocally = false;
 
         if (accepted)
         {
@@ -1394,6 +1482,8 @@ public class GameManager : Service<GameManager>
         drawOfferPending = false;
         pendingDrawOfferPlayerNumber = -1;
         rematchOfferPending = false;
+        rematchOfferSentLocally = false;
+        CloseRematchPrompt();
         positionRepetitionCounts.Clear();
         materialDrawPattern = MaterialDrawPattern.None;
         materialDrawCounter = 0;
