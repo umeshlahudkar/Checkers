@@ -4,9 +4,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Overlay popup shown between tapping a mode tile and the match actually starting: a "match setup"
-// card that lines the player up against whoever they are about to face, then lists the handful of
-// rules that change how a game feels. Start begins the match; Back and the close X both back out.
+// Overlay popup shown between tapping PLAY and the match actually starting: a "match setup" card
+// that lists the mode being played, then the handful of rules that change how a game feels. Start
+// begins the match; Back and the close X both back out.
 //
 // Same Show(...)-then-OpenPageAsOverlay(...) shape as RuleSetInfoPage, and the same DOScale/DOFade
 // entrance that ConfirmationPopup and WarningNotifier use, so popups across the app materialise the
@@ -14,12 +14,8 @@ using UnityEngine.UI;
 // because this one lists structured match detail rather than prose.
 public class MatchConfirmPage : Page
 {
-    [Header("Lineup")]
-    [SerializeField] private Image opponentIconImage;
-    [SerializeField] private TextMeshProUGUI opponentNameText;
-    [SerializeField] private TextMeshProUGUI opponentSubText;
-
     [Header("Rules Table")]
+    [SerializeField] private TextMeshProUGUI modeValueText;
     [SerializeField] private TextMeshProUGUI rulesValueText;
     [SerializeField] private TextMeshProUGUI piecesValueText;
     [SerializeField] private TextMeshProUGUI kingsValueText;
@@ -57,13 +53,13 @@ public class MatchConfirmPage : Page
         bgRestAlpha = bgImage.color.a;
     }
 
-    // modeDetail is the tile's own sub-choice where it has one (the bot's difficulty); it replaces
-    // the opponent's default sub-label.
+    // modeDetail is the mode card's own sub-choice where it has one (the bot's difficulty); it is
+    // shown after the mode's name.
     public void Show(ModeInfo info, RuleSetSO ruleSet, string modeDetail, Action onNext)
     {
         onConfirmed = onNext;
 
-        ShowOpponent(info, modeDetail);
+        modeValueText.text = string.IsNullOrEmpty(modeDetail) ? info.modeName : $"{info.modeName}  ·  {modeDetail}";
         ShowRules(ruleSet);
 
         // Read here, not in Awake: the popup is inactive until first opened, so Awake only runs after
@@ -74,40 +70,6 @@ public class MatchConfirmPage : Page
         }
 
         nextButtonText.text = info.mode == GameModeType.PrivateRoom ? "CREATE ROOM" : defaultNextButtonText;
-    }
-
-    private void ShowOpponent(ModeInfo info, string modeDetail)
-    {
-        opponentIconImage.sprite = info.modeIcon;
-
-        string opponentName;
-        string defaultSub;
-        switch (info.mode)
-        {
-            case GameModeType.VsBot:
-                opponentName = "Bot";
-                defaultSub = string.Empty;
-                break;
-            case GameModeType.VsPlayer:
-                opponentName = "Player 2";
-                defaultSub = "SAME DEVICE";
-                break;
-            case GameModeType.Multiplayer:
-                opponentName = "Opponent";
-                defaultSub = "ONLINE";
-                break;
-            case GameModeType.PrivateRoom:
-                opponentName = "Friend";
-                defaultSub = "PRIVATE ROOM";
-                break;
-            default:
-                opponentName = info.modeName;
-                defaultSub = string.Empty;
-                break;
-        }
-
-        opponentNameText.text = opponentName;
-        opponentSubText.text = string.IsNullOrEmpty(modeDetail) ? defaultSub : modeDetail.ToUpperInvariant();
     }
 
     // Only the rules that actually change how a game plays - board, material, kings and capture

@@ -16,32 +16,28 @@ MonoBehaviour:
   - isActive: 1
     mode: 3
     modeName: Vs Bot
-    modeDescription: Offline vs the computer, hints and undo
-    footerLabel: 
+    modeDescription: Offline vs the computer
     modeIcon: {fileID: 21300000, guid: 74f66b6f13e46ed4eb9c440cade1f517, type: 3}
     showOnlineBadge: 0
     enableTurnTimer: 0
   - isActive: 1
     mode: 2
     modeName: Vs Player
-    modeDescription: Pass and play with a friend on one device
-    footerLabel: SAME DEVICE
+    modeDescription: Two players, one device
     modeIcon: {fileID: 21300000, guid: 399252938b4ec8548bd276e4ce6bdfbb, type: 3}
     showOnlineBadge: 0
     enableTurnTimer: 0
   - isActive: 1
     mode: 1
     modeName: Multiplayer
-    modeDescription: Play online against a random opponent
-    footerLabel: 15S TURNS
+    modeDescription: Random opponent, online
     modeIcon: {fileID: 21300000, guid: c568b2371895f8945a97fa3c6770c175, type: 3}
     showOnlineBadge: 1
     enableTurnTimer: 1
   - isActive: 1
     mode: 4
     modeName: Friends
-    modeDescription: Create a private room or join with a code
-    footerLabel: 
+    modeDescription: Play with a room code
     modeIcon: {fileID: 21300000, guid: 11cc27cfc82e8354ba824f6832eacda7, type: 3}
     showOnlineBadge: 1
     enableTurnTimer: 1
