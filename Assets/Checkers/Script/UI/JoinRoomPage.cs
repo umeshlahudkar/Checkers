@@ -19,10 +19,6 @@ public class JoinRoomPage : Page
     [SerializeField] private Image fieldImage;
     [SerializeField] private CanvasGroup codeGroup;
 
-    // One chip, two jobs: "PASTE CODE" while the field is empty, "CLEAR" once there is anything in it.
-    [SerializeField] private GameObject pasteButton;
-    [SerializeField] private TextMeshProUGUI pasteButtonText;
-
     [Header("Status")]
     [SerializeField] private TextMeshProUGUI subtitleText;
     [SerializeField] private TextMeshProUGUI messageText;
@@ -54,6 +50,7 @@ public class JoinRoomPage : Page
     private bool isJoining;
     private bool hasAttempted;
     private bool hasError;
+    private bool keyboardWasVisible;
     private string defaultSubtitle;
 
     private Action<string> onSubmit;
@@ -90,6 +87,7 @@ public class JoinRoomPage : Page
         isClosing = false;
         isJoining = false;
         hasAttempted = false;
+        keyboardWasVisible = false;
 
         codeInput.SetTextWithoutNotify(string.Empty);
         SetJoining(false);
@@ -145,8 +143,6 @@ public class JoinRoomPage : Page
         string code = CurrentCode;
 
         fieldImage.color = hasError ? ErrorTint : NormalTint;
-        pasteButton.SetActive(!isJoining);
-        pasteButtonText.text = code.Length == 0 ? "PASTE CODE" : "CLEAR";
 
         // The gold ready look takes dark text, the idle (and JOINING) look light text.
         bool joinReady = RoomCode.IsComplete(code) && !isJoining;
@@ -154,29 +150,22 @@ public class JoinRoomPage : Page
         joinButtonText.color = joinReady ? JoinReadyTextColor : JoinIdleTextColor;
     }
 
-    public void OnPasteButtonClick()
+    // On a phone, closing the keyboard (back, the hide arrow, Done) leaves the field "focused" as far
+    // as Unity knows, so tapping it again is not a new selection and no keyboard opens. Dropping the
+    // focus the moment the keyboard goes away makes the next tap a normal selection again. Only a
+    // keyboard that was seen open counts, so the moment between focusing the field and the keyboard
+    // sliding up is not mistaken for a closed one. In the editor the keyboard is never visible, so
+    // this does nothing there.
+    private void Update()
     {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        bool keyboardVisible = TouchScreenKeyboard.visible;
 
-        // With something typed the chip says CLEAR; otherwise it pastes.
-        if (CurrentCode.Length > 0)
+        if (keyboardWasVisible && !keyboardVisible && codeInput.isFocused)
         {
-            codeInput.text = string.Empty;
-            codeInput.ActivateInputField();
-            return;
+            codeInput.DeactivateInputField();
         }
 
-        // Whatever was copied - the bare code, a link, or the whole invite message - gives the code.
-        string pasted = RoomCode.Extract(GUIUtility.systemCopyBuffer);
-        if (pasted.Length == 0)
-        {
-            ShowMessage("No room code found. Copy the code first.");
-            return;
-        }
-
-        codeInput.text = pasted;
-        codeInput.ActivateInputField();
-        codeInput.caretPosition = pasted.Length;
+        keyboardWasVisible = keyboardVisible;
     }
 
     public void OnJoinButtonClick()
