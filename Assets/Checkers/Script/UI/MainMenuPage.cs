@@ -1,41 +1,20 @@
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
-// The main menu is the mode picker: a row of mode tabs, the selected mode's card, and the rules strip
-// sit directly on this page, so a match is one tab and one PLAY away. PLAY starts the match with
-// whatever ruleset the strip is showing and, for VsBot, whatever difficulty the card has selected.
-// For the private-room mode PLAY is replaced by Create room and Join.
+// The main menu is a short list of modes: the gold Play Online card and one card each for Vs Bot,
+// Pass and Play and Friends. Tapping a card opens the match setup popup, which is where the ruleset
+// (and the bot's difficulty) is chosen and the match is started.
 public class MainMenuPage : Page
 {
     [Header("Modes")]
     [SerializeField] private ModeListSO modeList;
 
-    // The mode cards and tabs are placed in the prefab, under these containers - one ModeTile and one
-    // ModeTab per active mode, in the same order as the active entries of the mode list. Only the
-    // selected mode's card is active, and the card around it resizes to fit. Nothing is created at
-    // runtime; this page only fills them in (see SetupModes).
-    [SerializeField] private Transform tileContainer;
-    [SerializeField] private Transform tabContainer;
-
-    [Header("Rules Strip")]
-    [SerializeField] private RuleSetCard ruleSetCard;
-    [SerializeField] private TappableCarousel ruleSetCarousel;
-    [SerializeField] private TextMeshProUGUI rulesCaptionText;
-
-    // PLAY for every mode except the private room, whose Create room / Join pair takes its place.
-    [Header("Actions")]
-    [SerializeField] private GameObject playSection;
-    [SerializeField] private GameObject roomSection;
+    // The cards are placed in the prefab and each one knows which mode it is for (see ModeCard). A
+    // card whose mode is missing or switched off in the mode list is hidden.
+    [SerializeField] private ModeCard[] modeCards;
 
     [SerializeField] private GameDataSO gameDataSO;
 
-    private readonly List<ModeInfo> activeModes = new List<ModeInfo>();
-    private ModeTile[] tiles;
-    private ModeTab[] tabs;
     private bool modesSetUp;
-    private int selectedModeIndex;
-    private int selectedRuleSetIndex;
 
     private void Awake()
     {
@@ -45,7 +24,7 @@ public class MainMenuPage : Page
     private void Start()
     {
         // MainMenuPage starts active in the scene rather than being opened via MenuPageManager, so
-        // OnOpened() (which shows the shared top/bottom bars and fills in the tiles) would otherwise
+        // OnOpened() (which shows the shared top/bottom bars and fills in the cards) would otherwise
         // never fire on first launch.
         if (ServiceLocator.Get<MenuPageManager>().CurrentActivePage == null)
         {
@@ -58,14 +37,7 @@ public class MainMenuPage : Page
         ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuTopPanel);
         ServiceLocator.Get<MenuPageManager>().OpenPageAsOverlay(MenuPageType.MenuBottomPanel);
 
-        SetupModes();
-        SelectMode(selectedModeIndex);
-
-        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
-        int startIndex = settings.GetRuleSetIndex();
-        ruleSetCarousel.Setup(settings.RuleSetCount, startIndex, OnRuleSetIndexChanged);
-        OnRuleSetIndexChanged(startIndex);
-
+        SetupModeCards();
         ListenForRoomLinks();
     }
 
@@ -149,155 +121,58 @@ public class MainMenuPage : Page
 #endif
     }
 
-    // Fills in the cards and tabs that are already in the prefab: the first of each gets the first
-    // active mode, the second the second, and so on, in hierarchy order. A card or tab with no mode
-    // left is hidden, and a mode with no card or tab is reported rather than silently missing from
-    // the menu.
-    private void SetupModes()
+    // Fills in the cards that are already in the prefab, each from its own mode's entry in the mode
+    // list. Done once: the cards keep what they were given between visits to this page.
+    private void SetupModeCards()
     {
         if (modesSetUp)
         {
             return;
         }
 
-        tiles = tileContainer.GetComponentsInChildren<ModeTile>(true);
-        tabs = tabContainer.GetComponentsInChildren<ModeTab>(true);
-        int modeCount = 0;
-
-        foreach (ModeInfo info in modeList.modes)
+        foreach (ModeCard card in modeCards)
         {
-            if (!info.isActive)
+            ModeInfo info = FindMode(card.Mode);
+
+            if (info == null || !info.isActive)
             {
+                card.gameObject.SetActive(false);
                 continue;
             }
 
-            if (modeCount >= tiles.Length || modeCount >= tabs.Length)
-            {
-                Debug.LogError($"[MainMenuPage] No card or tab in the prefab for mode '{info.modeName}'. Add a ModeTile and a ModeTab for every active mode.");
-                break;
-            }
-
-            int modeIndex = modeCount++;
-            tiles[modeIndex].Setup(info);
-            tabs[modeIndex].Setup(info, () => SelectMode(modeIndex));
-            activeModes.Add(info);
-        }
-
-        for (int i = modeCount; i < tiles.Length; i++)
-        {
-            tiles[i].gameObject.SetActive(false);
-        }
-
-        for (int i = modeCount; i < tabs.Length; i++)
-        {
-            tabs[i].gameObject.SetActive(false);
+            card.Setup(info, OnModeSelected);
         }
 
         modesSetUp = true;
     }
 
-    // Shows the chosen mode's card, highlights its tab, and swaps PLAY for Create room / Join when it
-    // is the private-room mode.
-    private void SelectMode(int index)
-    {
-        if (activeModes.Count == 0)
-        {
-            return;
-        }
-
-        selectedModeIndex = Mathf.Clamp(index, 0, activeModes.Count - 1);
-
-        for (int i = 0; i < activeModes.Count; i++)
-        {
-            tiles[i].gameObject.SetActive(i == selectedModeIndex);
-            tabs[i].SetSelected(i == selectedModeIndex);
-        }
-
-        bool isPrivateRoom = activeModes[selectedModeIndex].mode == GameModeType.PrivateRoom;
-        playSection.SetActive(!isPrivateRoom);
-        roomSection.SetActive(isPrivateRoom);
-        rulesCaptionText.text = isPrivateRoom ? "Rules for your room" : "Rules";
-    }
-
-    // Called on open and whenever the strip's arrows move - refreshes the name, the "1 / 9" counter
-    // and the meta chips, and persists the choice, same as SettingPage does for its theme picker.
-    private void OnRuleSetIndexChanged(int index)
-    {
-        selectedRuleSetIndex = index;
-
-        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
-        ruleSetCard.Setup(index, settings.GetRuleSet(index), settings.RuleSetCount);
-        settings.SetRuleSetIndex(index);
-    }
-
-    public void OnPlayButtonClick()
-    {
-        if (activeModes.Count > 0)
-        {
-            OnModeSelected(activeModes[selectedModeIndex]);
-        }
-    }
-
-    // PLAY doesn't start the match outright - it opens the confirm popup, which restates the mode
-    // and the ruleset it is about to be played with. StartMatch runs only once that popup's Next is
+    // A card doesn't start the match outright - it opens the setup popup, where the ruleset (and the
+    // bot's difficulty) is picked. StartMatch runs only once that popup's Play or Create room is
     // pressed.
     private void OnModeSelected(ModeInfo info)
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
-        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
-        RuleSetSO ruleSet = settings.GetRuleSet(selectedRuleSetIndex);
-
         MenuPageManager pageManager = ServiceLocator.Get<MenuPageManager>();
-        pageManager.MatchConfirmPage.Show(info, ruleSet, BuildModeDetail(info, settings),
-            () => StartMatch(info, ruleSet, settings));
+        pageManager.MatchConfirmPage.Show(info, ruleSet => StartMatch(info, ruleSet), ShowJoinPopup);
         pageManager.OpenPageAsOverlay(MenuPageType.MatchConfirm);
     }
 
-    // The sub-choice the tile itself carries, if it has one: the bot's difficulty. The other modes
-    // have none, and the popup labels their opponent itself.
-    private string BuildModeDetail(ModeInfo info, GameSettingsManager settings)
-    {
-        return info.mode == GameModeType.VsBot
-            ? settings.GetBotDifficulty().ToString()
-            : null;
-    }
-
-    private void StartMatch(ModeInfo info, RuleSetSO ruleSet, GameSettingsManager settings)
+    private void StartMatch(ModeInfo info, RuleSetSO ruleSet)
     {
         gameDataSO.ruleSet = ruleSet;
         gameDataSO.enableTurnTimer = info.enableTurnTimer;
 
         if (info.mode == GameModeType.VsBot)
         {
-            gameDataSO.botDifficulty = settings.GetBotDifficulty();
+            gameDataSO.botDifficulty = ServiceLocator.Get<GameSettingsManager>().GetBotDifficulty();
         }
 
         ServiceLocator.Get<MatchmakingConnectionManager>().StartMatch(info.mode);
     }
 
-    // Private rooms: the Create room and Join buttons that replace PLAY for the Friends mode. Create
-    // goes through the same confirm popup as every other mode and then opens the matchmaking page
-    // with the room code; Join opens a popup where the guest types the code.
-    public void OnCreateRoomButtonClick()
-    {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-
-        ModeInfo info = FindMode(GameModeType.PrivateRoom);
-        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
-        RuleSetSO ruleSet = settings.GetRuleSet(selectedRuleSetIndex);
-
-        MenuPageManager pageManager = ServiceLocator.Get<MenuPageManager>();
-        pageManager.MatchConfirmPage.Show(info, ruleSet, null, () => StartMatch(info, ruleSet, settings));
-        pageManager.OpenPageAsOverlay(MenuPageType.MatchConfirm);
-    }
-
-    public void OnJoinRoomButtonClick()
-    {
-        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
-        ShowJoinPopup();
-    }
-
+    // Private rooms: the setup popup's Join button lands here. The guest types the room code in a
+    // popup of its own.
     private void ShowJoinPopup()
     {
         ModeInfo info = FindMode(GameModeType.PrivateRoom);

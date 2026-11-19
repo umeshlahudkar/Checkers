@@ -4,28 +4,50 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Overlay popup shown between tapping PLAY and the match actually starting: a "match setup" card
-// that lists the mode being played, then the handful of rules that change how a game feels. Start
-// begins the match; Back and the close X both back out.
+// Overlay popup shown between tapping a mode and the match actually starting: the match setup. It is
+// where the ruleset is picked (a carousel over the rulesets, with the chosen one remembered between
+// sessions) and, for Vs Bot, the bot's difficulty. The button at the bottom right starts the match;
+// for Friends the two buttons are Join and Create room instead of Back and Play.
 //
 // Same Show(...)-then-OpenPageAsOverlay(...) shape as RuleSetInfoPage, and the same DOScale/DOFade
 // entrance that ConfirmationPopup and WarningNotifier use, so popups across the app materialise the
-// same way. Distinct from ConfirmationPopup (a generic yes/no prompt of header + one description)
-// because this one lists structured match detail rather than prose.
+// same way.
 public class MatchConfirmPage : Page
 {
-    [Header("Rules Table")]
-    [SerializeField] private TextMeshProUGUI modeValueText;
-    [SerializeField] private TextMeshProUGUI rulesValueText;
-    [SerializeField] private TextMeshProUGUI piecesValueText;
-    [SerializeField] private TextMeshProUGUI kingsValueText;
-    [SerializeField] private TextMeshProUGUI captureValueText;
-    [SerializeField] private TextMeshProUGUI menCaptureValueText;
+    [SerializeField] private TextMeshProUGUI modeTitleText;
 
-    // The confirm button's label: "START" for most modes, but creating a private room isn't starting
-    // a match yet - it opens a room and waits for a friend - so that mode says what it does.
-    [Header("Confirm Button")]
-    [SerializeField] private TextMeshProUGUI nextButtonText;
+    [Header("Rules")]
+    [SerializeField] private RuleSetCard ruleSetCard;
+    [SerializeField] private TappableCarousel ruleSetCarousel;
+
+    // The bot's difficulty, shown for Vs Bot only.
+    [Header("Bot Difficulty")]
+    [SerializeField] private GameObject difficultySection;
+
+    [SerializeField] private TextMeshProUGUI easyLabel;
+    [SerializeField] private Image easyImg;
+
+    [SerializeField] private TextMeshProUGUI mediumLabel;
+    [SerializeField] private Image mediumImg;
+
+    [SerializeField] private TextMeshProUGUI hardLabel;
+    [SerializeField] private Image hardImg;
+
+    [SerializeField] private Color selectedLabelColor;
+    [SerializeField] private Color unselectedLabelColor;
+    [SerializeField] private Sprite selectedSprite;
+    [SerializeField] private Sprite unselectedSprite;
+
+    // The left button is Back, or Join for Friends; the right one is Play, or Create room for Friends.
+    [Header("Buttons")]
+    [SerializeField] private TextMeshProUGUI leftButtonText;
+    [SerializeField] private TextMeshProUGUI confirmButtonText;
+
+    // The card's height with and without the difficulty section; the buttons are anchored to its
+    // bottom, so this is all the card needs to fit the mode being shown.
+    [Header("Card Size")]
+    [SerializeField] private float heightWithDifficulty;
+    [SerializeField] private float heightWithoutDifficulty;
 
     [Header("Entrance Animation")]
     [SerializeField] private Image bgImage;
@@ -40,51 +62,124 @@ public class MatchConfirmPage : Page
     // to be 1 - same reason as ConfirmationPopup.bgRestAlpha.
     private float bgRestAlpha;
 
-    // Start and Back/close all land here, and the panel stays clickable while the exit tween is
-    // still shrinking it, so a second click must not start the match twice. Reset on every open.
+    // Play, Back/close and Join all land in the exit animation, and the panel stays clickable while
+    // it is still shrinking, so a second click must not start the match twice. Reset on every open.
     private bool isClosing;
 
-    private Action onConfirmed;
-
-    private string defaultNextButtonText;
+    private Action<RuleSetSO> onConfirmed;
+    private Action onJoin;
+    private bool isPrivateRoom;
+    private int selectedRuleSetIndex;
 
     private void Awake()
     {
         bgRestAlpha = bgImage.color.a;
     }
 
-    // modeDetail is the mode card's own sub-choice where it has one (the bot's difficulty); it is
-    // shown after the mode's name.
-    public void Show(ModeInfo info, RuleSetSO ruleSet, string modeDetail, Action onNext)
+    // onConfirmed gets the ruleset that was chosen. onJoin is only used for Friends, whose left
+    // button is Join.
+    public void Show(ModeInfo info, Action<RuleSetSO> onConfirmed, Action onJoin)
     {
-        onConfirmed = onNext;
+        this.onConfirmed = onConfirmed;
+        this.onJoin = onJoin;
 
-        modeValueText.text = string.IsNullOrEmpty(modeDetail) ? info.modeName : $"{info.modeName}  ·  {modeDetail}";
-        ShowRules(ruleSet);
+        isPrivateRoom = info.mode == GameModeType.PrivateRoom;
+        bool isVsBot = info.mode == GameModeType.VsBot;
 
-        // Read here, not in Awake: the popup is inactive until first opened, so Awake only runs after
-        // the first Show - by which point the label could already have been changed.
-        if (defaultNextButtonText == null)
+        modeTitleText.text = info.modeName;
+        leftButtonText.text = isPrivateRoom ? "JOIN" : "BACK";
+        confirmButtonText.text = isPrivateRoom ? "CREATE ROOM" : "PLAY";
+
+        difficultySection.SetActive(isVsBot);
+        contentTransform.sizeDelta = new Vector2(contentTransform.sizeDelta.x, isVsBot ? heightWithDifficulty : heightWithoutDifficulty);
+
+        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
+
+        // The carousel pages through the rulesets that are switched on, so it works in places among
+        // those; the ruleset index (its position in the full list) is what is saved and sent on.
+        selectedRuleSetIndex = settings.GetRuleSetIndex();
+        int position = Mathf.Max(0, settings.GetAvailablePosition(selectedRuleSetIndex));
+        ruleSetCarousel.Setup(settings.AvailableRuleSetCount, position, OnRuleSetPositionChanged);
+        ruleSetCard.Setup(position, settings.GetRuleSet(selectedRuleSetIndex), settings.AvailableRuleSetCount);
+
+        if (isVsBot)
         {
-            defaultNextButtonText = nextButtonText.text;
+            HighlightDifficulty(settings.GetBotDifficulty());
+        }
+    }
+
+    // Called by the carousel's arrows - refreshes the block and remembers the choice.
+    private void OnRuleSetPositionChanged(int position)
+    {
+        GameSettingsManager settings = ServiceLocator.Get<GameSettingsManager>();
+
+        selectedRuleSetIndex = settings.GetIndexAtAvailablePosition(position);
+        ruleSetCard.Setup(position, settings.GetRuleSet(selectedRuleSetIndex), settings.AvailableRuleSetCount);
+        settings.SetRuleSetIndex(selectedRuleSetIndex);
+    }
+
+    public void OnEasyButtonClick()
+    {
+        SelectDifficulty(BotDifficulty.Easy);
+    }
+
+    public void OnMediumButtonClick()
+    {
+        SelectDifficulty(BotDifficulty.Medium);
+    }
+
+    public void OnHardButtonClick()
+    {
+        SelectDifficulty(BotDifficulty.Hard);
+    }
+
+    private void SelectDifficulty(BotDifficulty difficulty)
+    {
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+        ServiceLocator.Get<GameSettingsManager>().SetBotDifficulty(difficulty);
+        HighlightDifficulty(difficulty);
+    }
+
+    private void HighlightDifficulty(BotDifficulty difficulty)
+    {
+        bool easySelected = difficulty == BotDifficulty.Easy;
+        bool mediumSelected = difficulty == BotDifficulty.Medium;
+        bool hardSelected = difficulty == BotDifficulty.Hard;
+
+        easyLabel.color = easySelected ? selectedLabelColor : unselectedLabelColor;
+        mediumLabel.color = mediumSelected ? selectedLabelColor : unselectedLabelColor;
+        hardLabel.color = hardSelected ? selectedLabelColor : unselectedLabelColor;
+
+        easyImg.sprite = easySelected ? selectedSprite : unselectedSprite;
+        mediumImg.sprite = mediumSelected ? selectedSprite : unselectedSprite;
+        hardImg.sprite = hardSelected ? selectedSprite : unselectedSprite;
+    }
+
+    // Play, or Create room for Friends.
+    public void OnConfirmButtonClick()
+    {
+        if (isClosing) { return; }
+        isClosing = true;
+
+        ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
+
+        RuleSetSO ruleSet = ServiceLocator.Get<GameSettingsManager>().GetRuleSet(selectedRuleSetIndex);
+        PlayExitAnimation(() =>
+        {
+            ServiceLocator.Get<MenuPageManager>().CloseOverlay(MenuPageType.MatchConfirm);
+            onConfirmed?.Invoke(ruleSet);
+        });
+    }
+
+    // Back, or Join for Friends.
+    public void OnLeftButtonClick()
+    {
+        if (!isPrivateRoom)
+        {
+            OnCloseButtonClick();
+            return;
         }
 
-        nextButtonText.text = info.mode == GameModeType.PrivateRoom ? "CREATE ROOM" : defaultNextButtonText;
-    }
-
-    // Only the rules that actually change how a game plays - board, material, kings and capture
-    // obligation. The full prose lives in RuleSetInfoPage; this is the at-a-glance version.
-    private void ShowRules(RuleSetSO ruleSet)
-    {
-        rulesValueText.text = $"{ruleSet.DisplayName}  ·  {ruleSet.Rows}×{ruleSet.Columns}";
-        piecesValueText.text = $"{ruleSet.PiecesPerSide} each";
-        kingsValueText.text = ruleSet.FlyingKings ? "Flying kings" : "No flying kings";
-        captureValueText.text = ruleSet.MustCaptureMaximum ? "Longest forced" : "Any capture";
-        menCaptureValueText.text = ruleSet.MenCaptureBackward ? "Forward and backward" : "Forward only";
-    }
-
-    public void OnNextButtonClick()
-    {
         if (isClosing) { return; }
         isClosing = true;
 
@@ -92,7 +187,7 @@ public class MatchConfirmPage : Page
         PlayExitAnimation(() =>
         {
             ServiceLocator.Get<MenuPageManager>().CloseOverlay(MenuPageType.MatchConfirm);
-            onConfirmed?.Invoke();
+            onJoin?.Invoke();
         });
     }
 
@@ -117,15 +212,6 @@ public class MatchConfirmPage : Page
     protected override void OnOpened()
     {
         isClosing = false;
-
-        // The rules table sizes itself through a VerticalLayoutGroup/ContentSizeFitter chain, and
-        // Unity doesn't reliably re-measure that the same frame a script changes text or toggles a
-        // row, so a previous mode's row count would otherwise leave the card the wrong height. Has
-        // to happen here rather than in Show(): the page is still inactive at that point, and
-        // ForceRebuildLayoutImmediate silently no-ops on anything inactive.
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(contentTransform);
-
         PlayEntranceAnimation();
     }
 

@@ -5,6 +5,16 @@ public class RuleSetSO : ScriptableObject, IRuleSet
 {
     [SerializeField] private string displayName;
 
+    // Switch a ruleset off to take it out of the game: it is then not offered in the match setup
+    // popup. It stays in the RuleSetList, because rulesets are told apart by their position in that
+    // list (it is saved and sent to other players), so the list's order must never change.
+    [Tooltip("Off hides this ruleset from the match setup popup. Keep it in the RuleSetList either way.")]
+    [SerializeField] private bool availableInGame = true;
+
+    // Round flag medallion shown with the name in the match setup popup. Variants with no single
+    // country (International, Pool Checkers) use a globe and an 8-ball.
+    [SerializeField] private Sprite flag;
+
     // Short, single-line blurb shown on the mode-selection card itself.
     [TextArea] [SerializeField] private string description;
 
@@ -45,6 +55,8 @@ public class RuleSetSO : ScriptableObject, IRuleSet
     [SerializeField] private bool darkSquareBottomRight;
 
     public string DisplayName => displayName;
+    public bool AvailableInGame => availableInGame;
+    public Sprite Flag => flag;
     public string Description => description;
     public string LongDescription => longDescription;
 

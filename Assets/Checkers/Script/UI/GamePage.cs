@@ -277,8 +277,11 @@ public class GamePage : Page
     {
         ServiceLocator.Get<AudioManager>().PlayButtonClickSound();
 
+        // The ruleset actually being played - a friend's room can use one this build has switched off,
+        // which has no place among the offered ones (-1, and the popup then drops the "n of N").
         GameSettingsManager gameSettings = ServiceLocator.Get<GameSettingsManager>();
-        ServiceLocator.Get<GamePageManager>().RuleSetInfoPage.Show(ServiceLocator.Get<GameManager>().RuleSet, gameSettings.GetRuleSetIndex(), gameSettings.RuleSetCount);
+        IRuleSet ruleSet = ServiceLocator.Get<GameManager>().RuleSet;
+        ServiceLocator.Get<GamePageManager>().RuleSetInfoPage.Show(ruleSet, gameSettings.GetAvailablePosition(ruleSet), gameSettings.AvailableRuleSetCount);
         ServiceLocator.Get<GamePageManager>().OpenPageAsOverlay(GamePageType.RuleSetInfoPage);
     }
 

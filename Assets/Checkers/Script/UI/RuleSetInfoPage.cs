@@ -42,7 +42,8 @@ public class RuleSetInfoPage : Page
 
     public void Show(IRuleSet ruleSet, int ruleSetIndex, int ruleSetCount)
     {
-        variantLabelText.text = $"RULES VARIANT {ruleSetIndex + 1} OF {ruleSetCount}";
+        // A negative index means the ruleset is not one of the offered ones, so it has no "n of N".
+        variantLabelText.text = ruleSetIndex < 0 ? "RULES VARIANT" : $"RULES VARIANT {ruleSetIndex + 1} OF {ruleSetCount}";
         titleText.text = ruleSet.DisplayName;
 
         // Rich-text TMP tags (<b>Header</b>) are already baked into LongDescription - Rich Text

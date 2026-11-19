@@ -11,10 +11,68 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
   m_Name: CanadianRules
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   displayName: Canadian
-  description: 12x12 draughts - flying kings, men capture backward, mandatory maximum capture, on the biggest board in the game.
-  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nThe biggest board in the game - 12x12, with each player starting 30 pieces on the first five rows on their side, leaving the middle two rows empty. White always moves first.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory, and men may capture in any diagonal direction, including backward. If more than one path is available, you must play the one that captures the most pieces.\n\n<b><color=#D4AF37>No-Removal:</color></b>\nA captured piece stays on the board - still blocking its square - until your turn ends; you can't jump the same piece twice.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece only crowns if it finishes its turn on the back row - jumping through mid-capture and landing elsewhere leaves it a man.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move.\n\n<b><color=#D4AF37>Draw:</color></b>\nEither player may offer a draw at any time; if accepted, the match ends level. The match is also drawn if the same position, with the same side to move, repeats three times, or if material is reduced to 3 Kings vs 1 King for 16 further moves, or 2 Kings (or a King and a man) vs 1 King for 5 further moves, without a result."
+  availableInGame: 1
+  flag: {fileID: 21300000, guid: 47cc0351124e6204cb768a7c3a6099f8, type: 3}
+  description: 12x12 draughts - flying kings, men capture backward, mandatory maximum
+    capture, on the biggest board in the game.
+  longDescription: '<b><color=#D4AF37>Goal:</color></b>
+
+    Capture all of your
+    opponent''s pieces, or leave them with no legal move to make.
+
+
+    <b><color=#D4AF37>Board:</color></b>
+
+    The
+    biggest board in the game - 12x12, with each player starting 30 pieces on the
+    first five rows on their side, leaving the middle two rows empty. White always
+    moves first.
+
+
+    <b><color=#D4AF37>Movement:</color></b>
+
+    Men move diagonally
+    forward only. Kings are flying kings - they slide and capture any distance along
+    a diagonal.
+
+
+    <b><color=#D4AF37>Capturing:</color></b>
+
+    Capturing is
+    mandatory, and men may capture in any diagonal direction, including backward.
+    If more than one path is available, you must play the one that captures the most
+    pieces.
+
+
+    <b><color=#D4AF37>No-Removal:</color></b>
+
+    A captured piece
+    stays on the board - still blocking its square - until your turn ends; you can''t
+    jump the same piece twice.
+
+
+    <b><color=#D4AF37>Kings:</color></b>
+
+    A
+    piece only crowns if it finishes its turn on the back row - jumping through mid-capture
+    and landing elsewhere leaves it a man.
+
+
+    <b><color=#D4AF37>Win:</color></b>
+
+    Capture
+    every enemy piece, or leave your opponent with no legal move.
+
+
+    <b><color=#D4AF37>Draw:</color></b>
+
+    Either
+    player may offer a draw at any time; if accepted, the match ends level. The match
+    is also drawn if the same position, with the same side to move, repeats three
+    times, or if material is reduced to 3 Kings vs 1 King for 16 further moves, or
+    2 Kings (or a King and a man) vs 1 King for 5 further moves, without a result.'
   rows: 12
   columns: 12
   pieceRowsPerSide: 5
@@ -33,8 +91,9 @@ MonoBehaviour:
   forbidImmediateReversal: 0
   noProgressMoveLimit: 0
   singleManLosesToKing: 0
-  firstMoveColor: 1
   threefoldRepetitionEnabled: 1
   threeVsOneKingDrawLimit: 16
   twoVsOneKingDrawLimit: 5
   oneVsOneIsDraw: 0
+  firstMoveColor: 1
+  darkSquareBottomRight: 0

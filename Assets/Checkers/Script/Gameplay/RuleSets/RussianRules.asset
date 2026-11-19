@@ -11,10 +11,60 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 91036662a85844eb162bdfbe2ea8ce9c, type: 3}
   m_Name: RussianRules
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   displayName: Russian
-  description: 8x8 draughts - flying kings, men capture backward, any legal capture is playable, and a newly crowned king keeps capturing that turn.
-  longDescription: "<b><color=#D4AF37>Goal:</color></b>\nCapture all of your opponent's pieces, or leave them with no legal move to make.\n\n<b><color=#D4AF37>Board:</color></b>\nPlayed on an 8x8 board. Each player starts with 12 pieces filling the first three rows on their side.\n\n<b><color=#D4AF37>Movement:</color></b>\nMen move diagonally forward only. Kings are flying kings - they slide and capture any distance along a diagonal.\n\n<b><color=#D4AF37>Capturing:</color></b>\nCapturing is mandatory, and men may capture in any diagonal direction, including backward - but any legal capture path may be chosen, with no \"most pieces\" requirement. Captured pieces are removed from the board immediately, which can open up new paths mid-turn.\n\n<b><color=#D4AF37>Kings:</color></b>\nA piece crowns the instant it reaches the back row, even mid-capture, and must immediately keep capturing that same turn using its new king powers.\n\n<b><color=#D4AF37>Win:</color></b>\nCapture every enemy piece, or leave your opponent with no legal move.\n\n<b><color=#D4AF37>Draw:</color></b>\nEither player may offer a draw at any time; if accepted, the match ends level. The match is also drawn if the same position, with the same side to move, repeats three times."
+  availableInGame: 1
+  flag: {fileID: 21300000, guid: 701cee80bd9195348a6e353bdca7841e, type: 3}
+  description: 8x8 draughts - flying kings, men capture backward, any legal capture
+    is playable, and a newly crowned king keeps capturing that turn.
+  longDescription: '<b><color=#D4AF37>Goal:</color></b>
+
+    Capture all of your
+    opponent''s pieces, or leave them with no legal move to make.
+
+
+    <b><color=#D4AF37>Board:</color></b>
+
+    Played
+    on an 8x8 board. Each player starts with 12 pieces filling the first three rows
+    on their side.
+
+
+    <b><color=#D4AF37>Movement:</color></b>
+
+    Men move diagonally
+    forward only. Kings are flying kings - they slide and capture any distance along
+    a diagonal.
+
+
+    <b><color=#D4AF37>Capturing:</color></b>
+
+    Capturing is
+    mandatory, and men may capture in any diagonal direction, including backward
+    - but any legal capture path may be chosen, with no "most pieces" requirement.
+    Captured pieces are removed from the board immediately, which can open up new
+    paths mid-turn.
+
+
+    <b><color=#D4AF37>Kings:</color></b>
+
+    A piece crowns
+    the instant it reaches the back row, even mid-capture, and must immediately keep
+    capturing that same turn using its new king powers.
+
+
+    <b><color=#D4AF37>Win:</color></b>
+
+    Capture
+    every enemy piece, or leave your opponent with no legal move.
+
+
+    <b><color=#D4AF37>Draw:</color></b>
+
+    Either
+    player may offer a draw at any time; if accepted, the match ends level. The match
+    is also drawn if the same position, with the same side to move, repeats three
+    times.'
   rows: 8
   columns: 8
   pieceRowsPerSide: 3
@@ -33,3 +83,9 @@ MonoBehaviour:
   forbidImmediateReversal: 0
   noProgressMoveLimit: 30
   singleManLosesToKing: 0
+  threefoldRepetitionEnabled: 1
+  threeVsOneKingDrawLimit: 0
+  twoVsOneKingDrawLimit: 0
+  oneVsOneIsDraw: 0
+  firstMoveColor: 0
+  darkSquareBottomRight: 0
