@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851588403623",
+    "project_id": "checkers-king-313b5",
+    "storage_bucket": "checkers-king-313b5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851588403623:android:2ed5495fee757c06c66682",
+        "android_client_info": {
+          "package_name": "com.PlayEasy.CheckersKing"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbDnLy9OlJ1nB8GArhzmBDtTDJWCv6Jzs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
